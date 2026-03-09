@@ -1680,14 +1680,14 @@ function renderCanvas() {
   const _topLabel = _topLang === 'pt-BR' ? 'PT' : 'EN';
   const _botLabel = _botLang === 'pt-BR' ? 'PT' : 'EN';
   const _dualFontSize = Math.max(10, Math.round((narrativeStyle.size || 15) * 0.8));
-  const _nBaseStyle = `font-family:${narrativeFont};text-align:${narrativeStyle.align};${narrativeStyle.bold ? 'font-weight:bold;' : 'font-weight:normal;'}${narrativeStyle.italic ? 'font-style:italic;' : ''}color:${narrativeStyle.color && narrativeStyle.color !== '#333333' ? narrativeStyle.color : '#ffffff'};${narrativeStyle.leading ? 'line-height:'+narrativeStyle.leading+';' : ''}text-shadow:0 1px 2px rgba(0,0,0,0.5);letter-spacing:0.01em;`;
+  const _nBaseStyle = `font-family:${narrativeFont};text-align:${narrativeStyle.align};${narrativeStyle.bold ? 'font-weight:bold;' : 'font-weight:normal;'}${narrativeStyle.italic ? 'font-style:italic;' : ''}color:${narrativeStyle.color || narrativeStyle.textColor || '#ffffff'};${narrativeStyle.leading ? 'line-height:'+narrativeStyle.leading+';' : ''}text-shadow:0 1px 2px rgba(0,0,0,0.5);letter-spacing:0.01em;`;
   const narrativeHTML = textBelowActive ? `
     <div class="narrative-resize-handle" style="position:absolute;left:0;top:${panelZoneH - 12}px;width:${pageW}px;height:24px;cursor:ns-resize;z-index:50;display:flex;align-items:center;justify-content:center;gap:8px;" onmousedown="App.startNarrativeDrag(event)">
       <div style="width:40px;height:3px;border-radius:1px;background:rgba(20,184,166,0.5);"></div>
       <span style="font-size:9px;color:rgba(20,184,166,0.7);font-weight:600;pointer-events:none;">${textBelowH}px${_isDualNarr ? ' · DUAL' : ''}</span>
       <div style="width:40px;height:3px;border-radius:1px;background:rgba(20,184,166,0.5);"></div>
     </div>
-    <div class="text-below-area narrative-box-pro" style="position:absolute;left:0;top:${panelZoneH}px;width:${pageW}px;height:${textBelowH}px;background:${_nBg};backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-left:4px solid var(--accent, #14b8a6);box-shadow:0 -2px 12px rgba(0,0,0,0.3);">
+    <div class="text-below-area narrative-box-pro" style="position:absolute;left:0;top:${panelZoneH}px;width:${pageW}px;height:${textBelowH}px;background:${_nBg};backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 -2px 12px rgba(0,0,0,0.3);">
       ${_isDualNarr ? `
       <div style="display:flex;flex-direction:column;width:100%;height:100%;box-sizing:border-box;">
         <div style="position:relative;flex:1;min-height:0;">
@@ -1697,7 +1697,7 @@ function renderCanvas() {
             onclick="event.stopPropagation();App.handleTextZoneClick(this, 'narrativa')"
             onkeydown="event.stopImmediatePropagation();"
             onmousedown="event.stopPropagation();"
-            style="width:100%;height:100%;padding:14px 20px 4px 20px;box-sizing:border-box;font-size:${_dualFontSize}px;overflow-y:auto;${_nBaseStyle}color:${narrativeStyle.color && narrativeStyle.color !== '#333333' ? narrativeStyle.color : '#ffffff'};"
+            style="width:100%;height:100%;padding:14px 20px 4px 20px;box-sizing:border-box;font-size:${_dualFontSize}px;overflow-y:auto;${_nBaseStyle}"
           >${_topText || ''}</div>
         </div>
         <div style="height:0;border-top:1px solid rgba(0,212,255,0.2);margin:0 16px;flex-shrink:0;"></div>
@@ -1708,7 +1708,7 @@ function renderCanvas() {
             onclick="event.stopPropagation();App.handleTextZoneClick(this, 'narrativa')"
             onkeydown="event.stopImmediatePropagation();"
             onmousedown="event.stopPropagation();"
-            style="width:100%;height:100%;padding:14px 20px 4px 20px;box-sizing:border-box;font-size:${_dualFontSize}px;overflow-y:auto;opacity:0.8;${_nBaseStyle}color:${narrativeStyle.color && narrativeStyle.color !== '#333333' ? narrativeStyle.color : '#ffffff'};"
+            style="width:100%;height:100%;padding:14px 20px 4px 20px;box-sizing:border-box;font-size:${_dualFontSize}px;overflow-y:auto;opacity:0.8;${_nBaseStyle}"
           >${_botText || ''}</div>
         </div>
       </div>` : `
@@ -1717,7 +1717,7 @@ function renderCanvas() {
         onclick="event.stopPropagation();App.handleTextZoneClick(this, 'narrativa')"
         onkeydown="event.stopImmediatePropagation();"
         onmousedown="event.stopPropagation();"
-        style="width:100%;height:100%;padding:16px 24px 16px 20px;box-sizing:border-box;font-family:${narrativeFont};font-size:${narrativeStyle.size}px;text-align:${narrativeStyle.align};overflow-y:auto;${narrativeStyle.bold ? 'font-weight:bold;' : 'font-weight:normal;'}${narrativeStyle.italic ? 'font-style:italic;' : ''}color:${narrativeStyle.color && narrativeStyle.color !== '#333333' ? narrativeStyle.color : '#ffffff'};${narrativeStyle.leading ? 'line-height:'+narrativeStyle.leading+';' : ''}text-shadow:0 1px 2px rgba(0,0,0,0.5);letter-spacing:0.01em;"
+        style="width:100%;height:100%;padding:16px 24px 16px 20px;box-sizing:border-box;font-family:${narrativeFont};font-size:${narrativeStyle.size}px;text-align:${narrativeStyle.align};overflow-y:auto;${narrativeStyle.bold ? 'font-weight:bold;' : 'font-weight:normal;'}${narrativeStyle.italic ? 'font-style:italic;' : ''}color:${narrativeStyle.color || narrativeStyle.textColor || '#ffffff'};${narrativeStyle.leading ? 'line-height:'+narrativeStyle.leading+';' : ''}text-shadow:0 1px 2px rgba(0,0,0,0.5);letter-spacing:0.01em;"
       >${narrativeText || ''}</div>`}
     </div>` : '';
   const canvasTools = '';

@@ -707,7 +707,7 @@ class VideoExporter {
         
         const textColor = style.color || style.textColor || '#ffffff';
         const lines = this.wrapText(text, this.canvas.width - padding * 2).slice(0, maxLines);
-        const textY = y + trackHeight / 2 - ((lines.length - 1) * lineHeight) / 2;
+        const textY = y + trackHeight / 2 - ((lines.length * lineHeight) / 2) + (lineHeight / 2);
         
         lines.forEach((line, i) => {
             // Position based on alignment

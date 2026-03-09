@@ -3,8 +3,6 @@
    Purple Accent, Glassmorphism, Professional Studio Aesthetic
    ═══════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Bangers&family=Lora:ital,wght@0,400;0,600;1,400&family=Patrick+Hand&family=Boogaloo&family=Kalam:wght@300;400&family=Roboto+Condensed:wght@400;700&display=swap');
-
 *,
 *::before,
 *::after {
@@ -24,7 +22,7 @@
   --active: #3d424a;
   --glass: rgba(24, 25, 28, 0.92);
   --glass-blur: blur(16px) saturate(1.4);
-
+  
   /* ── Borders ── */
   --border: rgba(255, 255, 255, 0.08);
   --border2: rgba(255, 255, 255, 0.04);
@@ -55,7 +53,7 @@
   --gradient-glow: linear-gradient(135deg, rgba(20, 184, 166, 0.3), rgba(94, 234, 212, 0.3));
 
   /* ── Typography ── */
-  --font: 'Spline Sans', 'Inter', -apple-system, system-ui, sans-serif;
+  --font: 'Inter', -apple-system, system-ui, sans-serif;
   --font-comic: 'Bangers', cursive;
   --font-story: 'Lora', Georgia, serif;
 
@@ -4024,7 +4022,9 @@ kbd {
 }
 .text-below-area:focus-within {
   opacity: 1;
-  border-top-color: var(--accent) !important;
+  border-top-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 .text-below-content:hover:empty::before {
   opacity: 0.7;
@@ -4147,12 +4147,20 @@ kbd {
   background: rgba(20,184,166,0.03);
 }
 .materia-text-zone.selected,
-.materia-text-zone:focus-within,
-.text-below-content.selected,
-.text-below-content:focus-within {
+.materia-text-zone:focus-within {
   border-color: var(--accent);
   background: rgba(20,184,166,0.05);
   outline: none;
+  border-radius: 10px;
+}
+
+.text-below-content.selected,
+.text-below-content:focus-within {
+  border-color: transparent !important;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0;
 }
 
 /* Matéria subtitle placeholder */
