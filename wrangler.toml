@@ -1,12 +1,13 @@
 name = "hqmovie"
 compatibility_date = "2025-09-27"
 
-[site]
-bucket = "."
+# Cloudflare Pages configuration
+pages_build_output_dir = "."
 
 # Excluir arquivos desnecessários do deploy
-[site.exclude]
-patterns = [
+[site]
+bucket = "."
+exclude = [
   "node_modules/**",
   "tests/**",
   "files/**",
@@ -27,11 +28,3 @@ patterns = [
   "I18N-GUIDE.md",
   "HOW_TO_DEPLOY.md"
 ]
-
-# Headers para COOP/COEP (exportação de vídeo)
-[[headers]]
-for = "/*"
-
-[headers.values]
-Cross-Origin-Opener-Policy = "same-origin"
-Cross-Origin-Embedder-Policy = "require-corp"
