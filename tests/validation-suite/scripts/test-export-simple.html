@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Video Export - Simple</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #0a0e17;
+            color: #e0e0e0;
+        }
+        h1 { color: #14b8a6; }
+        .status {
+            background: #1a1f2e;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #14b8a6;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        button {
+            background: #14b8a6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover { background: #0d9488; }
+        button:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+        .progress {
+            background: #1a1f2e;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #14b8a6, #06b6d4);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .video-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .video-card {
+            background: #1a1f2e;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #333;
+        }
+        .video-card.success { border-color: #10b981; }
+        .video-card.error { border-color: #ef4444; }
+        .video-card.running { border-color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <h1>🎬 Test Video Export - Simple Runner</h1>
+    <p>Testa exportação de vídeos WebM usando projetos da validation suite</p>
+
+    <div class="status">
+        <h3>Status: <span id="status">Pronto</span></h3>
+        <div class="progress">
+            <div class="progress-bar" id="progress-bar">0%</div>
+        </div>
+    </div>
+
+    <div>
+        <button onclick="testSingleVideo()" id="btn-single">🎬 Testar 1 Vídeo</button>
+        <button onclick="testAllVideos()" id="btn-all">🚀 Gerar Todos (28)</button>
+        <button onclick="clearLog()">🗑 Limpar Log</button>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <div id="videos" class="video-list"></div>
+
+    <!-- Load dependencies from parent directory -->
+    <script src="../../../layouts-video.js"></script>
+    <script src="../../../video-exporter.js"></script>
+    
+    <script>
+        // Minimal getProjectDims implementation for testing
+        function getProjectDims(project) {
+            const vf = project?.videoFormat ? VIDEO_FORMATS[project.videoFormat] : null;
+            if (vf) {
+                return { 
+                    canvasW: vf.width, 
+                    canvasH: vf.height, 
+                    contentW: vf.width, 
+                    contentH: vf.height, 
+                    marginX: 0, 
+                    marginY: 0, 
+                    isVideo: true 
+                };
+            }
+            return { 
+                canvasW: 794, 
+                canvasH: 1123, 
+                contentW: 714, 
+                contentH: 1043, 
+                marginX: 40, 
+                marginY: 40, 
+                isVideo: false 
+            };
+        }
+    </script>
+    
+    <script>
+        const log = (msg, type = 'info') => {
+            const logEl = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff4444' : type === 'success' ? '#00ff00' : '#00ffff';
+            logEl.innerHTML += `<div style="color:${color}">[${time}] ${msg}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(msg);
+        };
+
+        const clearLog = () => {
+            document.getElementById('log').innerHTML = '';
+        };
+
+        const updateStatus = (msg) => {
+            document.getElementById('status').textContent = msg;
+        };
+
+        const updateProgress = (current, total) => {
+            const pct = Math.round((current / total) * 100);
+            const bar = document.getElementById('progress-bar');
+            bar.style.width = pct + '%';
+            bar.textContent = pct + '%';
+        };
+
+        const scenarios = [
+            { format: 'vertical', id: 'simple', pages: 1 },
+            { format: 'vertical', id: 'narrative', pages: 3 },
+            { format: 'vertical', id: 'action', pages: 5 },
+            { format: 'vertical', id: 'dialogue', pages: 4 },
+            { format: 'vertical', id: 'epic', pages: 6 },
+            { format: 'vertical', id: 'minimal', pages: 2 },
+            { format: 'vertical', id: 'complete', pages: 8 },
+            { format: 'widescreen', id: 'simple', pages: 1 },
+            { format: 'widescreen', id: 'narrative', pages: 3 },
+            { format: 'widescreen', id: 'action', pages: 5 },
+            { format: 'widescreen', id: 'dialogue', pages: 4 },
+            { format: 'widescreen', id: 'epic', pages: 6 },
+            { format: 'widescreen', id: 'minimal', pages: 2 },
+            { format: 'widescreen', id: 'complete', pages: 8 },
+            { format: 'square', id: 'simple', pages: 1 },
+            { format: 'square', id: 'narrative', pages: 3 },
+            { format: 'square', id: 'action', pages: 5 },
+            { format: 'square', id: 'dialogue', pages: 4 },
+            { format: 'square', id: 'epic', pages: 6 },
+            { format: 'square', id: 'minimal', pages: 2 },
+            { format: 'square', id: 'complete', pages: 8 },
+            { format: 'portrait', id: 'simple', pages: 1 },
+            { format: 'portrait', id: 'narrative', pages: 3 },
+            { format: 'portrait', id: 'action', pages: 5 },
+            { format: 'portrait', id: 'dialogue', pages: 4 },
+            { format: 'portrait', id: 'epic', pages: 6 },
+            { format: 'portrait', id: 'minimal', pages: 2 },
+            { format: 'portrait', id: 'complete', pages: 8 }
+        ];
+
+        async function loadProject(format, scenarioId) {
+            const filename = `${scenarioId}-${format}.json`;
+            const path = `../projects/${filename}`;
+            
+            try {
+                const response = await fetch(path);
+                if (!response.ok) throw new Error(`Failed to load ${filename}`);
+                const project = await response.json();
+                log(`✓ Loaded project: ${filename}`, 'success');
+                return project;
+            } catch (err) {
+                log(`✗ Error loading ${filename}: ${err.message}`, 'error');
+                throw err;
+            }
+        }
+
+        async function exportVideo(project, scenarioName) {
+            try {
+                log(`Starting export for ${scenarioName}...`);
+                
+                const blob = await VideoExporter.exportVideo({
+                    project: project,
+                    fps: 30,
+                    quality: 'medium',
+                    onProgress: (p) => {
+                        const pct = Math.round(p * 100);
+                        log(`  Progress: ${pct}%`);
+                    },
+                    onStatus: (s) => {
+                        log(`  ${s}`);
+                    }
+                });
+
+                const sizeMB = (blob.size / (1024 * 1024)).toFixed(2);
+                log(`✓ Export complete: ${sizeMB} MB`, 'success');
+                
+                // Download the file
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${scenarioName}.webm`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                return { success: true, size: sizeMB, blob };
+            } catch (err) {
+                log(`✗ Export failed: ${err.message}`, 'error');
+                return { success: false, error: err.message };
+            }
+        }
+
+        async function testSingleVideo() {
+            const btn = document.getElementById('btn-single');
+            btn.disabled = true;
+            
+            updateStatus('Testing single video...');
+            log('=== Testing Single Video Export ===');
+            
+            try {
+                const scenario = scenarios[0]; // vertical-simple
+                const project = await loadProject(scenario.format, scenario.id);
+                const result = await exportVideo(project, `${scenario.id}-${scenario.format}`);
+                
+                if (result.success) {
+                    updateStatus(`Success! ${result.size} MB`);
+                    log(`✓ Test completed successfully!`, 'success');
+                } else {
+                    updateStatus('Failed');
+                    log(`✗ Test failed`, 'error');
+                }
+            } catch (err) {
+                updateStatus('Error');
+                log(`✗ Error: ${err.message}`, 'error');
+            }
+            
+            btn.disabled = false;
+        }
+
+        async function testAllVideos() {
+            const btnAll = document.getElementById('btn-all');
+            const btnSingle = document.getElementById('btn-single');
+            btnAll.disabled = true;
+            btnSingle.disabled = true;
+            
+            log('=== Starting Batch Export (28 videos) ===');
+            updateStatus('Running batch export...');
+            
+            const results = [];
+            
+            for (let i = 0; i < scenarios.length; i++) {
+                const scenario = scenarios[i];
+                const scenarioName = `${scenario.id}-${scenario.format}`;
+                
+                updateProgress(i, scenarios.length);
+                updateStatus(`Exporting ${i + 1}/${scenarios.length}: ${scenarioName}`);
+                log(`\n--- [${i + 1}/${scenarios.length}] ${scenarioName.toUpperCase()} ---`);
+                
+                try {
+                    const project = await loadProject(scenario.format, scenario.id);
+                    const result = await exportVideo(project, scenarioName);
+                    results.push({ scenario: scenarioName, ...result });
+                    
+                    // Delay between exports to avoid overwhelming the browser
+                    await new Promise(r => setTimeout(r, 1000));
+                } catch (err) {
+                    log(`✗ Failed: ${err.message}`, 'error');
+                    results.push({ scenario: scenarioName, success: false, error: err.message });
+                }
+            }
+            
+            updateProgress(scenarios.length, scenarios.length);
+            
+            // Summary
+            const successful = results.filter(r => r.success).length;
+            const failed = results.filter(r => !r.success).length;
+            
+            log(`\n=== SUMMARY ===`);
+            log(`✓ Successful: ${successful}/${scenarios.length}`, 'success');
+            log(`✗ Failed: ${failed}/${scenarios.length}`, failed > 0 ? 'error' : 'info');
+            
+            updateStatus(`Complete: ${successful}/${scenarios.length} successful`);
+            
+            btnAll.disabled = false;
+            btnSingle.disabled = false;
+        }
+
+        // Initialize
+        log('System ready. Click "Testar 1 Vídeo" to test or "Gerar Todos" to export all 28 videos.');
+    </script>
+</body>
+</html>

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balloon Techniques Showcase</title>
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #1e1e22; color: #ccc; font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; }
+
+h1 { text-align: center; color: #14b8a6; font-size: 22px; margin-bottom: 6px; }
+h2 { color: #0f0; font-size: 16px; margin: 24px 0 8px; padding: 6px 12px; background: rgba(0,255,0,0.08); border-left: 3px solid #0f0; }
+h2.whisper-h { color: #ff0; border-color: #ff0; background: rgba(255,255,0,0.06); }
+h2.think-h { color: #f0f; border-color: #f0f; background: rgba(255,0,255,0.06); }
+h2.compare-h { color: #f80; border-color: #f80; background: rgba(255,136,0,0.06); }
+.subtitle { text-align: center; color: #888; font-size: 12px; margin-bottom: 20px; }
+
+.row { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-bottom: 16px; padding: 12px; }
+.cell { position: relative; display: flex; flex-direction: column; align-items: center; padding: 40px 24px; }
+.cell-label { color: #666; font-size: 10px; margin-top: 28px; text-align: center; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ══════════════════════════════════════════════════
+   TECHNIQUE A — Box-shadow curved tail (exemplos.css lines 6-49)
+   The REFERENCE technique with CORRECT proportions
+   ══════════════════════════════════════════════════ */
+.tA {
+  display: inline-block;
+  position: relative;
+  padding: 14px 20px;
+  border-radius: 22px;
+  border: 2px solid #1a1a1a;
+  background: #fff;
+  font-family: 'Comic Neue', 'Patrick Hand', 'Comic Sans MS', cursive;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: #1a1a1a;
+  box-shadow: 1px 2px 5px rgba(0,0,0,0.15);
+  min-width: 80px;
+  max-width: 160px;
+}
+.tA::before {
+  content: '';
+  position: absolute;
+  width: 50px;
+  height: 30px;
+}
+.tA::after { content: none; }
+
+/* S */
+.tA[data-tail="s"]::before {
+  bottom: -28px; left: 50%; transform: translateX(-60%);
+  border-radius: 0 0 100%;
+  box-shadow:
+    -2px -2px 0 0 #1a1a1a inset,
+    -18px 0 0 0 #fff inset,
+    -20px -2px 0 0 #1a1a1a inset;
+}
+/* N */
+.tA[data-tail="n"]::before {
+  top: -28px; bottom: auto; left: 50%; transform: translateX(-60%);
+  border-radius: 0 100% 0 0;
+  box-shadow:
+    -2px 2px 0 0 #1a1a1a inset,
+    -18px 0 0 0 #fff inset,
+    -20px 2px 0 0 #1a1a1a inset;
+}
+/* SW */
+.tA[data-tail="sw"]::before {
+  bottom: -28px; left: 10px;
+  border-radius: 0 0 100%;
+  box-shadow:
+    -2px -2px 0 0 #1a1a1a inset,
+    -18px 0 0 0 #fff inset,
+    -20px -2px 0 0 #1a1a1a inset;
+}
+/* SE */
+.tA[data-tail="se"]::before {
+  bottom: -28px; right: 10px; left: auto;
+  border-radius: 0 0 0 100%;
+  box-shadow:
+    2px -2px 0 0 #1a1a1a inset,
+    18px 0 0 0 #fff inset,
+    20px -2px 0 0 #1a1a1a inset;
+}
+/* NW */
+.tA[data-tail="nw"]::before {
+  top: -28px; bottom: auto; left: 10px;
+  border-radius: 0 100% 0 0;
+  box-shadow:
+    -2px 2px 0 0 #1a1a1a inset,
+    -18px 0 0 0 #fff inset,
+    -20px 2px 0 0 #1a1a1a inset;
+}
+/* NE */
+.tA[data-tail="ne"]::before {
+  top: -28px; bottom: auto; right: 10px; left: auto;
+  border-radius: 100% 0 0 0;
+  box-shadow:
+    2px 2px 0 0 #1a1a1a inset,
+    18px 0 0 0 #fff inset,
+    20px 2px 0 0 #1a1a1a inset;
+}
+/* W */
+.tA[data-tail="w"]::before {
+  width: 30px; height: 50px;
+  top: 50%; left: -28px; bottom: auto; transform: translateY(-50%);
+  border-radius: 0 0 0 100%;
+  box-shadow:
+    2px -2px 0 0 #1a1a1a inset,
+    0 -18px 0 0 #fff inset,
+    2px -20px 0 0 #1a1a1a inset;
+}
+/* E */
+.tA[data-tail="e"]::before {
+  width: 30px; height: 50px;
+  top: 50%; right: -28px; left: auto; bottom: auto; transform: translateY(-50%);
+  border-radius: 0 0 100% 0;
+  box-shadow:
+    -2px -2px 0 0 #1a1a1a inset,
+    0 -18px 0 0 #fff inset,
+    -2px -20px 0 0 #1a1a1a inset;
+}
+/* none */
+.tA[data-tail="none"]::before { display: none; }
+
+
+/* ══════════════════════════════════════════════════
+   TECHNIQUE B — Simple asymmetric border triangle (lines 169-180)
+   No stroke on tail — just fill color
+   ══════════════════════════════════════════════════ */
+.tB {
+  display: inline-block;
+  position: relative;
+  padding: 16px 22px;
+  border-radius: 40px;
+  background: #fff;
+  font-family: sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+  text-align: center;
+  color: #000;
+  min-width: 80px;
+  max-width: 160px;
+}
+.tB::before {
+  content: '';
+  width: 0; height: 0;
+  position: absolute;
+}
+
+/* S */
+.tB[data-tail="s"]::before {
+  bottom: -22px; left: 50%; transform: translateX(-50%);
+  border-left: 20px solid #fff;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #fff;
+  border-bottom: 18px solid transparent;
+}
+/* SW */
+.tB[data-tail="sw"]::before {
+  bottom: -22px; left: 24px;
+  border-left: 20px solid #fff;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #fff;
+  border-bottom: 18px solid transparent;
+}
+/* SE */
+.tB[data-tail="se"]::before {
+  bottom: -22px; right: 24px; left: auto;
+  border-right: 20px solid #fff;
+  border-left: 10px solid transparent;
+  border-top: 10px solid #fff;
+  border-bottom: 18px solid transparent;
+}
+/* N */
+.tB[data-tail="n"]::before {
+  top: -22px; bottom: auto; left: 50%; transform: translateX(-50%);
+  border-left: 20px solid #fff;
+  border-right: 10px solid transparent;
+  border-bottom: 10px solid #fff;
+  border-top: 18px solid transparent;
+}
+/* NW */
+.tB[data-tail="nw"]::before {
+  top: -22px; bottom: auto; left: 24px;
+  border-left: 20px solid #fff;
+  border-right: 10px solid transparent;
+  border-bottom: 10px solid #fff;
+  border-top: 18px solid transparent;
+}
+/* NE */
+.tB[data-tail="ne"]::before {
+  top: -22px; bottom: auto; right: 24px; left: auto;
+  border-right: 20px solid #fff;
+  border-left: 10px solid transparent;
+  border-bottom: 10px solid #fff;
+  border-top: 18px solid transparent;
+}
+/* W */
+.tB[data-tail="w"]::before {
+  top: 50%; left: -18px; bottom: auto; transform: translateY(-50%);
+  border-top: 10px solid transparent;
+  border-bottom: 16px solid transparent;
+  border-right: 18px solid #fff;
+  border-left: 0;
+}
+/* E */
+.tB[data-tail="e"]::before {
+  top: 50%; right: -18px; left: auto; bottom: auto; transform: translateY(-50%);
+  border-top: 10px solid transparent;
+  border-bottom: 16px solid transparent;
+  border-left: 18px solid #fff;
+  border-right: 0;
+}
+.tB[data-tail="none"]::before { display: none; }
+
+
+/* ══════════════════════════════════════════════════
+   TECHNIQUE C — Double-border outlined triangle (lines 192-426)
+   ::before = stroke triangle, ::after = fill triangle
+   ══════════════════════════════════════════════════ */
+.tC {
+  display: inline-block;
+  position: relative;
+  padding: 14px 18px;
+  border-radius: 22px;
+  border: 2px solid #555;
+  background: #fff;
+  font-family: 'Comic Neue', 'Patrick Hand', 'Comic Sans MS', cursive;
+  font-size: 14px;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.4;
+  text-align: center;
+  color: #555;
+  min-width: 70px;
+  max-width: 140px;
+}
+.tC::before, .tC::after {
+  content: '';
+  position: absolute;
+  width: 0; height: 0;
+}
+
+/* S */
+.tC[data-tail="s"]::before {
+  bottom: -18px; left: 50%; transform: translateX(-8px);
+  border: 10px solid; border-color: #555 transparent transparent #555;
+}
+.tC[data-tail="s"]::after {
+  bottom: -10px; left: 50%; transform: translateX(-4px);
+  border: 6px solid; border-color: #fff transparent transparent #fff;
+}
+/* SW */
+.tC[data-tail="sw"]::before {
+  bottom: -18px; left: 14px;
+  border: 10px solid; border-color: #555 transparent transparent #555;
+}
+.tC[data-tail="sw"]::after {
+  bottom: -10px; left: 18px;
+  border: 6px solid; border-color: #fff transparent transparent #fff;
+}
+/* SE */
+.tC[data-tail="se"]::before {
+  bottom: -18px; right: 14px; left: auto;
+  border: 10px solid; border-color: #555 #555 transparent transparent;
+}
+.tC[data-tail="se"]::after {
+  bottom: -10px; right: 18px; left: auto;
+  border: 6px solid; border-color: #fff #fff transparent transparent;
+}
+/* N */
+.tC[data-tail="n"]::before {
+  top: -18px; bottom: auto; left: 50%; transform: translateX(-8px);
+  border: 10px solid; border-color: transparent transparent #555 #555;
+}
+.tC[data-tail="n"]::after {
+  top: -10px; bottom: auto; left: 50%; transform: translateX(-4px);
+  border: 6px solid; border-color: transparent transparent #fff #fff;
+}
+/* NW */
+.tC[data-tail="nw"]::before {
+  top: -18px; bottom: auto; left: 14px;
+  border: 10px solid; border-color: transparent transparent #555 #555;
+}
+.tC[data-tail="nw"]::after {
+  top: -10px; bottom: auto; left: 18px;
+  border: 6px solid; border-color: transparent transparent #fff #fff;
+}
+/* NE */
+.tC[data-tail="ne"]::before {
+  top: -18px; bottom: auto; right: 14px; left: auto;
+  border: 10px solid; border-color: transparent #555 #555 transparent;
+}
+.tC[data-tail="ne"]::after {
+  top: -10px; bottom: auto; right: 18px; left: auto;
+  border: 6px solid; border-color: transparent #fff #fff transparent;
+}
+/* W */
+.tC[data-tail="w"]::before {
+  top: 50%; left: -18px; bottom: auto; transform: translateY(-6px);
+  border: 10px solid; border-color: transparent #555 #555 transparent;
+}
+.tC[data-tail="w"]::after {
+  top: 50%; left: -10px; bottom: auto; transform: translateY(-2px);
+  border: 6px solid; border-color: transparent #fff #fff transparent;
+}
+/* E */
+.tC[data-tail="e"]::before {
+  top: 50%; right: -18px; left: auto; bottom: auto; transform: translateY(-6px);
+  border: 10px solid; border-color: #555 transparent transparent #555;
+}
+.tC[data-tail="e"]::after {
+  top: 50%; right: -10px; left: auto; bottom: auto; transform: translateY(-2px);
+  border: 6px solid; border-color: #fff transparent transparent #fff;
+}
+.tC[data-tail="none"]::before, .tC[data-tail="none"]::after { display: none; }
+
+
+/* ══════════════════════════════════════════════════
+   TECHNIQUE D — Rotated border-radius tail (lines 497-509)
+   Elegant thin curved tail via rotation
+   ══════════════════════════════════════════════════ */
+.tD {
+  display: inline-block;
+  position: relative;
+  padding: 14px 20px;
+  border-radius: 22px;
+  border: 2px solid #1a1a1a;
+  background: #fff;
+  font-family: 'Comic Neue', 'Patrick Hand', 'Comic Sans MS', cursive;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  color: #1a1a1a;
+  box-shadow: 1px 2px 5px rgba(0,0,0,0.15);
+  min-width: 80px;
+  max-width: 160px;
+}
+.tD::before {
+  content: '';
+  position: absolute;
+  border: 0 solid transparent;
+  border-top: 8px solid #fff;
+  border-radius: 0 20px 0;
+  width: 14px;
+  height: 28px;
+}
+.tD::after {
+  content: '';
+  position: absolute;
+  border: 0 solid transparent;
+  border-top: 9px solid #1a1a1a;
+  border-radius: 0 22px 0;
+  width: 16px;
+  height: 30px;
+}
+
+/* S (left-leaning) */
+.tD[data-tail="s"]::after {
+  bottom: -16px; left: 50%; transform: translateX(-8px) rotate(145deg);
+}
+.tD[data-tail="s"]::before {
+  bottom: -14px; left: 50%; transform: translateX(-6px) rotate(145deg);
+  z-index: 1;
+}
+/* SW */
+.tD[data-tail="sw"]::after {
+  bottom: -16px; left: 16px; transform: rotate(145deg);
+}
+.tD[data-tail="sw"]::before {
+  bottom: -14px; left: 18px; transform: rotate(145deg);
+  z-index: 1;
+}
+/* SE */
+.tD[data-tail="se"]::after {
+  bottom: -16px; right: 16px; left: auto; transform: rotate(45deg) scaleY(-1);
+}
+.tD[data-tail="se"]::before {
+  bottom: -14px; right: 18px; left: auto; transform: rotate(45deg) scaleY(-1);
+  z-index: 1;
+}
+/* N */
+.tD[data-tail="n"]::after {
+  top: -16px; bottom: auto; left: 50%; transform: translateX(-8px) rotate(-35deg);
+}
+.tD[data-tail="n"]::before {
+  top: -14px; bottom: auto; left: 50%; transform: translateX(-6px) rotate(-35deg);
+  z-index: 1;
+}
+/* NW */
+.tD[data-tail="nw"]::after {
+  top: -16px; bottom: auto; left: 16px; transform: rotate(-35deg);
+}
+.tD[data-tail="nw"]::before {
+  top: -14px; bottom: auto; left: 18px; transform: rotate(-35deg);
+  z-index: 1;
+}
+/* NE */
+.tD[data-tail="ne"]::after {
+  top: -16px; bottom: auto; right: 16px; left: auto; transform: rotate(-145deg) scaleY(-1);
+}
+.tD[data-tail="ne"]::before {
+  top: -14px; bottom: auto; right: 18px; left: auto; transform: rotate(-145deg) scaleY(-1);
+  z-index: 1;
+}
+/* W */
+.tD[data-tail="w"]::after {
+  top: 50%; left: -14px; bottom: auto; transform: translateY(-10px) rotate(55deg);
+}
+.tD[data-tail="w"]::before {
+  top: 50%; left: -12px; bottom: auto; transform: translateY(-8px) rotate(55deg);
+  z-index: 1;
+}
+/* E */
+.tD[data-tail="e"]::after {
+  top: 50%; right: -14px; left: auto; bottom: auto; transform: translateY(-10px) rotate(-55deg) scaleY(-1);
+}
+.tD[data-tail="e"]::before {
+  top: 50%; right: -12px; left: auto; bottom: auto; transform: translateY(-8px) rotate(-55deg) scaleY(-1);
+  z-index: 1;
+}
+.tD[data-tail="none"]::before, .tD[data-tail="none"]::after { display: none; }
+
+
+/* ══════════════════════════════════════════════════
+   TECHNIQUE E — Think dots (lines 51-78)
+   Already implemented, shown here for comparison
+   ══════════════════════════════════════════════════ */
+.tE {
+  display: inline-block;
+  position: relative;
+  padding: 18px 24px;
+  border-radius: 50% / 42%;
+  border: 2px solid #1a1a1a;
+  background: #fff;
+  font-family: 'Patrick Hand', 'Comic Sans MS', cursive;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.3;
+  text-align: center;
+  color: #1a1a1a;
+  box-shadow: 1px 2px 5px rgba(0,0,0,0.12);
+  min-width: 80px;
+  max-width: 160px;
+}
+.tE::after {
+  content: '';
+  position: absolute;
+  width: 14px; height: 12px;
+  background: #fff;
+  border: 2px solid #1a1a1a;
+  border-radius: 50%;
+}
+.tE::before {
+  content: '';
+  position: absolute;
+  width: 8px; height: 7px;
+  background: #fff;
+  border: 1.5px solid #1a1a1a;
+  border-radius: 50%;
+}
+
+/* S */
+.tE[data-tail="s"]::after  { bottom: -16px; left: 50%; transform: translateX(-50%); }
+.tE[data-tail="s"]::before { bottom: -28px; left: 50%; transform: translateX(-6px); }
+/* SW */
+.tE[data-tail="sw"]::after  { bottom: -16px; left: 18px; }
+.tE[data-tail="sw"]::before { bottom: -28px; left: 8px; }
+/* SE */
+.tE[data-tail="se"]::after  { bottom: -16px; right: 18px; left: auto; }
+.tE[data-tail="se"]::before { bottom: -28px; right: 8px; left: auto; }
+/* N */
+.tE[data-tail="n"]::after  { top: -16px; bottom: auto; left: 50%; transform: translateX(-50%); }
+.tE[data-tail="n"]::before { top: -28px; bottom: auto; left: 50%; transform: translateX(-6px); }
+/* NW */
+.tE[data-tail="nw"]::after  { top: -16px; bottom: auto; left: 18px; }
+.tE[data-tail="nw"]::before { top: -28px; bottom: auto; left: 8px; }
+/* NE */
+.tE[data-tail="ne"]::after  { top: -16px; bottom: auto; right: 18px; left: auto; }
+.tE[data-tail="ne"]::before { top: -28px; bottom: auto; right: 8px; left: auto; }
+/* W */
+.tE[data-tail="w"]::after  { top: 50%; left: -18px; transform: translateY(-50%); }
+.tE[data-tail="w"]::before { top: 60%; left: -30px; }
+/* E */
+.tE[data-tail="e"]::after  { top: 50%; right: -18px; left: auto; transform: translateY(-50%); }
+.tE[data-tail="e"]::before { top: 60%; right: -30px; left: auto; }
+.tE[data-tail="none"]::after, .tE[data-tail="none"]::before { display: none; }
+
+</style>
+</head>
+<body>
+
+<h1>🎈 Balloon Techniques — Showcase</h1>
+<p class="subtitle">Todas as técnicas do exemplos.css renderizadas lado a lado. Escolha a melhor para cada tipo de balão.</p>
+
+<h2>A — Box-shadow Curved Tail (exemplos.css linhas 6-49)</h2>
+<p class="subtitle">Quarter-circle + 3-layer inset box-shadow. Clássico de HQ. Tamanho: 50×30px, stroke 2px.</p>
+<div class="row" id="row-a"></div>
+
+<h2>B — Simple Asymmetric Triangle (linhas 169-180)</h2>
+<p class="subtitle">Border trick sem stroke. Limpo e minimalista. Sem contorno no rabo.</p>
+<div class="row" id="row-b"></div>
+
+<h2 class="whisper-h">C — Double-Border Outlined Triangle (linhas 192-426)</h2>
+<p class="subtitle">::before = stroke + ::after = fill. Geométrico com contorno. Ideal para Whisper/Sussurro.</p>
+<div class="row" id="row-c"></div>
+
+<h2>D — Rotated Border-Radius Tail (linhas 497-509)</h2>
+<p class="subtitle">border-top + border-radius: 0 20px 0 + rotate. Curva fina e elegante, moderno.</p>
+<div class="row" id="row-d"></div>
+
+<h2 class="think-h">E — Think Dots (linhas 51-78)</h2>
+<p class="subtitle">Bolinhas descendentes. Clássico de pensamento. Já implementado.</p>
+<div class="row" id="row-e"></div>
+
+<h2 class="compare-h">Comparação — Mesmo texto, todas as técnicas (tail S)</h2>
+<div class="row" id="row-compare"></div>
+
+<h2 class="compare-h">Texto longo — Wrapping test (tail SW)</h2>
+<div class="row" id="row-wrap"></div>
+
+<script>
+const dirs = ['s','n','e','w','sw','se','nw','ne','none'];
+const techniques = [
+  { id: 'a', cls: 'tA', text: 'Olá mundo!' },
+  { id: 'b', cls: 'tB', text: 'Olá mundo!' },
+  { id: 'c', cls: 'tC', text: 'psiu...' },
+  { id: 'd', cls: 'tD', text: 'Olá mundo!' },
+  { id: 'e', cls: 'tE', text: 'hmm...' },
+];
+
+// Render each technique in all directions
+techniques.forEach(t => {
+  const row = document.getElementById('row-' + t.id);
+  dirs.forEach(dir => {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.innerHTML = `
+      <div class="${t.cls}" data-tail="${dir}">${t.text}</div>
+      <div class="cell-label">${dir}</div>
+    `;
+    row.appendChild(cell);
+  });
+});
+
+// Comparison row — all techniques with tail=s
+const compareRow = document.getElementById('row-compare');
+const compareItems = [
+  { cls: 'tA', label: 'A: Box-shadow curved', text: 'Olá mundo!' },
+  { cls: 'tB', label: 'B: Simple triangle', text: 'Olá mundo!' },
+  { cls: 'tC', label: 'C: Outlined triangle', text: 'Olá mundo!' },
+  { cls: 'tD', label: 'D: Rotated curve', text: 'Olá mundo!' },
+  { cls: 'tE', label: 'E: Think dots', text: 'Olá mundo!' },
+];
+compareItems.forEach(item => {
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  cell.innerHTML = `
+    <div class="${item.cls}" data-tail="s">${item.text}</div>
+    <div class="cell-label">${item.label}</div>
+  `;
+  compareRow.appendChild(cell);
+});
+
+// Wrap test — long text with tail=sw
+const wrapRow = document.getElementById('row-wrap');
+const longText = 'Precisamos conversar sobre o que aconteceu ontem à noite! É muito importante.';
+const wrapItems = [
+  { cls: 'tA', label: 'A: Box-shadow' },
+  { cls: 'tB', label: 'B: Simple triangle' },
+  { cls: 'tC', label: 'C: Outlined triangle' },
+  { cls: 'tD', label: 'D: Rotated curve' },
+];
+wrapItems.forEach(item => {
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  cell.innerHTML = `
+    <div class="${item.cls}" data-tail="sw" style="max-width:180px;">${longText}</div>
+    <div class="cell-label">${item.label}</div>
+  `;
+  wrapRow.appendChild(cell);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HQ Movie - Stress Test Suite</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #1a1a1a; color: #e0e0e0; padding: 20px; }
+    h1 { color: #4ecdc4; margin-bottom: 20px; }
+    h2 { color: #f5a623; margin: 20px 0 10px; font-size: 16px; }
+    .test-group { background: #222; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .test-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #333; }
+    .test-item:last-child { border-bottom: none; }
+    .test-status { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .pending { background: #333; color: #888; }
+    .running { background: #f5a623; color: #000; animation: pulse 1s infinite; }
+    .pass { background: #50c878; color: #000; }
+    .fail { background: #e8625c; color: #fff; }
+    .skip { background: #666; color: #fff; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .test-name { flex: 1; }
+    .test-time { color: #888; font-size: 12px; }
+    .test-error { color: #e8625c; font-size: 12px; margin-top: 4px; }
+    button { background: #4ecdc4; color: #000; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-right: 8px; }
+    button:hover { background: #3dbdb5; }
+    button.secondary { background: #333; color: #fff; }
+    .summary { background: #333; padding: 16px; border-radius: 8px; margin-top: 20px; }
+    .summary-stat { display: inline-block; margin-right: 20px; }
+    .summary-stat span { font-weight: 700; }
+    .pass-count { color: #50c878; }
+    .fail-count { color: #e8625c; }
+    .skip-count { color: #888; }
+    iframe { display: none; }
+    #log { background: #111; padding: 12px; border-radius: 6px; margin-top: 16px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; white-space: pre-wrap; }
+    .log-info { color: #4ecdc4; }
+    .log-warn { color: #f5a623; }
+    .log-error { color: #e8625c; }
+  </style>
+</head>
+<body>
+  <h1>🧪 HQ Movie - Stress Test Suite</h1>
+  
+  <div style="margin-bottom: 20px;">
+    <button onclick="runAllTests()">▶ Executar Todos os Testes</button>
+    <button class="secondary" onclick="clearResults()">🔄 Limpar</button>
+    <button class="secondary" onclick="openApp()">🔗 Abrir App</button>
+  </div>
+
+  <div class="test-group">
+    <h2>📦 Inicialização</h2>
+    <div class="test-item" data-test="init-store">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Store inicializa corretamente</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="init-layouts">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Layouts disponíveis (mínimo 4)</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="init-app">
+      <div class="test-status pending">-</div>
+      <div class="test-name">App object existe com funções essenciais</div>
+      <div class="test-time"></div>
+    </div>
+  </div>
+
+  <div class="test-group">
+    <h2>📄 Projeto</h2>
+    <div class="test-item" data-test="project-create">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Criar novo projeto</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="project-add-page">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Adicionar página</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="project-delete-page">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Deletar página</div>
+      <div class="test-time"></div>
+    </div>
+  </div>
+
+  <div class="test-group">
+    <h2>🎨 Layouts (CRÍTICO)</h2>
+    <div class="test-item" data-test="layout-change-1to2">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Mudar layout 1→2 painéis</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="layout-change-2to3">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Mudar layout 2→3 painéis</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="layout-change-3to4">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Mudar layout 3→4 painéis</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="layout-render-after-change">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Canvas renderiza após mudança de layout</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="layout-custom-create">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Criar layout customizado (modal abre)</div>
+      <div class="test-time"></div>
+    </div>
+  </div>
+
+  <div class="test-group">
+    <h2>💬 Balões</h2>
+    <div class="test-item" data-test="balloon-add-speech">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Adicionar balão de fala</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="balloon-add-whisper">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Adicionar balão sussurro</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="balloon-add-narration">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Adicionar balão narração</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="balloon-context-menu">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Context menu do balão funciona</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="balloon-change-type">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Mudar tipo do balão</div>
+      <div class="test-time"></div>
+    </div>
+  </div>
+
+  <div class="test-group">
+    <h2>🖱️ Interação</h2>
+    <div class="test-item" data-test="drag-balloon">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Arrastar balão</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="drag-panel">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Arrastar imagem no painel</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="click-slot">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Selecionar slot clicando</div>
+      <div class="test-time"></div>
+    </div>
+  </div>
+
+  <div class="test-group">
+    <h2>🎬 Timeline</h2>
+    <div class="test-item" data-test="timeline-render">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Timeline renderiza</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="timeline-transition">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Transição aparece ao clicar página</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="timeline-duration">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Duração editável</div>
+      <div class="test-time"></div>
+    </div>
+  </div>
+
+  <div class="test-group">
+    <h2>🔧 UI Components</h2>
+    <div class="test-item" data-test="ui-right-panel">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Painel direito renderiza</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="ui-left-panel">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Painel esquerdo renderiza</div>
+      <div class="test-time"></div>
+    </div>
+    <div class="test-item" data-test="ui-floating-toolbar">
+      <div class="test-status pending">-</div>
+      <div class="test-name">Floating toolbar existe</div>
+      <div class="test-time"></div>
+    </div>
+  </div>
+
+  <div class="summary" id="summary" style="display:none;">
+    <div class="summary-stat"><span class="pass-count" id="pass-count">0</span> Passou</div>
+    <div class="summary-stat"><span class="fail-count" id="fail-count">0</span> Falhou</div>
+    <div class="summary-stat"><span class="skip-count" id="skip-count">0</span> Pulou</div>
+    <div class="summary-stat">Tempo: <span id="total-time">0</span>ms</div>
+  </div>
+
+  <div id="log"></div>
+
+  <iframe id="app-frame" src="../index.html"></iframe>
+
+  <script>
+    const log = (msg, level = 'info') => {
+      const logEl = document.getElementById('log');
+      const line = document.createElement('div');
+      line.className = 'log-' + level;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    };
+
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+
+    const getAppWindow = () => document.getElementById('app-frame').contentWindow;
+
+    const setStatus = (testId, status, time = '', error = '') => {
+      const item = document.querySelector(`[data-test="${testId}"]`);
+      if (!item) return;
+      const statusEl = item.querySelector('.test-status');
+      const timeEl = item.querySelector('.test-time');
+      statusEl.className = 'test-status ' + status;
+      statusEl.textContent = status === 'pass' ? '✓' : status === 'fail' ? '✗' : status === 'running' ? '…' : '-';
+      timeEl.textContent = time ? time + 'ms' : '';
+      if (error) {
+        let errEl = item.querySelector('.test-error');
+        if (!errEl) {
+          errEl = document.createElement('div');
+          errEl.className = 'test-error';
+          item.appendChild(errEl);
+        }
+        errEl.textContent = error;
+      }
+    };
+
+    const runTest = async (testId, testFn) => {
+      setStatus(testId, 'running');
+      const start = performance.now();
+      try {
+        await testFn();
+        const time = Math.round(performance.now() - start);
+        setStatus(testId, 'pass', time);
+        log(`✓ ${testId} (${time}ms)`, 'info');
+        return true;
+      } catch (e) {
+        const time = Math.round(performance.now() - start);
+        setStatus(testId, 'fail', time, e.message);
+        log(`✗ ${testId}: ${e.message}`, 'error');
+        return false;
+      }
+    };
+
+    const tests = {
+      // Initialization
+      'init-store': async () => {
+        const w = getAppWindow();
+        if (!w.Store) throw new Error('Store não encontrado');
+        if (typeof w.Store.get !== 'function') throw new Error('Store.get não é função');
+      },
+      'init-layouts': async () => {
+        const w = getAppWindow();
+        if (!w.Layouts) throw new Error('Layouts não encontrado');
+        const count = Object.keys(w.Layouts).length;
+        if (count < 4) throw new Error(`Apenas ${count} layouts (mínimo 4)`);
+      },
+      'init-app': async () => {
+        const w = getAppWindow();
+        if (!w.App) throw new Error('App não encontrado');
+        const required = ['setLayout', 'addPage', 'addBalloon', 'selectSlot'];
+        for (const fn of required) {
+          if (typeof w.App[fn] !== 'function') throw new Error(`App.${fn} não existe`);
+        }
+      },
+
+      // Project
+      'project-create': async () => {
+        const w = getAppWindow();
+        w.App.newProject('vertical');
+        await wait(200);
+        const p = w.Store.get('currentProject');
+        if (!p) throw new Error('Projeto não criado');
+        if (!p.pages || p.pages.length === 0) throw new Error('Projeto sem páginas');
+      },
+      'project-add-page': async () => {
+        const w = getAppWindow();
+        const before = w.Store.get('currentProject').pages.length;
+        w.App.addPage();
+        await wait(100);
+        const after = w.Store.get('currentProject').pages.length;
+        if (after !== before + 1) throw new Error(`Páginas: ${before} → ${after}`);
+      },
+      'project-delete-page': async () => {
+        const w = getAppWindow();
+        const before = w.Store.get('currentProject').pages.length;
+        if (before < 2) w.App.addPage();
+        await wait(100);
+        w.App.deletePage(w.Store.get('currentProject').pages.length - 1);
+        await wait(100);
+        const after = w.Store.get('currentProject').pages.length;
+        if (after >= before) throw new Error('Página não deletada');
+      },
+
+      // Layouts (CRITICAL)
+      'layout-change-1to2': async () => {
+        const w = getAppWindow();
+        w.App.setLayout('1p-full');
+        await wait(200);
+        w.App.setLayout('2p-h-50');
+        await wait(200);
+        const page = w.Store.getActivePage();
+        if (page.layoutId !== '2p-h-50') throw new Error(`Layout: ${page.layoutId}`);
+      },
+      'layout-change-2to3': async () => {
+        const w = getAppWindow();
+        w.App.setLayout('2p-h-50');
+        await wait(200);
+        w.App.setLayout('3p-h-equal');
+        await wait(200);
+        const page = w.Store.getActivePage();
+        if (page.layoutId !== '3p-h-equal') throw new Error(`Layout: ${page.layoutId}`);
+        // Check canvas still renders
+        const canvas = w.document.querySelector('.canvas-content');
+        if (!canvas) throw new Error('Canvas não renderizou após mudança');
+      },
+      'layout-change-3to4': async () => {
+        const w = getAppWindow();
+        w.App.setLayout('3p-h-equal');
+        await wait(200);
+        w.App.setLayout('4p-grid');
+        await wait(200);
+        const page = w.Store.getActivePage();
+        if (page.layoutId !== '4p-grid') throw new Error(`Layout: ${page.layoutId}`);
+      },
+      'layout-render-after-change': async () => {
+        const w = getAppWindow();
+        w.App.setLayout('2p-v-50');
+        await wait(300);
+        const panels = w.document.querySelectorAll('.panel-slot');
+        if (panels.length < 2) throw new Error(`Apenas ${panels.length} painéis renderizados`);
+      },
+      'layout-custom-create': async () => {
+        const w = getAppWindow();
+        w.App.enterLayoutEditor();
+        await wait(300);
+        const modal = w.document.getElementById('layout-editor-modal');
+        if (!modal) throw new Error('Modal não abriu');
+        w.App._leCloseModal();
+      },
+
+      // Balloons
+      'balloon-add-speech': async () => {
+        const w = getAppWindow();
+        const before = (w.Store.getActivePage().texts || []).length;
+        w.App.addBalloon('speech');
+        await wait(100);
+        const after = (w.Store.getActivePage().texts || []).length;
+        if (after !== before + 1) throw new Error('Balão não adicionado');
+      },
+      'balloon-add-whisper': async () => {
+        const w = getAppWindow();
+        const before = (w.Store.getActivePage().texts || []).length;
+        w.App.addBalloon('whisper');
+        await wait(100);
+        const after = (w.Store.getActivePage().texts || []).length;
+        if (after !== before + 1) throw new Error('Balão whisper não adicionado');
+      },
+      'balloon-add-narration': async () => {
+        const w = getAppWindow();
+        const before = (w.Store.getActivePage().texts || []).length;
+        w.App.addBalloon('narration');
+        await wait(100);
+        const after = (w.Store.getActivePage().texts || []).length;
+        if (after !== before + 1) throw new Error('Balão narração não adicionado');
+      },
+      'balloon-context-menu': async () => {
+        const w = getAppWindow();
+        if (typeof w.App.showContextMenu !== 'function') throw new Error('showContextMenu não existe');
+      },
+      'balloon-change-type': async () => {
+        const w = getAppWindow();
+        const texts = w.Store.getActivePage().texts || [];
+        if (texts.length === 0) w.App.addBalloon('speech');
+        await wait(100);
+        w.App.changeBalloonType(0, 'thought');
+        await wait(100);
+        const type = w.Store.getActivePage().texts[0].type;
+        if (type !== 'thought') throw new Error(`Tipo: ${type}`);
+      },
+
+      // Interaction
+      'drag-balloon': async () => {
+        const w = getAppWindow();
+        if (typeof w.App.startBalloonDrag !== 'function') throw new Error('startBalloonDrag não existe');
+      },
+      'drag-panel': async () => {
+        const w = getAppWindow();
+        if (typeof w.App.startPanelPan !== 'function') throw new Error('startPanelPan não existe');
+      },
+      'click-slot': async () => {
+        const w = getAppWindow();
+        w.App.selectSlot(0);
+        await wait(100);
+        const sel = w.Store.get('selectedSlot');
+        if (sel !== 0) throw new Error(`selectedSlot: ${sel}`);
+      },
+
+      // Timeline
+      'timeline-render': async () => {
+        const w = getAppWindow();
+        const timeline = w.document.querySelector('.timeline, .tl-strip');
+        if (!timeline) throw new Error('Timeline não encontrada');
+      },
+      'timeline-transition': async () => {
+        const w = getAppWindow();
+        // Check transition controls exist
+        if (typeof w.App.setPageTransition !== 'function') throw new Error('setPageTransition não existe');
+      },
+      'timeline-duration': async () => {
+        const w = getAppWindow();
+        if (typeof w.App.setPageDuration !== 'function') throw new Error('setPageDuration não existe');
+      },
+
+      // UI Components
+      'ui-right-panel': async () => {
+        const w = getAppWindow();
+        const panel = w.document.getElementById('right-panel');
+        if (!panel) throw new Error('Painel direito não existe');
+      },
+      'ui-left-panel': async () => {
+        const w = getAppWindow();
+        const panel = w.document.getElementById('left-panel');
+        if (!panel) throw new Error('Painel esquerdo não existe');
+      },
+      'ui-floating-toolbar': async () => {
+        const w = getAppWindow();
+        const toolbar = w.document.getElementById('floating-text-toolbar');
+        if (!toolbar) throw new Error('Floating toolbar não existe');
+      },
+    };
+
+    async function runAllTests() {
+      log('=== Iniciando testes ===', 'info');
+      const startTime = performance.now();
+      
+      // Wait for app to load
+      log('Aguardando app carregar...', 'info');
+      await wait(1500);
+      
+      let passed = 0, failed = 0, skipped = 0;
+      
+      for (const [testId, testFn] of Object.entries(tests)) {
+        try {
+          const result = await runTest(testId, testFn);
+          if (result) passed++; else failed++;
+        } catch (e) {
+          failed++;
+          log(`Erro fatal em ${testId}: ${e.message}`, 'error');
+        }
+        await wait(50);
+      }
+      
+      const totalTime = Math.round(performance.now() - startTime);
+      
+      document.getElementById('summary').style.display = 'block';
+      document.getElementById('pass-count').textContent = passed;
+      document.getElementById('fail-count').textContent = failed;
+      document.getElementById('skip-count').textContent = skipped;
+      document.getElementById('total-time').textContent = totalTime;
+      
+      log(`=== Concluído: ${passed}/${passed+failed} (${totalTime}ms) ===`, passed === passed+failed ? 'info' : 'warn');
+    }
+
+    function clearResults() {
+      document.querySelectorAll('.test-status').forEach(el => {
+        el.className = 'test-status pending';
+        el.textContent = '-';
+      });
+      document.querySelectorAll('.test-time').forEach(el => el.textContent = '');
+      document.querySelectorAll('.test-error').forEach(el => el.remove());
+      document.getElementById('summary').style.display = 'none';
+      document.getElementById('log').innerHTML = '';
+    }
+
+    function openApp() {
+      window.open('../index.html', '_blank');
+    }
+
+    // Auto-run on load
+    window.addEventListener('load', () => {
+      log('Stress Test Suite carregado', 'info');
+      log('Clique "Executar Todos os Testes" para iniciar', 'info');
+    });
+  </script>
+</body>
+</html>

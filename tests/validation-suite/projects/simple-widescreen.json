@@ -1,0 +1,46 @@
+{
+  "id": "id_i3l5n048k",
+  "metadata": {
+    "name": "SIMPLE-WIDESCREEN",
+    "createdAt": 1772823118809,
+    "updatedAt": 1772823118809
+  },
+  "videoFormat": "widescreen",
+  "backgroundMusic": null,
+  "videoAudio": {
+    "ducking": {
+      "enabled": false
+    }
+  },
+  "customLayouts": [],
+  "favoriteLayoutId": null,
+  "pages": [
+    {
+      "id": "id_8916qa3jh",
+      "layoutId": "w1-cinematic",
+      "kenBurns": "static",
+      "duration": 4,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "none",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_dgi2sftps",
+          "type": "speech",
+          "text": "Este é um vídeo widescreen.",
+          "x": 480,
+          "y": 432,
+          "w": 960,
+          "h": 120,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    }
+  ]
+}

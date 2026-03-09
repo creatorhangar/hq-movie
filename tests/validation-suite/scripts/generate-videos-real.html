@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HQ Movie - Gerador de Vídeos Real</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 { color: #14b8a6; margin-bottom: 8px; }
+        .subtitle { color: #888; margin-bottom: 24px; }
+        
+        .status {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            background: #333;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #14b8a6, #0d9488);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        button {
+            background: #14b8a6;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        button:hover { background: #0d9488; }
+        button:disabled { background: #333; cursor: not-allowed; }
+        
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .video-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .video-card h3 {
+            margin: 0 0 10px;
+            font-size: 14px;
+            color: #14b8a6;
+        }
+        .video-card video {
+            width: 100%;
+            border-radius: 4px;
+            background: #000;
+        }
+        .video-info {
+            font-size: 11px;
+            color: #888;
+            margin-top: 8px;
+        }
+        
+        .log {
+            background: #0f0f0f;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 16px;
+        }
+        .log-entry { margin: 2px 0; }
+        .log-success { color: #2ecc71; }
+        .log-error { color: #e74c3c; }
+        .log-info { color: #888; }
+    </style>
+</head>
+<body>
+    <h1>🎬 HQ Movie - Gerador de Vídeos Real</h1>
+    <p class="subtitle">Teste com imagens reais e textos visíveis</p>
+    
+    <div class="status">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong>Status:</strong> <span id="status-text">Pronto</span>
+            </div>
+            <div>
+                <strong>Progresso:</strong> <span id="progress-text">0/4</span>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div style="margin-top: 10px;">
+            <button onclick="generateAll()" id="btn-generate">▶ Gerar Vídeos</button>
+            <button onclick="downloadAll()" id="btn-download" disabled>⬇ Download Todos</button>
+        </div>
+        <div class="log" id="log"></div>
+    </div>
+    
+    <div class="video-grid" id="video-grid"></div>
+
+    <script>
+        // Definições de formatos de vídeo
+        const VIDEO_FORMATS = {
+            vertical: { 
+                id: 'vertical',
+                name: 'Vertical (9:16)', 
+                width: 1080, 
+                height: 1920,
+                ratio: 9/16
+            },
+            widescreen: { 
+                id: 'widescreen',
+                name: 'Widescreen (16:9)', 
+                width: 1920, 
+                height: 1080,
+                ratio: 16/9
+            },
+            square: { 
+                id: 'square',
+                name: 'Quadrado (1:1)', 
+                width: 1080, 
+                height: 1080,
+                ratio: 1
+            },
+            portrait: { 
+                id: 'portrait',
+                name: 'Retrato (4:3)', 
+                width: 1440, 
+                height: 1080,
+                ratio: 4/3
+            }
+        };
+
+        // Função para obter dimensões do projeto
+        function getProjectDims(project) {
+            const format = VIDEO_FORMATS[project.videoFormat] || VIDEO_FORMATS.vertical;
+            return {
+                canvasW: format.width,
+                canvasH: format.height,
+                viewW: format.width,
+                viewH: format.height
+            };
+        }
+
+        // Imagens disponíveis no projeto
+        const AVAILABLE_IMAGES = [
+            '/img/66d6e88f025a7050bc4eb17e5b49b834.jpg',
+            '/img/8fdc28880a7c91b6bc8a02e8c6d90918.jpg',
+            '/img/Desenhos-dos-anos-2000-danny.jpg',
+            '/img/Monica5-1-.webp'
+        ];
+
+        // VideoExporter melhorado
+        class VideoExporter {
+            constructor(project) {
+                this.project = project;
+                this.canvas = null;
+                this.ctx = null;
+                this.mediaRecorder = null;
+                this.chunks = [];
+                this.fps = 30;
+            }
+            
+            async export() {
+                try {
+                    const dims = getProjectDims(this.project);
+                    this.canvas = document.createElement('canvas');
+                    this.canvas.width = dims.canvasW;
+                    this.canvas.height = dims.canvasH;
+                    this.ctx = this.canvas.getContext('2d');
+                    
+                    const stream = this.canvas.captureStream(this.fps);
+                    this.mediaRecorder = new MediaRecorder(stream, { 
+                        mimeType: 'video/webm;codecs=vp9',
+                        videoBitsPerSecond: 5000000
+                    });
+                    
+                    this.chunks = [];
+                    this.mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) this.chunks.push(e.data);
+                    };
+                    
+                    this.mediaRecorder.start();
+                    
+                    for (const page of this.project.pages) {
+                        await this.renderPage(page, page.duration || 3);
+                    }
+                    
+                    return await this.finalize();
+                } catch (error) {
+                    console.error('Erro ao exportar vídeo:', error);
+                    throw error;
+                }
+            }
+            
+            async renderPage(page, durationSeconds) {
+                const totalFrames = Math.floor(durationSeconds * this.fps);
+                
+                // Carregar imagem antes de começar a renderizar
+                let img = null;
+                if (page.images && page.images.length > 0 && page.images[0].src) {
+                    img = new Image();
+                    await new Promise((resolve) => {
+                        img.onload = resolve;
+                        img.onerror = resolve;
+                        img.src = page.images[0].src;
+                    });
+                }
+                
+                for (let frame = 0; frame < totalFrames; frame++) {
+                    // Background gradiente
+                    const gradient = this.ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
+                    gradient.addColorStop(0, '#2a0845');
+                    gradient.addColorStop(1, '#1a1a2e');
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    
+                    // Desenhar imagem se houver
+                    if (img && img.complete) {
+                        // Manter aspect ratio da imagem
+                        const imgRatio = img.width / img.height;
+                        const canvasRatio = this.canvas.width / this.canvas.height;
+                        
+                        let drawWidth, drawHeight, drawX, drawY;
+                        
+                        if (imgRatio > canvasRatio) {
+                            // Imagem mais larga que o canvas
+                            drawHeight = this.canvas.height;
+                            drawWidth = drawHeight * imgRatio;
+                            drawX = (this.canvas.width - drawWidth) / 2;
+                            drawY = 0;
+                        } else {
+                            // Imagem mais alta que o canvas
+                            drawWidth = this.canvas.width;
+                            drawHeight = drawWidth / imgRatio;
+                            drawX = 0;
+                            drawY = (this.canvas.height - drawHeight) / 2;
+                        }
+                        
+                        this.ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+                    }
+                    
+                    // Desenhar textos
+                    this.drawBalloons(page.texts || []);
+                    
+                    await this.waitFrame();
+                }
+            }
+            
+            drawBalloons(texts) {
+                texts.forEach(balloon => {
+                    this.ctx.save();
+                    
+                    const x = balloon.x || 50;
+                    const y = balloon.y || 50;
+                    const w = balloon.w || 300;
+                    const h = balloon.h || 100;
+                    
+                    // Desenhar balão com base no tipo
+                    if (balloon.type === 'speech') {
+                        // Balão de fala
+                        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                        this.ctx.strokeStyle = '#000000';
+                        this.ctx.lineWidth = 3;
+                        
+                        // Corpo do balão
+                        this.drawRoundedRect(x, y, w, h, 20);
+                        this.ctx.fill();
+                        this.ctx.stroke();
+                        
+                        // Cauda do balão
+                        this.ctx.beginPath();
+                        const tailDir = balloon.direction || 's';
+                        if (tailDir === 's') {
+                            this.ctx.moveTo(x + w/3, y + h);
+                            this.ctx.lineTo(x + w/3 - 20, y + h + 30);
+                            this.ctx.lineTo(x + w/3 + 20, y + h + 30);
+                        }
+                        this.ctx.closePath();
+                        this.ctx.fill();
+                        this.ctx.stroke();
+                    } else {
+                        // Balão simples
+                        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                        this.ctx.strokeStyle = '#000000';
+                        this.ctx.lineWidth = 3;
+                        this.drawRoundedRect(x, y, w, h, 10);
+                        this.ctx.fill();
+                        this.ctx.stroke();
+                    }
+                    
+                    // Desenhar texto
+                    this.ctx.fillStyle = balloon.color || '#000000';
+                    const fontSize = balloon.fontSize || 20;
+                    this.ctx.font = `bold ${fontSize}px ${this.getFontFamily(balloon.font)}`;
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    
+                    // Adicionar sombra ao texto para melhor legibilidade
+                    this.ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+                    this.ctx.shadowBlur = 2;
+                    this.ctx.shadowOffsetX = 1;
+                    this.ctx.shadowOffsetY = 1;
+                    
+                    // Centralizar texto no balão
+                    this.ctx.fillText(balloon.text, x + w/2, y + h/2);
+                    
+                    this.ctx.restore();
+                });
+            }
+            
+            drawRoundedRect(x, y, w, h, r) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(x + r, y);
+                this.ctx.lineTo(x + w - r, y);
+                this.ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+                this.ctx.lineTo(x + w, y + h - r);
+                this.ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                this.ctx.lineTo(x + r, y + h);
+                this.ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+                this.ctx.lineTo(x, y + r);
+                this.ctx.quadraticCurveTo(x, y, x + r, y);
+                this.ctx.closePath();
+            }
+            
+            getFontFamily(font) {
+                const fonts = {
+                    comic: 'Comic Sans MS, cursive',
+                    marker: 'Permanent Marker, cursive',
+                    serif: 'Georgia, serif',
+                    sans: 'Arial, sans-serif'
+                };
+                return fonts[font] || 'Arial, sans-serif';
+            }
+            
+            waitFrame() {
+                return new Promise(resolve => setTimeout(resolve, 1000 / this.fps));
+            }
+            
+            async finalize() {
+                return new Promise((resolve, reject) => {
+                    this.mediaRecorder.onstop = () => {
+                        const blob = new Blob(this.chunks, { type: 'video/webm' });
+                        resolve(blob);
+                    };
+                    this.mediaRecorder.onerror = (e) => {
+                        reject(new Error('Erro no MediaRecorder: ' + e.error));
+                    };
+                    this.mediaRecorder.stop();
+                });
+            }
+        }
+
+        let generatedVideos = [];
+        let isGenerating = false;
+        
+        const TESTS = [
+            'simple-vertical',
+            'simple-widescreen',
+            'simple-square',
+            'simple-portrait'
+        ];
+        
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function updateProgress(current, total) {
+            document.getElementById('progress-text').textContent = `${current}/${total}`;
+            document.getElementById('progress-fill').style.width = `${(current/total)*100}%`;
+        }
+        
+        function updateStatus(text) {
+            document.getElementById('status-text').textContent = text;
+        }
+        
+        async function loadProject(filename) {
+            const response = await fetch(`../projects/${filename}.json`);
+            if (!response.ok) throw new Error(`Projeto não encontrado: ${filename}`);
+            return await response.json();
+        }
+        
+        async function generateVideo(testId) {
+            log(`Gerando: ${testId}...`, 'info');
+            
+            try {
+                const project = await loadProject(testId);
+                
+                // Adicionar uma imagem real a cada página
+                const randomImage = AVAILABLE_IMAGES[Math.floor(Math.random() * AVAILABLE_IMAGES.length)];
+                project.pages.forEach(page => {
+                    if (!page.images || page.images.length === 0) {
+                        const format = VIDEO_FORMATS[project.videoFormat];
+                        page.images = [{
+                            src: randomImage,
+                            x: 0, y: 0, w: format.width, h: format.height
+                        }];
+                    }
+                });
+                
+                const exporter = new VideoExporter(project);
+                const blob = await exporter.export();
+                
+                const url = URL.createObjectURL(blob);
+                addVideoToGrid(testId, url, blob, project);
+                
+                generatedVideos.push({
+                    id: testId,
+                    filename: `${testId.toUpperCase()}.webm`,
+                    url: url,
+                    blob: blob,
+                    project: project
+                });
+                
+                log(`✅ ${testId} - ${(blob.size/1024/1024).toFixed(2)} MB`, 'success');
+                return true;
+                
+            } catch (error) {
+                log(`❌ Erro em ${testId}: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        function addVideoToGrid(testId, videoUrl, blob, project) {
+            const grid = document.getElementById('video-grid');
+            const card = document.createElement('div');
+            card.className = 'video-card';
+            
+            const formatInfo = VIDEO_FORMATS[project.videoFormat];
+            const duration = project.pages.reduce((sum, p) => sum + (p.duration || 3), 0);
+            
+            card.innerHTML = `
+                <h3>${testId.toUpperCase()}</h3>
+                <video controls loop>
+                    <source src="${videoUrl}" type="video/webm">
+                </video>
+                <div class="video-info">
+                    📐 ${formatInfo.width}×${formatInfo.height} | 
+                    ⏱ ${duration}s | 
+                    💾 ${(blob.size/1024/1024).toFixed(2)} MB
+                </div>
+            `;
+            
+            grid.appendChild(card);
+        }
+        
+        async function generateAll() {
+            if (isGenerating) return;
+            isGenerating = true;
+            
+            document.getElementById('btn-generate').disabled = true;
+            updateStatus('Gerando vídeos...');
+            
+            log('Iniciando geração de vídeos com imagens reais...', 'info');
+            
+            let successCount = 0;
+            for (let i = 0; i < TESTS.length; i++) {
+                const success = await generateVideo(TESTS[i]);
+                if (success) successCount++;
+                updateProgress(i + 1, TESTS.length);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            updateStatus('Concluído!');
+            log(`✅ Geração completa! ${successCount}/${TESTS.length} vídeos criados.`, 'success');
+            
+            document.getElementById('btn-generate').disabled = false;
+            document.getElementById('btn-download').disabled = false;
+            isGenerating = false;
+        }
+        
+        function downloadAll() {
+            generatedVideos.forEach(video => {
+                const a = document.createElement('a');
+                a.href = video.url;
+                a.download = video.filename;
+                a.click();
+            });
+            log(`Download iniciado para ${generatedVideos.length} vídeos...`, 'info');
+        }
+        
+        log('Sistema pronto. Clique em "Gerar Vídeos" para começar.', 'info');
+    </script>
+</body>
+</html>

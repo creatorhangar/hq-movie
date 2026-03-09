@@ -1,0 +1,11 @@
+{
+  "project": "NARRATIVE-VERTICAL",
+  "format": "vertical",
+  "dimensions": "1080x1920",
+  "duration": 15,
+  "fileSize": 7500000,
+  "pages": 3,
+  "balloons": 3,
+  "hasAudio": true,
+  "exportedAt": "2026-03-06T18:53:18.244Z"
+}

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste Visual - Balões Speech e Whisper</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      background: #1a1a2e; 
+      color: #fff; 
+      font-family: system-ui, sans-serif;
+      padding: 20px;
+    }
+    h1 { text-align: center; margin-bottom: 20px; color: #60a5fa; }
+    h2 { margin: 20px 0 10px; color: #14b8a6; border-bottom: 1px solid #333; padding-bottom: 5px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .balloon-container {
+      background: #2a2a3e;
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 200px;
+    }
+    .balloon-wrapper {
+      position: relative;
+      width: 160px;
+      height: 100px;
+      --bb-bg: #ffffff;
+      --bb-border: #1a1a1a;
+    }
+    .balloon-label {
+      margin-top: auto;
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+    }
+    .status {
+      text-align: center;
+      padding: 10px;
+      background: #22c55e;
+      color: #fff;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    .status.fail {
+      background: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎈 Teste Visual de Balões - Speech & Whisper</h1>
+  
+  <h2>SPEECH (Fala) - Todas as Direções</h2>
+  <div class="grid" id="speech-grid"></div>
+  
+  <h2>WHISPER (Sussurro) - Todas as Direções</h2>
+  <div class="grid" id="whisper-grid"></div>
+  
+  <div id="status" class="status">Carregando...</div>
+
+  <script src="../app.js"></script>
+  <script>
+    const directions = ['s', 'n', 'e', 'w', 'sw', 'se', 'nw', 'ne', 'none'];
+    const dirLabels = {
+      s: '↓ Sul', n: '↑ Norte', e: '→ Leste', w: '← Oeste',
+      sw: '↙ Sudoeste', se: '↘ Sudeste', nw: '↖ Noroeste', ne: '↗ Nordeste',
+      none: '○ Sem Tail'
+    };
+    
+    function createBalloonTest(type, dir) {
+      const container = document.createElement('div');
+      container.className = 'balloon-container';
+      
+      const wrapper = document.createElement('div');
+      wrapper.className = 'balloon-wrapper';
+      
+      // Generate balloon SVG
+      const svg = BalloonSVGRenderer.render(type, 160, 100, dir);
+      wrapper.innerHTML = svg;
+      
+      const label = document.createElement('div');
+      label.className = 'balloon-label';
+      label.textContent = dirLabels[dir] || dir;
+      
+      container.appendChild(wrapper);
+      container.appendChild(label);
+      return container;
+    }
+    
+    // Render Speech balloons
+    const speechGrid = document.getElementById('speech-grid');
+    directions.forEach(dir => {
+      speechGrid.appendChild(createBalloonTest('speech', dir));
+    });
+    
+    // Render Whisper balloons
+    const whisperGrid = document.getElementById('whisper-grid');
+    directions.forEach(dir => {
+      whisperGrid.appendChild(createBalloonTest('whisper', dir));
+    });
+    
+    // Check if all balloons rendered
+    const allBalloons = document.querySelectorAll('.balloon-wrapper svg');
+    const status = document.getElementById('status');
+    if (allBalloons.length === directions.length * 2) {
+      status.textContent = `✅ ${allBalloons.length} balões renderizados com sucesso!`;
+    } else {
+      status.className = 'status fail';
+      status.textContent = `❌ Erro: apenas ${allBalloons.length} balões renderizados`;
+    }
+  </script>
+</body>
+</html>

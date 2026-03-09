@@ -1,0 +1,203 @@
+{
+  "id": "id_6ate4kwiz",
+  "metadata": {
+    "name": "EPIC-VERTICAL",
+    "createdAt": 1772823118807,
+    "updatedAt": 1772823118807
+  },
+  "videoFormat": "vertical",
+  "backgroundMusic": {
+    "file": "../../test-audio/music-epic.wav",
+    "volume": 0.5,
+    "loop": true
+  },
+  "videoAudio": {
+    "ducking": {
+      "enabled": true,
+      "level": 0.15,
+      "fadeMs": 800
+    }
+  },
+  "activeLanguage": "pt-BR",
+  "customLayouts": [],
+  "favoriteLayoutId": null,
+  "pages": [
+    {
+      "id": "id_qofsf1gb8",
+      "layoutId": "v1-splash",
+      "kenBurns": "zoomIn",
+      "duration": 5,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-01.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_skoa0tbwa",
+          "type": "narration",
+          "text": "O destino aguarda...",
+          "x": 216,
+          "y": 576,
+          "w": 648,
+          "h": 120,
+          "direction": "center",
+          "font": "serif",
+          "fontSize": 14,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": true,
+      "narrative": "A épica jornada começa..."
+    },
+    {
+      "id": "id_fiqujxzsf",
+      "layoutId": "v2-dual",
+      "kenBurns": "panLeft",
+      "duration": 6,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "slide",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_ckg1qzuq8",
+          "type": "speech",
+          "text": "Precisamos agir agora!",
+          "x": 216,
+          "y": 576,
+          "w": 648,
+          "h": 120,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_s8ko5l5tx",
+      "layoutId": "v3-triple",
+      "kenBurns": "zoomOut",
+      "duration": 7,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-03.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_lrz1d4szl",
+          "type": "thought",
+          "text": "(Será que conseguiremos?)",
+          "x": 216,
+          "y": 576,
+          "w": 648,
+          "h": 120,
+          "direction": "se",
+          "font": "marker",
+          "fontSize": 14,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_4e41ksjia",
+      "layoutId": "v4-grid",
+      "kenBurns": "panRight",
+      "duration": 5,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "cut",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_13o4hlc3m",
+          "type": "sfx",
+          "text": "KABOOM!",
+          "x": 216,
+          "y": 576,
+          "w": 648,
+          "h": 120,
+          "direction": "center",
+          "font": "sans",
+          "fontSize": 24,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_rc21sly74",
+      "layoutId": "v4-grid",
+      "kenBurns": "panUp",
+      "duration": 6,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "slide",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_4uk6ca0f1",
+          "type": "whisper",
+          "text": "Silêncio...",
+          "x": 216,
+          "y": 576,
+          "w": 648,
+          "h": 120,
+          "direction": "sw",
+          "font": "sans",
+          "fontSize": 12,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_nx5ctn6l1",
+      "layoutId": "v1-splash",
+      "kenBurns": "float",
+      "duration": 5,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-03.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_fa6t07e4n",
+          "type": "shout",
+          "text": "VITÓRIA!",
+          "x": 216,
+          "y": 576,
+          "w": 648,
+          "h": 120,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 18,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    }
+  ]
+}

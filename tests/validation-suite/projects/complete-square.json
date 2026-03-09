@@ -1,0 +1,412 @@
+{
+  "id": "id_mcx0jpsny",
+  "metadata": {
+    "name": "COMPLETE-SQUARE",
+    "createdAt": 1772823118812,
+    "updatedAt": 1772823118812
+  },
+  "videoFormat": "square",
+  "backgroundMusic": {
+    "file": "../../test-audio/music-drama.wav",
+    "volume": 0.4,
+    "loop": true
+  },
+  "videoAudio": {
+    "ducking": {
+      "enabled": true,
+      "level": 0.2,
+      "fadeMs": 600
+    }
+  },
+  "activeLanguage": "pt-BR",
+  "customLayouts": [],
+  "favoriteLayoutId": null,
+  "pages": [
+    {
+      "id": "id_1eq2bcgna",
+      "layoutId": "s1-full",
+      "kenBurns": "static",
+      "duration": 4,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-01.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_jpehmvdmx",
+          "type": "speech",
+          "text": "Teste completo iniciando!",
+          "x": 162,
+          "y": 216,
+          "w": 756,
+          "h": 100,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        },
+        {
+          "id": "id_jb6xxtfvw",
+          "type": "speech",
+          "text": "Balão extra 1",
+          "x": 108,
+          "y": 540,
+          "w": 378,
+          "h": 80,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        },
+        {
+          "id": "id_cl00fo83r",
+          "type": "thought",
+          "text": "Pensamento 1",
+          "x": 594,
+          "y": 648,
+          "w": 378,
+          "h": 80,
+          "direction": "se",
+          "font": "marker",
+          "fontSize": 14,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": true,
+      "narrative": "Teste completo de todas as funcionalidades"
+    },
+    {
+      "id": "id_ove5ih2lr",
+      "layoutId": "s4-hsplit",
+      "kenBurns": "zoomIn",
+      "duration": 5,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-02.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_tif79w8ee",
+          "type": "thought",
+          "text": "Pensamentos profundos aqui...",
+          "x": 162,
+          "y": 216,
+          "w": 756,
+          "h": 100,
+          "direction": "se",
+          "font": "marker",
+          "fontSize": 14,
+          "color": "#000000"
+        },
+        {
+          "id": "id_q1wv1ty2f",
+          "type": "speech",
+          "text": "Balão extra 2",
+          "x": 108,
+          "y": 540,
+          "w": 378,
+          "h": 80,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        },
+        {
+          "id": "id_hj1mfkb5u",
+          "type": "thought",
+          "text": "Pensamento 2",
+          "x": 594,
+          "y": 648,
+          "w": 378,
+          "h": 80,
+          "direction": "se",
+          "font": "marker",
+          "fontSize": 14,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_r2xj5a94l",
+      "layoutId": "s3-lshape",
+      "kenBurns": "zoomOut",
+      "duration": 6,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-03.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_715t92q2i",
+          "type": "shout",
+          "text": "ATENÇÃO TOTAL!",
+          "x": 162,
+          "y": 216,
+          "w": 756,
+          "h": 100,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 18,
+          "color": "#000000"
+        },
+        {
+          "id": "id_m9xe80swl",
+          "type": "speech",
+          "text": "Balão extra 3",
+          "x": 108,
+          "y": 540,
+          "w": 378,
+          "h": 80,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        },
+        {
+          "id": "id_2ibcd46j2",
+          "type": "thought",
+          "text": "Pensamento 3",
+          "x": 594,
+          "y": 648,
+          "w": 378,
+          "h": 80,
+          "direction": "se",
+          "font": "marker",
+          "fontSize": 14,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_zgpr037bi",
+      "layoutId": "s2-grid",
+      "kenBurns": "panLeft",
+      "duration": 5,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-04.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_e14yba72f",
+          "type": "whisper",
+          "text": "sussurrando suavemente...",
+          "x": 162,
+          "y": 216,
+          "w": 756,
+          "h": 100,
+          "direction": "sw",
+          "font": "sans",
+          "fontSize": 12,
+          "color": "#000000"
+        },
+        {
+          "id": "id_7a0zbq0hw",
+          "type": "speech",
+          "text": "Balão extra 4",
+          "x": 108,
+          "y": 540,
+          "w": 378,
+          "h": 80,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        },
+        {
+          "id": "id_8adbmaxb2",
+          "type": "thought",
+          "text": "Pensamento 4",
+          "x": 594,
+          "y": 648,
+          "w": 378,
+          "h": 80,
+          "direction": "se",
+          "font": "marker",
+          "fontSize": 14,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_ew0q2yj1u",
+      "layoutId": "s1-full",
+      "kenBurns": "panRight",
+      "duration": 7,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-05.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_x0ly9bs8u",
+          "type": "narration",
+          "text": "A narração continua com detalhes importantes.",
+          "x": 162,
+          "y": 216,
+          "w": 756,
+          "h": 100,
+          "direction": "center",
+          "font": "serif",
+          "fontSize": 14,
+          "color": "#000000"
+        },
+        {
+          "id": "id_oycuhg2mq",
+          "type": "speech",
+          "text": "Balão extra 5",
+          "x": 108,
+          "y": 540,
+          "w": 378,
+          "h": 80,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        },
+        {
+          "id": "id_1qq8czqwq",
+          "type": "thought",
+          "text": "Pensamento 5",
+          "x": 594,
+          "y": 648,
+          "w": 378,
+          "h": 80,
+          "direction": "se",
+          "font": "marker",
+          "fontSize": 14,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_xkkvf1p7s",
+      "layoutId": "s4-hsplit",
+      "kenBurns": "panUp",
+      "duration": 5,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-01.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_ikkg8ol5c",
+          "type": "sfx",
+          "text": "CRASH! BOOM! POW!",
+          "x": 162,
+          "y": 216,
+          "w": 756,
+          "h": 100,
+          "direction": "center",
+          "font": "sans",
+          "fontSize": 24,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_xl94xag2f",
+      "layoutId": "s3-lshape",
+      "kenBurns": "float",
+      "duration": 8,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-02.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_mbke6pwgy",
+          "type": "speech",
+          "text": "Diálogo normal retorna.",
+          "x": 162,
+          "y": 216,
+          "w": 756,
+          "h": 100,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_teytu5prw",
+      "layoutId": "s1-full",
+      "kenBurns": "static",
+      "duration": 6,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-03.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_obevsehd5",
+          "type": "narration",
+          "text": "Conclusão: todos os elementos funcionam perfeitamente.",
+          "x": 162,
+          "y": 216,
+          "w": 756,
+          "h": 100,
+          "direction": "center",
+          "font": "serif",
+          "fontSize": 14,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": true,
+      "narrative": "FIM"
+    }
+  ]
+}

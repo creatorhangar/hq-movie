@@ -1,0 +1,45 @@
+{
+  "id": "id_s2n78900s",
+  "metadata": {
+    "name": "MINIMAL-SQUARE",
+    "createdAt": 1772823118812,
+    "updatedAt": 1772823118812
+  },
+  "videoFormat": "square",
+  "backgroundMusic": null,
+  "videoAudio": {
+    "ducking": {
+      "enabled": false
+    }
+  },
+  "customLayouts": [],
+  "favoriteLayoutId": null,
+  "pages": [
+    {
+      "id": "id_5ghg2ohpj",
+      "layoutId": "s1-full",
+      "kenBurns": "zoomIn",
+      "duration": 8,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "cut",
+      "images": [],
+      "texts": [],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_rcxhbtdxu",
+      "layoutId": "s1-full",
+      "kenBurns": "zoomOut",
+      "duration": 8,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "cut",
+      "images": [],
+      "texts": [],
+      "showTextBelow": false,
+      "narrative": ""
+    }
+  ]
+}

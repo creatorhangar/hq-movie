@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste Visual - Balões Speech e Whisper</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      background: #1a1a2e; 
+      color: #fff; 
+      font-family: system-ui, sans-serif;
+      padding: 20px;
+    }
+    h1 { text-align: center; margin-bottom: 20px; color: #60a5fa; }
+    h2 { margin: 20px 0 10px; color: #14b8a6; border-bottom: 1px solid #333; padding-bottom: 5px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    .balloon-container {
+      background: #2a2a3e;
+      border-radius: 8px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 180px;
+    }
+    .balloon-wrapper {
+      position: relative;
+      width: 140px;
+      height: 90px;
+    }
+    .balloon-label {
+      margin-top: auto;
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎈 Teste Visual de Balões - Speech & Whisper</h1>
+  
+  <h2>SPEECH (Fala) - Todas as Direções</h2>
+  <div class="grid" id="speech-grid"></div>
+  
+  <h2>WHISPER (Sussurro) - Todas as Direções</h2>
+  <div class="grid" id="whisper-grid"></div>
+
+  <script>
+    // Inline BalloonSVGRenderer for testing
+    const BalloonSVGRenderer = {
+      _shadow() {
+        return `<defs><filter id="bbShadow" x="-18%" y="-18%" width="146%" height="150%">
+          <feDropShadow dx="1" dy="2" stdDeviation="2.5" flood-color="rgba(0,0,0,0.22)"/></filter></defs>`;
+      },
+
+      dialog(w, h, tailDir, o) {
+        const PAD = 32;
+        const cx = w / 2, cy = h / 2;
+        const rx = w / 2 - 4, ry = h / 2 - 4;
+        const dir = (!tailDir || tailDir === 'center' || tailDir === 'none') ? null : tailDir;
+        
+        const DMAP = {
+          s:  { dx: 0, dy: 1, perpX: 1, perpY: 0 },
+          n:  { dx: 0, dy: -1, perpX: 1, perpY: 0 },
+          e:  { dx: 1, dy: 0, perpX: 0, perpY: 1 },
+          w:  { dx: -1, dy: 0, perpX: 0, perpY: 1 },
+          sw: { dx: -0.707, dy: 0.707, perpX: 0.707, perpY: 0.707 },
+          se: { dx: 0.707, dy: 0.707, perpX: -0.707, perpY: 0.707 },
+          nw: { dx: -0.707, dy: -0.707, perpX: 0.707, perpY: -0.707 },
+          ne: { dx: 0.707, dy: -0.707, perpX: -0.707, perpY: -0.707 }
+        };
+        
+        let tailPath = '';
+        if (dir && DMAP[dir]) {
+          const d = DMAP[dir];
+          const isHorizontal = Math.abs(d.dx) > Math.abs(d.dy);
+          const tailLen = (isHorizontal ? rx : ry) * 0.5;
+          const tailWidth = (isHorizontal ? ry : rx) * 0.35;
+          
+          const baseX = cx + d.dx * rx * 0.85;
+          const baseY = cy + d.dy * ry * 0.85;
+          const tipX = cx + d.dx * (rx + tailLen);
+          const tipY = cy + d.dy * (ry + tailLen);
+          
+          const b1x = baseX + d.perpX * tailWidth;
+          const b1y = baseY + d.perpY * tailWidth;
+          const b2x = baseX - d.perpX * tailWidth;
+          const b2y = baseY - d.perpY * tailWidth;
+          
+          tailPath = `<path d="M ${b1x.toFixed(1)},${b1y.toFixed(1)} L ${tipX.toFixed(1)},${tipY.toFixed(1)} L ${b2x.toFixed(1)},${b2y.toFixed(1)} Z" fill="${o.fill}" stroke="${o.stroke}" stroke-width="${o.sw}" stroke-linejoin="round"/>`;
+        }
+        
+        const svgW = w + PAD * 2, svgH = h + PAD * 2;
+        return `<svg width="${svgW}" height="${svgH}" viewBox="${-PAD} ${-PAD} ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;position:absolute;left:${-PAD}px;top:${-PAD}px;pointer-events:none;">
+          ${this._shadow()}
+          <g filter="url(#bbShadow)">
+            ${tailPath}
+            <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${o.fill}" stroke="${o.stroke}" stroke-width="${o.sw}" stroke-linejoin="round"/>
+          </g></svg>`;
+      },
+
+      whisper(w, h, tailDir, o) {
+        const PAD = 32;
+        const cx = w / 2, cy = h / 2;
+        const rx = w / 2 - 4, ry = h / 2 - 4;
+        const dir = (!tailDir || tailDir === 'center' || tailDir === 'none') ? null : tailDir;
+        
+        const DMAP = {
+          s:  { dx: 0, dy: 1, perpX: 1, perpY: 0 },
+          n:  { dx: 0, dy: -1, perpX: 1, perpY: 0 },
+          e:  { dx: 1, dy: 0, perpX: 0, perpY: 1 },
+          w:  { dx: -1, dy: 0, perpX: 0, perpY: 1 },
+          sw: { dx: -0.707, dy: 0.707, perpX: 0.707, perpY: 0.707 },
+          se: { dx: 0.707, dy: 0.707, perpX: -0.707, perpY: 0.707 },
+          nw: { dx: -0.707, dy: -0.707, perpX: 0.707, perpY: -0.707 },
+          ne: { dx: 0.707, dy: -0.707, perpX: -0.707, perpY: -0.707 }
+        };
+        
+        let tailPath = '';
+        if (dir && DMAP[dir]) {
+          const d = DMAP[dir];
+          const isHorizontal = Math.abs(d.dx) > Math.abs(d.dy);
+          const tailLen = (isHorizontal ? rx : ry) * 0.4;
+          const tailWidth = (isHorizontal ? ry : rx) * 0.28;
+          
+          const baseX = cx + d.dx * rx * 0.85;
+          const baseY = cy + d.dy * ry * 0.85;
+          const tipX = cx + d.dx * (rx + tailLen);
+          const tipY = cy + d.dy * (ry + tailLen);
+          
+          const b1x = baseX + d.perpX * tailWidth;
+          const b1y = baseY + d.perpY * tailWidth;
+          const b2x = baseX - d.perpX * tailWidth;
+          const b2y = baseY - d.perpY * tailWidth;
+          
+          tailPath = `<path d="M ${b1x.toFixed(1)},${b1y.toFixed(1)} L ${tipX.toFixed(1)},${tipY.toFixed(1)} L ${b2x.toFixed(1)},${b2y.toFixed(1)} Z" fill="${o.fill}" stroke="${o.stroke}" stroke-width="${o.sw}" stroke-linejoin="round" stroke-dasharray="4 3"/>`;
+        }
+        
+        const dashLen = 6;
+        const gapLen = 4;
+        const svgW = w + PAD * 2, svgH = h + PAD * 2;
+        return `<svg width="${svgW}" height="${svgH}" viewBox="${-PAD} ${-PAD} ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;position:absolute;left:${-PAD}px;top:${-PAD}px;pointer-events:none;">
+          ${this._shadow()}
+          <g filter="url(#bbShadow)">
+            ${tailPath}
+            <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${o.fill}" stroke="${o.stroke}" stroke-width="${o.sw}" stroke-dasharray="${dashLen} ${gapLen}" stroke-linecap="round"/>
+          </g></svg>`;
+      }
+    };
+
+    const directions = ['s', 'n', 'e', 'w', 'sw', 'se', 'nw', 'ne', 'none'];
+    const dirLabels = {
+      s: '↓ Sul', n: '↑ Norte', e: '→ Leste', w: '← Oeste',
+      sw: '↙ Sudoeste', se: '↘ Sudeste', nw: '↖ Noroeste', ne: '↗ Nordeste',
+      none: '○ Sem Tail'
+    };
+    
+    const opts = { fill: '#ffffff', stroke: '#1a1a1a', sw: 2.5 };
+    
+    function createBalloonTest(type, dir) {
+      const container = document.createElement('div');
+      container.className = 'balloon-container';
+      
+      const wrapper = document.createElement('div');
+      wrapper.className = 'balloon-wrapper';
+      
+      const svg = type === 'speech' 
+        ? BalloonSVGRenderer.dialog(140, 90, dir, opts)
+        : BalloonSVGRenderer.whisper(140, 90, dir, opts);
+      wrapper.innerHTML = svg;
+      
+      const label = document.createElement('div');
+      label.className = 'balloon-label';
+      label.textContent = dirLabels[dir] || dir;
+      
+      container.appendChild(wrapper);
+      container.appendChild(label);
+      return container;
+    }
+    
+    // Render Speech balloons
+    const speechGrid = document.getElementById('speech-grid');
+    directions.forEach(dir => {
+      speechGrid.appendChild(createBalloonTest('speech', dir));
+    });
+    
+    // Render Whisper balloons
+    const whisperGrid = document.getElementById('whisper-grid');
+    directions.forEach(dir => {
+      whisperGrid.appendChild(createBalloonTest('whisper', dir));
+    });
+  </script>
+</body>
+</html>

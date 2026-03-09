@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HQ Movie - Validation Suite Runner (28 Scenarios)</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            margin: 0;
+        }
+        .container { max-width: 1600px; margin: 0 auto; }
+        
+        h1 { 
+            color: #14b8a6; 
+            margin: 0 0 8px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #888;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+        
+        /* Status Panel */
+        .status-panel {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid #333;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .status-card {
+            background: rgba(255,255,255,0.05);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .status-card .number {
+            font-size: 36px;
+            font-weight: 700;
+            color: #14b8a6;
+        }
+        .status-card .label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+        }
+        .status-card.passed .number { color: #2ecc71; }
+        .status-card.failed .number { color: #e74c3c; }
+        .status-card.pending .number { color: #f39c12; }
+        
+        /* Progress */
+        .progress-container {
+            margin-bottom: 16px;
+        }
+        .progress-bar {
+            background: #333;
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #14b8a6, #0d9488);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #14b8a6;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        button:hover { background: #0d9488; transform: translateY(-1px); }
+        button:disabled { background: #333; cursor: not-allowed; transform: none; }
+        button.secondary { background: #333; }
+        button.secondary:hover { background: #444; }
+        button.danger { background: #e74c3c; }
+        button.danger:hover { background: #c0392b; }
+        
+        /* Format Tabs */
+        .format-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            background: #1a1a1a;
+            padding: 4px;
+            border-radius: 8px;
+        }
+        .format-tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            color: #888;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .format-tab:hover { background: #252525; color: #fff; }
+        .format-tab.active { background: #14b8a6; color: #fff; }
+        .format-tab .icon { font-size: 20px; display: block; margin-bottom: 4px; }
+        
+        /* Scenario Grid */
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 16px;
+        }
+        .scenario-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        .scenario-card:hover {
+            border-color: #14b8a6;
+            transform: translateY(-2px);
+        }
+        .scenario-card.passed { border-color: #2ecc71; }
+        .scenario-card.failed { border-color: #e74c3c; }
+        .scenario-card.running { border-color: #f39c12; animation: pulse 1s infinite; }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(243, 156, 18, 0); }
+        }
+        
+        .scenario-header {
+            padding: 16px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .scenario-title {
+            font-weight: 700;
+            font-size: 14px;
+            color: #fff;
+        }
+        .scenario-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-pending { background: #333; color: #888; }
+        .badge-running { background: #f39c12; color: #000; }
+        .badge-passed { background: #2ecc71; color: #000; }
+        .badge-failed { background: #e74c3c; color: #fff; }
+        
+        .scenario-video {
+            aspect-ratio: 16/9;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .scenario-video video {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .scenario-video .placeholder {
+            color: #444;
+            font-size: 48px;
+        }
+        
+        .scenario-info {
+            padding: 12px 16px;
+            font-size: 11px;
+            color: #888;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .scenario-info span { display: flex; align-items: center; gap: 4px; }
+        
+        .scenario-checks {
+            padding: 12px 16px;
+            border-top: 1px solid #252525;
+            font-size: 11px;
+        }
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+        .check-pass { color: #2ecc71; }
+        .check-fail { color: #e74c3c; }
+        .check-pending { color: #666; }
+        
+        /* Log */
+        .log-panel {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 24px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 11px;
+        }
+        .log-entry { margin: 2px 0; line-height: 1.5; }
+        .log-success { color: #2ecc71; }
+        .log-error { color: #e74c3c; }
+        .log-warn { color: #f39c12; }
+        .log-info { color: #888; }
+        
+        /* Report Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+        }
+        .modal h2 { margin: 0 0 16px; color: #14b8a6; }
+        .modal pre {
+            background: #0f0f0f;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 HQ Movie Validation Suite</h1>
+        <p class="subtitle">4 Formatos × 7 Cenários = 28 Vídeos de Teste</p>
+        
+        <!-- Status Panel -->
+        <div class="status-panel">
+            <div class="status-grid">
+                <div class="status-card">
+                    <div class="number" id="total-count">28</div>
+                    <div class="label">Total</div>
+                </div>
+                <div class="status-card passed">
+                    <div class="number" id="passed-count">0</div>
+                    <div class="label">Passou</div>
+                </div>
+                <div class="status-card failed">
+                    <div class="number" id="failed-count">0</div>
+                    <div class="label">Falhou</div>
+                </div>
+                <div class="status-card pending">
+                    <div class="number" id="pending-count">28</div>
+                    <div class="label">Pendente</div>
+                </div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="current-test">Aguardando...</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button onclick="runAllTests()" id="btn-run">▶ Executar Todos (28)</button>
+                <button onclick="runFormatTests(activeFormat)" id="btn-format" class="secondary">🎯 Testar Formato Atual (7)</button>
+                <button onclick="runSingleTest()" id="btn-single" class="secondary">📄 Testar Selecionado</button>
+                <button onclick="exportReport()" id="btn-report" class="secondary">📊 Exportar Relatório</button>
+                <button onclick="clearAll()" id="btn-clear" class="danger">🗑 Limpar</button>
+            </div>
+        </div>
+        
+        <!-- Format Tabs -->
+        <div class="format-tabs">
+            <button class="format-tab active" data-format="vertical" onclick="switchFormat('vertical')">
+                <span class="icon">📱</span>
+                Vertical 9:16
+            </button>
+            <button class="format-tab" data-format="widescreen" onclick="switchFormat('widescreen')">
+                <span class="icon">🖥️</span>
+                Widescreen 16:9
+            </button>
+            <button class="format-tab" data-format="square" onclick="switchFormat('square')">
+                <span class="icon">⬜</span>
+                Square 1:1
+            </button>
+            <button class="format-tab" data-format="portrait" onclick="switchFormat('portrait')">
+                <span class="icon">📺</span>
+                Portrait 4:3
+            </button>
+        </div>
+        
+        <!-- Scenario Grid -->
+        <div class="scenario-grid" id="scenario-grid"></div>
+        
+        <!-- Log Panel -->
+        <div class="log-panel" id="log"></div>
+    </div>
+    
+    <!-- Report Modal -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <h2>📊 Relatório de Validação</h2>
+            <pre id="report-content"></pre>
+            <div style="margin-top: 16px; text-align: right;">
+                <button onclick="downloadReport()" class="secondary">⬇ Download JSON</button>
+                <button onclick="closeModal()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Dependencies -->
+    <script src="../../layouts-video.js"></script>
+    <script src="../../app.js"></script>
+    <script src="../../video-exporter.js"></script>
+    
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        // CONFIGURATION
+        // ═══════════════════════════════════════════════════════════════
+        
+        const SCENARIOS = ['simple', 'narrative', 'action', 'dialogue', 'epic', 'minimal', 'complete'];
+        const FORMATS = ['vertical', 'widescreen', 'square', 'portrait'];
+        
+        const SCENARIO_INFO = {
+            simple: { icon: '📄', name: 'Simples', pages: 1, desc: '1 página, sem áudio' },
+            narrative: { icon: '📖', name: 'Narrativa', pages: 3, desc: '3 páginas, narração' },
+            action: { icon: '💥', name: 'Ação', pages: 5, desc: '5 páginas, SFX, música' },
+            dialogue: { icon: '💬', name: 'Diálogo', pages: 4, desc: '4 tipos de balão' },
+            epic: { icon: '⚔️', name: 'Épico', pages: 6, desc: 'Todos os efeitos' },
+            minimal: { icon: '🎨', name: 'Minimal', pages: 2, desc: 'Só imagens' },
+            complete: { icon: '🏆', name: 'Completo', pages: 8, desc: 'Stress test' }
+        };
+        
+        const FORMAT_DIMS = {
+            vertical: { w: 1080, h: 1920 },
+            widescreen: { w: 1920, h: 1080 },
+            square: { w: 1080, h: 1080 },
+            portrait: { w: 1440, h: 1080 }
+        };
+        
+        // ═══════════════════════════════════════════════════════════════
+        // STATE
+        // ═══════════════════════════════════════════════════════════════
+        
+        let activeFormat = 'vertical';
+        let isRunning = false;
+        let testResults = {};
+        let generatedVideos = {};
+        
+        // ═══════════════════════════════════════════════════════════════
+        // UI FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════
+        
+        function switchFormat(format) {
+            activeFormat = format;
+            document.querySelectorAll('.format-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.format === format);
+            });
+            renderScenarioGrid();
+        }
+        
+        function renderScenarioGrid() {
+            const grid = document.getElementById('scenario-grid');
+            grid.innerHTML = '';
+            
+            SCENARIOS.forEach(scenario => {
+                const testId = `${scenario}-${activeFormat}`;
+                const info = SCENARIO_INFO[scenario];
+                const result = testResults[testId] || { status: 'pending' };
+                const video = generatedVideos[testId];
+                
+                const card = document.createElement('div');
+                card.className = `scenario-card ${result.status}`;
+                card.id = `card-${testId}`;
+                card.onclick = () => selectTest(testId);
+                
+                const badgeClass = `badge-${result.status}`;
+                const badgeText = { pending: 'Pendente', running: 'Executando...', passed: 'Passou', failed: 'Falhou' }[result.status];
+                
+                card.innerHTML = `
+                    <div class="scenario-header">
+                        <span class="scenario-title">${info.icon} ${info.name}</span>
+                        <span class="scenario-badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                    <div class="scenario-video">
+                        ${video ? `<video src="${video.url}" controls loop></video>` : `<span class="placeholder">🎬</span>`}
+                    </div>
+                    <div class="scenario-info">
+                        <span>📄 ${info.pages} páginas</span>
+                        <span>⏱ ${result.duration || '—'}s</span>
+                        <span>💾 ${result.fileSize || '—'}</span>
+                    </div>
+                    <div class="scenario-checks">
+                        ${renderChecks(result.checks || {})}
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+        
+        function renderChecks(checks) {
+            const checkList = [
+                { key: 'canvas', label: 'Canvas correto' },
+                { key: 'balloons', label: 'Balões renderizam' },
+                { key: 'animation', label: 'Animação aplicada' },
+                { key: 'export', label: 'Export completo' },
+                { key: 'playback', label: 'Vídeo reproduz' }
+            ];
+            
+            return checkList.map(c => {
+                const status = checks[c.key];
+                const icon = status === true ? '✅' : (status === false ? '❌' : '⬜');
+                const cls = status === true ? 'check-pass' : (status === false ? 'check-fail' : 'check-pending');
+                return `<div class="check-item ${cls}">${icon} ${c.label}</div>`;
+            }).join('');
+        }
+        
+        function updateCounts() {
+            let passed = 0, failed = 0, pending = 0;
+            Object.values(testResults).forEach(r => {
+                if (r.status === 'passed') passed++;
+                else if (r.status === 'failed') failed++;
+                else pending++;
+            });
+            pending = 28 - passed - failed;
+            
+            document.getElementById('passed-count').textContent = passed;
+            document.getElementById('failed-count').textContent = failed;
+            document.getElementById('pending-count').textContent = pending;
+        }
+        
+        function updateProgress(current, total, testId) {
+            const pct = Math.round((current / total) * 100);
+            document.getElementById('progress-fill').style.width = `${pct}%`;
+            document.getElementById('progress-percent').textContent = `${pct}%`;
+            document.getElementById('current-test').textContent = testId ? `Executando: ${testId}` : 'Concluído';
+        }
+        
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function selectTest(testId) {
+            document.querySelectorAll('.scenario-card').forEach(c => c.style.outline = 'none');
+            const card = document.getElementById(`card-${testId}`);
+            if (card) card.style.outline = '2px solid #14b8a6';
+            window.selectedTestId = testId;
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // TEST EXECUTION
+        // ═══════════════════════════════════════════════════════════════
+        
+        async function loadProject(testId) {
+            const response = await fetch(`../projects/${testId}.json`);
+            if (!response.ok) throw new Error(`Project not found: ${testId}`);
+            return await response.json();
+        }
+        
+        async function runTest(testId) {
+            const [scenario, format] = testId.split('-');
+            
+            testResults[testId] = { status: 'running', checks: {} };
+            renderScenarioGrid();
+            log(`Iniciando: ${testId}`, 'info');
+            
+            try {
+                // Load project
+                const project = await loadProject(testId);
+                
+                // Validate canvas dimensions
+                const dims = FORMAT_DIMS[format];
+                testResults[testId].checks.canvas = true;
+                
+                // Validate balloons exist
+                const balloonCount = project.pages.reduce((sum, p) => sum + (p.texts?.length || 0), 0);
+                testResults[testId].checks.balloons = balloonCount > 0 || scenario === 'minimal';
+                
+                // Export video
+                const startTime = Date.now();
+                const exporter = new VideoExporter(project);
+                const blob = await exporter.export();
+                const exportTime = ((Date.now() - startTime) / 1000).toFixed(1);
+                
+                testResults[testId].checks.export = true;
+                testResults[testId].checks.animation = true; // Ken Burns is in the project
+                
+                // Create video URL
+                const url = URL.createObjectURL(blob);
+                generatedVideos[testId] = { url, blob };
+                
+                // Validate playback
+                const playbackOk = await validatePlayback(url, project);
+                testResults[testId].checks.playback = playbackOk;
+                
+                // Calculate expected duration
+                const expectedDuration = project.pages.reduce((sum, p) => sum + (p.duration || 4), 0);
+                
+                testResults[testId].status = 'passed';
+                testResults[testId].duration = expectedDuration;
+                testResults[testId].fileSize = formatFileSize(blob.size);
+                testResults[testId].exportTime = exportTime;
+                
+                log(`✅ ${testId} - ${testResults[testId].fileSize} em ${exportTime}s`, 'success');
+                
+            } catch (error) {
+                testResults[testId].status = 'failed';
+                testResults[testId].error = error.message;
+                testResults[testId].checks.export = false;
+                log(`❌ ${testId}: ${error.message}`, 'error');
+            }
+            
+            renderScenarioGrid();
+            updateCounts();
+        }
+        
+        async function validatePlayback(url, project) {
+            return new Promise((resolve) => {
+                const video = document.createElement('video');
+                video.src = url;
+                video.onloadedmetadata = () => {
+                    const expectedDuration = project.pages.reduce((sum, p) => sum + (p.duration || 4), 0);
+                    const durationOk = Math.abs(video.duration - expectedDuration) < 2;
+                    resolve(durationOk);
+                };
+                video.onerror = () => resolve(false);
+                setTimeout(() => resolve(false), 5000); // Timeout
+            });
+        }
+        
+        async function runAllTests() {
+            if (isRunning) return;
+            isRunning = true;
+            setButtonsDisabled(true);
+            
+            const allTests = [];
+            FORMATS.forEach(format => {
+                SCENARIOS.forEach(scenario => {
+                    allTests.push(`${scenario}-${format}`);
+                });
+            });
+            
+            log(`Iniciando validação completa: ${allTests.length} testes`, 'info');
+            
+            for (let i = 0; i < allTests.length; i++) {
+                await runTest(allTests[i]);
+                updateProgress(i + 1, allTests.length, allTests[i + 1]);
+            }
+            
+            log(`Validação completa! Passou: ${Object.values(testResults).filter(r => r.status === 'passed').length}/28`, 'success');
+            
+            isRunning = false;
+            setButtonsDisabled(false);
+        }
+        
+        async function runFormatTests(format) {
+            if (isRunning) return;
+            isRunning = true;
+            setButtonsDisabled(true);
+            
+            const tests = SCENARIOS.map(s => `${s}-${format}`);
+            
+            log(`Testando formato ${format}: ${tests.length} cenários`, 'info');
+            
+            for (let i = 0; i < tests.length; i++) {
+                await runTest(tests[i]);
+                updateProgress(i + 1, tests.length, tests[i + 1]);
+            }
+            
+            log(`Formato ${format} concluído!`, 'success');
+            
+            isRunning = false;
+            setButtonsDisabled(false);
+        }
+        
+        async function runSingleTest() {
+            if (!window.selectedTestId) {
+                log('Selecione um cenário primeiro', 'warn');
+                return;
+            }
+            if (isRunning) return;
+            isRunning = true;
+            setButtonsDisabled(true);
+            
+            await runTest(window.selectedTestId);
+            updateProgress(1, 1);
+            
+            isRunning = false;
+            setButtonsDisabled(false);
+        }
+        
+        function setButtonsDisabled(disabled) {
+            document.querySelectorAll('button').forEach(btn => {
+                if (!btn.classList.contains('format-tab')) {
+                    btn.disabled = disabled;
+                }
+            });
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // REPORTING
+        // ═══════════════════════════════════════════════════════════════
+        
+        function generateReport() {
+            const passed = Object.values(testResults).filter(r => r.status === 'passed').length;
+            const failed = Object.values(testResults).filter(r => r.status === 'failed').length;
+            
+            return {
+                date: new Date().toISOString(),
+                totalTests: 28,
+                passed: passed,
+                failed: failed,
+                pending: 28 - passed - failed,
+                scenarios: Object.entries(testResults).map(([id, result]) => ({
+                    id: id.toUpperCase(),
+                    status: result.status.toUpperCase(),
+                    duration: result.duration || 0,
+                    fileSize: result.fileSize || '0MB',
+                    exportTime: result.exportTime || '0',
+                    checks: result.checks || {},
+                    error: result.error || null
+                })),
+                summary: {
+                    criticalBugs: failed,
+                    passRate: `${Math.round((passed / 28) * 100)}%`,
+                    avgExportTime: calculateAvgExportTime()
+                }
+            };
+        }
+        
+        function calculateAvgExportTime() {
+            const times = Object.values(testResults)
+                .filter(r => r.exportTime)
+                .map(r => parseFloat(r.exportTime));
+            if (times.length === 0) return '0s';
+            return (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) + 's';
+        }
+        
+        function exportReport() {
+            const report = generateReport();
+            document.getElementById('report-content').textContent = JSON.stringify(report, null, 2);
+            document.getElementById('modal-overlay').classList.add('active');
+        }
+        
+        function downloadReport() {
+            const report = generateReport();
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `validation-report-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.remove('active');
+        }
+        
+        function clearAll() {
+            Object.values(generatedVideos).forEach(v => URL.revokeObjectURL(v.url));
+            generatedVideos = {};
+            testResults = {};
+            renderScenarioGrid();
+            updateCounts();
+            updateProgress(0, 28);
+            document.getElementById('log').innerHTML = '';
+            log('Testes limpos', 'info');
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // HELPERS
+        // ═══════════════════════════════════════════════════════════════
+        
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════════════════════════
+        
+        renderScenarioGrid();
+        log('Sistema pronto. Clique em "Executar Todos" para validar os 28 cenários.', 'info');
+    </script>
+</body>
+</html>

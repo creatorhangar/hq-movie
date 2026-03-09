@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Collapsible Studio Workspace v1</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#6366f1",
+                        "background-light": "#f8fafc",
+                        "background-dark": "#0f172a",
+                        "glass-light": "rgba(255, 255, 255, 0.7)",
+                        "glass-dark": "rgba(15, 23, 42, 0.7)",
+                        "panel-dark": "#1e293b",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        .glass {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dark .glass {
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .canvas-bg {
+            background-color: #0f172a;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 h-screen flex flex-col">
+    <header
+        class="h-14 flex items-center justify-between px-4 bg-white dark:bg-slate-900 z-50 border-b border-slate-200 dark:border-slate-800 shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
+                <span class="material-symbols-outlined text-white text-xl">view_quilt</span>
+            </div>
+            <div class="flex flex-col">
+                <h1 class="font-semibold tracking-tight text-sm leading-tight">Studio Workspace</h1>
+                <span class="text-slate-400 text-xs">Project Phoenix / v1.0</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+            <button
+                class="w-8 h-8 flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 rounded transition-colors text-slate-500 dark:text-slate-400">
+                <span class="material-symbols-outlined text-lg">smartphone</span>
+            </button>
+            <button
+                class="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-700 shadow-sm rounded transition-colors text-primary">
+                <span class="material-symbols-outlined text-lg">desktop_windows</span>
+            </button>
+        </div>
+        <div class="flex items-center gap-2">
+            <button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-500">
+                <span class="material-symbols-outlined text-lg">undo</span>
+            </button>
+            <button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-500">
+                <span class="material-symbols-outlined text-lg">redo</span>
+            </button>
+            <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
+            <button
+                class="flex items-center gap-2 px-4 py-1.5 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 text-sm">
+                <span class="material-symbols-outlined text-lg">rocket_launch</span>
+                <span>Publish</span>
+            </button>
+        </div>
+    </header>
+    <div class="flex flex-1 overflow-hidden relative">
+        <aside
+            class="w-72 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 relative group transition-all duration-300 z-20 shrink-0">
+            <button
+                class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-r-lg flex items-center justify-center shadow-md hover:text-primary z-50 cursor-pointer">
+                <span class="material-symbols-outlined text-sm">chevron_left</span>
+            </button>
+            <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Asset Library</span>
+                <button class="text-slate-400 hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined text-lg">settings</span>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-6">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Images</span>
+                        <button class="text-primary hover:bg-primary/10 p-1 rounded transition-colors">
+                            <span class="material-symbols-outlined text-lg">add</span>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div
+                            class="aspect-square bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden cursor-pointer hover:ring-2 ring-primary transition-all group/img relative">
+                            <img alt="Abstract gradient blue" class="w-full h-full object-cover"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCshP2AUnLAlr4H3xvapbhEt1xtHc8zx3l-bX44E1pp08RyrnnjbIIk49A4anlzNeOMQqOnsG_0sCMLWuQLAdv5OzT_uD4CZjFn-swBZrpkO65Yw7NZb2tWMb3doKaCLlxJnxUNvGez8oltBe4cycqsRQexR3aB0ax2ks3Jg2RqZG14RRlrayjQht5-NzbvQf48xnp5x5EyRtMis9V1jMmBeAydgClUzQsZZvP8k_morcKbIbDhn0s5RrBqRtDsfGRs4KPk7v_ZDcA" />
+                            <div
+                                class="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                <span class="material-symbols-outlined text-white">add</span>
+                            </div>
+                        </div>
+                        <div
+                            class="aspect-square bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden cursor-pointer hover:ring-2 ring-primary transition-all group/img relative">
+                            <img alt="Abstract mesh pink" class="w-full h-full object-cover"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlkRdmP_ziw0uVAc7hURKyixiHkyzcHYLpeWPnZFYHDweGsN7ws_rPzUGX3ZpuooOo3Imkwj_bqjUjBOkyHrb3Sd1ETh4UuryFyVU6zGQQwgbrv3X4prhGXowycbEK2D5p-qpMtpfLzZQMoAQB7mj2c6qtJg8sE1hJUF-R0ntp6oxHied5dtr4EVdBQarnY6_TLwFjZ8Px0tT6Wnr8FqXbST927wnElERn8JLRcP3c9EPycndcbREmIavY3iS7T4VO0_3CEEoIc1Q" />
+                            <div
+                                class="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                <span class="material-symbols-outlined text-white">add</span>
+                            </div>
+                        </div>
+                        <div
+                            class="aspect-square bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden cursor-pointer hover:ring-2 ring-primary transition-all group/img relative">
+                            <img alt="Abstract fluid yellow" class="w-full h-full object-cover"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKN_mKQZ7bCCyZXNjNbosZ4l4fxgJO-NPKKhi56UfacdVomqSS8XBIdhs0JlWpwJKsmdxRZLgBFBjS6HnZe4_L-CnxHvZ7Vk9ITlUkXs4XF93dmAwQI1jtgDqiS1nyOEivMJtJdHJXvYgGdKObbJ-Aob7XBckT0-HSRy6Y_Ja-sKlDWY8Va-iz8s6E3-lkDU4c7v9fdAMpWvzpEEPnkcog9bYxdARTlGK41ko63N3TLcgKXJfaKRA6cqPqP-M1C4wXaYGAKyDnx3k" />
+                            <div
+                                class="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                <span class="material-symbols-outlined text-white">add</span>
+                            </div>
+                        </div>
+                        <div
+                            class="aspect-square bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg flex flex-col items-center justify-center text-slate-400 hover:border-primary hover:text-primary transition-colors cursor-pointer">
+                            <span class="material-symbols-outlined mb-1">cloud_upload</span>
+                            <span class="text-[10px] font-medium uppercase">Upload</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Typography</span>
+                    </div>
+                    <div class="space-y-2">
+                        <div
+                            class="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 cursor-grab active:cursor-grabbing hover:border-primary transition-colors">
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white leading-none">Headline</h2>
+                            <p class="text-xs text-slate-400 mt-1">Inter Bold 32px</p>
+                        </div>
+                        <div
+                            class="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 cursor-grab active:cursor-grabbing hover:border-primary transition-colors">
+                            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 leading-none">Subheading
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1">Inter Semibold 20px</p>
+                        </div>
+                        <div
+                            class="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 cursor-grab active:cursor-grabbing hover:border-primary transition-colors">
+                            <p class="text-sm text-slate-600 dark:text-slate-400 leading-snug">Body text block for
+                                narrative descriptions and long form content.</p>
+                            <p class="text-xs text-slate-400 mt-2">Inter Regular 14px</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Shapes</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button
+                            class="aspect-square rounded bg-slate-50 dark:bg-slate-800 hover:bg-primary/10 hover:text-primary flex items-center justify-center border border-slate-200 dark:border-slate-700 transition-colors">
+                            <span class="material-symbols-outlined">rectangle</span>
+                        </button>
+                        <button
+                            class="aspect-square rounded bg-slate-50 dark:bg-slate-800 hover:bg-primary/10 hover:text-primary flex items-center justify-center border border-slate-200 dark:border-slate-700 transition-colors">
+                            <span class="material-symbols-outlined">circle</span>
+                        </button>
+                        <button
+                            class="aspect-square rounded bg-slate-50 dark:bg-slate-800 hover:bg-primary/10 hover:text-primary flex items-center justify-center border border-slate-200 dark:border-slate-700 transition-colors">
+                            <span class="material-symbols-outlined">change_history</span>
+                        </button>
+                        <button
+                            class="aspect-square rounded bg-slate-50 dark:bg-slate-800 hover:bg-primary/10 hover:text-primary flex items-center justify-center border border-slate-200 dark:border-slate-700 transition-colors">
+                            <span class="material-symbols-outlined">star</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <main class="flex-1 relative flex flex-col bg-slate-50 dark:bg-slate-950 canvas-bg overflow-hidden min-w-0">
+            <div
+                class="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 z-10">
+                <button
+                    class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 dark:text-slate-400"
+                    title="Select">
+                    <span class="material-symbols-outlined text-lg">arrow_selector_tool</span>
+                </button>
+                <button
+                    class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 dark:text-slate-400"
+                    title="Hand Tool">
+                    <span class="material-symbols-outlined text-lg">pan_tool</span>
+                </button>
+                <div class="w-px h-4 bg-slate-200 dark:bg-slate-600 mx-1"></div>
+                <button
+                    class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 dark:text-slate-400"
+                    title="Text">
+                    <span class="material-symbols-outlined text-lg">title</span>
+                </button>
+                <button
+                    class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 dark:text-slate-400"
+                    title="Image">
+                    <span class="material-symbols-outlined text-lg">image</span>
+                </button>
+            </div>
+            <div class="flex-1 flex items-center justify-center p-8 relative overflow-hidden">
+                <div
+                    class="absolute bottom-32 right-8 flex items-center gap-2 bg-white dark:bg-slate-800 p-1 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-10">
+                    <button class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500">
+                        <span class="material-symbols-outlined text-lg">remove</span>
+                    </button>
+                    <span class="text-xs font-medium px-2 min-w-[3rem] text-center">100%</span>
+                    <button class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500">
+                        <span class="material-symbols-outlined text-lg">add</span>
+                    </button>
+                </div>
+                <div
+                    class="w-[450px] lg:w-[520px] aspect-[3/4] bg-white dark:bg-slate-900 shadow-2xl rounded-sm flex flex-col overflow-hidden ring-1 ring-slate-200 dark:ring-slate-800">
+                    <div
+                        class="h-[70%] bg-slate-100 dark:bg-slate-800 relative group border-b border-slate-100 dark:border-slate-800">
+                        <div class="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-2 p-2">
+                            <div class="row-span-2 rounded overflow-hidden relative">
+                                <img alt="Visual Content 1" class="w-full h-full object-cover"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNL71FwOhhRqoapmNNeXOmrXC09KFU5a9UY9perFGyEf6KVxllKoCIO2S_Xslp9q_10aXEjJGPwJi2f-rrn8D6RKzDRqyJamEJezIRP_ZisklZm9i6JCLJZWu7YojFs_DP_IevWsS4EIHyG-PJp2xgYna2m7_fmTuL025uk93eQgavI-QNsw8uQpkmDjAWIsJSUiSvGh5daKhNPYfKoLVGFYAyerV-H0MO87Qq5kEtHmwePC0v4uQ1wURKy1HrLEWp0jpzz8kYPd4" />
+                            </div>
+                            <div class="rounded overflow-hidden relative">
+                                <img alt="Visual Content 2" class="w-full h-full object-cover"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8lSMpY41e47i7z62KgyUrCpD2DNrcLksq2R6s7D0JPaPJ2VdCsz6wO0hNB7ZYTXjnzaWHGJQqMieb1Zs4ECdKaVSNmnQc0nojr1MaDY7r2LJ5NvPDCSNCLhWeA1an09wvxCPabPxcLrQfxi_ta_agbhEnNyvoFYrWJ1INCSSeQamZ4WNhcwhIrq5tOdh5yLG1s1V-2orHfof-FvPgAUKlggwuJVoTRJvaGtgeqvAwgPPqXN0sQm5cXSQ2-SVDrLeIj8Hf1g6RSM4" />
+                            </div>
+                            <div class="rounded overflow-hidden relative">
+                                <img alt="Visual Content 3" class="w-full h-full object-cover"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFf1wJoudvytsWn-9gN_UYQqvtMNsJGCNyg28OW4Qkfu-mTwJ3RT_EMJVGNAhqToIhWmDaMdPZN6X94yuXD-kYOh6eRc3OR_3ie1AHtYpAAhxmWBU42_IWUoAFHphKJU1ZSS8GcTz7gKqq3NnlLbxxIF0ksyxiflR4ltAwitIqpyfQfCgn6LilJyFWi9q2zgFbdKFGS6VrYWdsXSe3fdj--J4fKRJaKtOOYETcg8r-QAPS6QUPMZ5AUrRaDMJ6NuJ2wJ_tKnSL5II" />
+                            </div>
+                        </div>
+                        <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button class="bg-black/50 hover:bg-black/70 text-white p-1.5 rounded backdrop-blur-sm">
+                                <span class="material-symbols-outlined text-sm">edit</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="h-[30%] bg-white dark:bg-slate-900 p-6 flex flex-col relative group">
+                        <div class="flex items-start gap-4">
+                            <div class="flex-1">
+                                <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-2">Chapter 3: The Void</h3>
+                                <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300 font-serif">
+                                    "The light shifted across the horizon, revealing structures that shouldn't have
+                                    existed. In this void, geometry was the only language that remained constant. We
+                                    walked for hours, yet the distance never seemed to close."
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                            <button
+                                class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-400 hover:text-primary">
+                                <span class="material-symbols-outlined text-sm">format_bold</span>
+                            </button>
+                            <button
+                                class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-400 hover:text-primary">
+                                <span class="material-symbols-outlined text-sm">format_italic</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div
+                class="h-32 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-col shrink-0 z-20 relative">
+                <div class="h-8 px-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+                    <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Storyline</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-400">3 Pages</span>
+                        <button class="text-slate-400 hover:text-primary">
+                            <span class="material-symbols-outlined text-sm">sort</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-x-auto no-scrollbar flex items-center px-4 gap-4">
+                    <div class="relative group cursor-pointer">
+                        <div
+                            class="w-16 h-20 bg-white dark:bg-slate-800 rounded border-2 border-primary ring-2 ring-primary/20 shadow-lg flex-shrink-0 overflow-hidden">
+                            <div class="h-[70%] bg-slate-200 dark:bg-slate-700 w-full"></div>
+                            <div class="h-[30%] bg-white dark:bg-slate-800 w-full"></div>
+                        </div>
+                        <span
+                            class="absolute -top-2 -right-2 bg-primary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold shadow-sm z-10">1</span>
+                    </div>
+                    <div class="relative group cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
+                        <div
+                            class="w-16 h-20 bg-slate-50 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 flex-shrink-0 overflow-hidden">
+                            <div class="h-[70%] bg-slate-200 dark:bg-slate-700 w-full opacity-50"></div>
+                            <div class="h-[30%] bg-white dark:bg-slate-800 w-full"></div>
+                        </div>
+                        <span class="absolute bottom-1 right-1 text-[10px] font-bold text-slate-400">2</span>
+                    </div>
+                    <div class="relative group cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
+                        <div
+                            class="w-16 h-20 bg-slate-50 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 flex-shrink-0 overflow-hidden">
+                            <div class="h-[70%] bg-slate-200 dark:bg-slate-700 w-full opacity-50"></div>
+                            <div class="h-[30%] bg-white dark:bg-slate-800 w-full"></div>
+                        </div>
+                        <span class="absolute bottom-1 right-1 text-[10px] font-bold text-slate-400">3</span>
+                    </div>
+                    <button
+                        class="w-16 h-20 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded flex flex-col items-center justify-center text-slate-400 hover:border-primary hover:text-primary transition-colors gap-1 group">
+                        <span
+                            class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
+                        <span class="text-[9px] font-bold uppercase">New</span>
+                    </button>
+                </div>
+            </div>
+        </main>
+        <aside
+            class="w-80 flex flex-col bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 relative shrink-0 z-20">
+            <button
+                class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-l-lg flex items-center justify-center shadow-md hover:text-primary z-50 cursor-pointer">
+                <span class="material-symbols-outlined text-sm">chevron_right</span>
+            </button>
+            <div class="flex border-b border-slate-200 dark:border-slate-800">
+                <button
+                    class="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-primary border-b-2 border-primary bg-primary/5">
+                    Layouts
+                </button>
+                <button
+                    class="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    Properties
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar">
+                <div class="relative">
+                    <span
+                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+                    <input
+                        class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg pl-9 py-2 text-sm focus:ring-2 ring-primary transition-all text-slate-900 dark:text-slate-100 placeholder-slate-500"
+                        placeholder="Find layouts..." type="text" />
+                </div>
+                <section>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Standard
+                            Grids</span>
+                        <span class="text-[10px] text-primary cursor-pointer hover:underline">See All</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div
+                            class="aspect-[3/4] bg-slate-50 dark:bg-slate-800/50 rounded-lg border-2 border-primary p-2 flex flex-col gap-1 transition-transform hover:scale-105 cursor-pointer ring-2 ring-primary/20">
+                            <div class="flex-1 flex gap-1">
+                                <div class="flex-1 bg-primary/20 rounded-[2px] border border-primary/30"></div>
+                                <div class="flex-1 flex flex-col gap-1">
+                                    <div class="flex-1 bg-primary/20 rounded-[2px] border border-primary/30"></div>
+                                    <div class="flex-1 bg-primary/20 rounded-[2px] border border-primary/30"></div>
+                                </div>
+                            </div>
+                            <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded-[2px]"></div>
+                            <div class="h-1.5 w-2/3 bg-slate-200 dark:bg-slate-700 rounded-full opacity-50"></div>
+                        </div>
+                        <div
+                            class="aspect-[3/4] bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary/50 p-2 flex flex-col gap-1 transition-transform hover:scale-105 cursor-pointer hover:shadow-md">
+                            <div class="flex-1 grid grid-cols-2 gap-1">
+                                <div class="col-span-2 h-1/2 bg-slate-300 dark:bg-slate-600 rounded-[2px]"></div>
+                                <div class="bg-slate-300 dark:bg-slate-600 rounded-[2px]"></div>
+                                <div class="bg-slate-300 dark:bg-slate-600 rounded-[2px]"></div>
+                            </div>
+                            <div class="h-6 bg-slate-200 dark:bg-slate-700 rounded-[2px]"></div>
+                        </div>
+                    </div>
+                </section>
+                <section>
+                    <span
+                        class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">Cinematic</span>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div
+                            class="aspect-[3/4] bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary/50 p-2 flex flex-col gap-1 transition-transform hover:scale-105 cursor-pointer hover:shadow-md">
+                            <div class="h-[80%] bg-slate-300 dark:bg-slate-600 rounded-[2px]"></div>
+                            <div class="flex-1 flex flex-col justify-center gap-1.5 px-1">
+                                <div class="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full w-full"></div>
+                                <div class="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full w-4/5"></div>
+                            </div>
+                        </div>
+                        <div
+                            class="aspect-[3/4] bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary/50 p-2 flex flex-col gap-1 transition-transform hover:scale-105 cursor-pointer hover:shadow-md relative overflow-hidden">
+                            <div class="absolute inset-0 m-2 flex flex-col z-0">
+                                <div class="flex-1 bg-slate-300 dark:bg-slate-600 rounded-[2px] mb-1"></div>
+                            </div>
+                            <div class="z-10 mt-auto bg-slate-900/80 backdrop-blur-sm p-2 rounded-[2px] m-1 mb-6">
+                                <div class="h-1 w-full bg-white/40 rounded-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section class="pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">Page
+                        Settings</span>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-slate-600 dark:text-slate-400">Ratio</span>
+                            <div class="flex bg-slate-100 dark:bg-slate-800 rounded p-0.5">
+                                <button
+                                    class="px-2 py-1 text-xs rounded shadow-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100">70/30</button>
+                                <button
+                                    class="px-2 py-1 text-xs rounded text-slate-500 hover:text-slate-900 dark:hover:text-slate-100">50/50</button>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-slate-600 dark:text-slate-400">Gutter</span>
+                            <div class="w-24 h-1 bg-slate-200 dark:bg-slate-700 rounded-full relative">
+                                <div
+                                    class="absolute left-1/3 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full shadow cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30">
+                <button
+                    class="w-full py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">auto_fix_high</span>
+                    Generate Layout
+                </button>
+            </div>
+        </aside>
+    </div>
+
+</body>
+
+</html>

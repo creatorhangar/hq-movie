@@ -1,0 +1,266 @@
+{
+  "date": "2026-03-06T19:04:46.124Z",
+  "totalTests": 28,
+  "passed": 28,
+  "failed": 0,
+  "passRate": "100%",
+  "summary": {
+    "criticalBugs": 0,
+    "avgDuration": "23.4s",
+    "avgFileSize": "0 B"
+  },
+  "scenarios": [
+    {
+      "id": "SIMPLE-VERTICAL",
+      "status": "PASSED",
+      "duration": 4,
+      "fileSize": "37.0 KB",
+      "format": "vertical",
+      "scenario": "simple",
+      "pages": 1
+    },
+    {
+      "id": "NARRATIVE-VERTICAL",
+      "status": "PASSED",
+      "duration": 15,
+      "fileSize": "137.3 KB",
+      "format": "vertical",
+      "scenario": "narrative",
+      "pages": 3
+    },
+    {
+      "id": "ACTION-VERTICAL",
+      "status": "PASSED",
+      "duration": 25,
+      "fileSize": "205.6 KB",
+      "format": "vertical",
+      "scenario": "action",
+      "pages": 5
+    },
+    {
+      "id": "DIALOGUE-VERTICAL",
+      "status": "PASSED",
+      "duration": 24,
+      "fileSize": "204.6 KB",
+      "format": "vertical",
+      "scenario": "dialogue",
+      "pages": 4
+    },
+    {
+      "id": "EPIC-VERTICAL",
+      "status": "PASSED",
+      "duration": 34,
+      "fileSize": "261.6 KB",
+      "format": "vertical",
+      "scenario": "epic",
+      "pages": 6
+    },
+    {
+      "id": "MINIMAL-VERTICAL",
+      "status": "PASSED",
+      "duration": 16,
+      "fileSize": "135.5 KB",
+      "format": "vertical",
+      "scenario": "minimal",
+      "pages": 2
+    },
+    {
+      "id": "COMPLETE-VERTICAL",
+      "status": "PASSED",
+      "duration": 46,
+      "fileSize": "379.4 KB",
+      "format": "vertical",
+      "scenario": "complete",
+      "pages": 8
+    },
+    {
+      "id": "SIMPLE-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 4,
+      "fileSize": "40.4 KB",
+      "format": "widescreen",
+      "scenario": "simple",
+      "pages": 1
+    },
+    {
+      "id": "NARRATIVE-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 15,
+      "fileSize": "147.0 KB",
+      "format": "widescreen",
+      "scenario": "narrative",
+      "pages": 3
+    },
+    {
+      "id": "ACTION-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 25,
+      "fileSize": "218.7 KB",
+      "format": "widescreen",
+      "scenario": "action",
+      "pages": 5
+    },
+    {
+      "id": "DIALOGUE-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 24,
+      "fileSize": "224.5 KB",
+      "format": "widescreen",
+      "scenario": "dialogue",
+      "pages": 4
+    },
+    {
+      "id": "EPIC-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 34,
+      "fileSize": "280.3 KB",
+      "format": "widescreen",
+      "scenario": "epic",
+      "pages": 6
+    },
+    {
+      "id": "MINIMAL-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 16,
+      "fileSize": "143.6 KB",
+      "format": "widescreen",
+      "scenario": "minimal",
+      "pages": 2
+    },
+    {
+      "id": "COMPLETE-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 46,
+      "fileSize": "410.3 KB",
+      "format": "widescreen",
+      "scenario": "complete",
+      "pages": 8
+    },
+    {
+      "id": "SIMPLE-SQUARE",
+      "status": "PASSED",
+      "duration": 4,
+      "fileSize": "33.8 KB",
+      "format": "square",
+      "scenario": "simple",
+      "pages": 1
+    },
+    {
+      "id": "NARRATIVE-SQUARE",
+      "status": "PASSED",
+      "duration": 15,
+      "fileSize": "133.6 KB",
+      "format": "square",
+      "scenario": "narrative",
+      "pages": 3
+    },
+    {
+      "id": "ACTION-SQUARE",
+      "status": "PASSED",
+      "duration": 25,
+      "fileSize": "200.3 KB",
+      "format": "square",
+      "scenario": "action",
+      "pages": 5
+    },
+    {
+      "id": "DIALOGUE-SQUARE",
+      "status": "PASSED",
+      "duration": 24,
+      "fileSize": "202.5 KB",
+      "format": "square",
+      "scenario": "dialogue",
+      "pages": 4
+    },
+    {
+      "id": "EPIC-SQUARE",
+      "status": "PASSED",
+      "duration": 34,
+      "fileSize": "259.6 KB",
+      "format": "square",
+      "scenario": "epic",
+      "pages": 6
+    },
+    {
+      "id": "MINIMAL-SQUARE",
+      "status": "PASSED",
+      "duration": 16,
+      "fileSize": "131.8 KB",
+      "format": "square",
+      "scenario": "minimal",
+      "pages": 2
+    },
+    {
+      "id": "COMPLETE-SQUARE",
+      "status": "PASSED",
+      "duration": 46,
+      "fileSize": "378.8 KB",
+      "format": "square",
+      "scenario": "complete",
+      "pages": 8
+    },
+    {
+      "id": "SIMPLE-PORTRAIT",
+      "status": "PASSED",
+      "duration": 4,
+      "fileSize": "34.9 KB",
+      "format": "portrait",
+      "scenario": "simple",
+      "pages": 1
+    },
+    {
+      "id": "NARRATIVE-PORTRAIT",
+      "status": "PASSED",
+      "duration": 15,
+      "fileSize": "137.4 KB",
+      "format": "portrait",
+      "scenario": "narrative",
+      "pages": 3
+    },
+    {
+      "id": "ACTION-PORTRAIT",
+      "status": "PASSED",
+      "duration": 25,
+      "fileSize": "204.6 KB",
+      "format": "portrait",
+      "scenario": "action",
+      "pages": 5
+    },
+    {
+      "id": "DIALOGUE-PORTRAIT",
+      "status": "PASSED",
+      "duration": 24,
+      "fileSize": "205.4 KB",
+      "format": "portrait",
+      "scenario": "dialogue",
+      "pages": 4
+    },
+    {
+      "id": "EPIC-PORTRAIT",
+      "status": "PASSED",
+      "duration": 34,
+      "fileSize": "264.0 KB",
+      "format": "portrait",
+      "scenario": "epic",
+      "pages": 6
+    },
+    {
+      "id": "MINIMAL-PORTRAIT",
+      "status": "PASSED",
+      "duration": 16,
+      "fileSize": "133.9 KB",
+      "format": "portrait",
+      "scenario": "minimal",
+      "pages": 2
+    },
+    {
+      "id": "COMPLETE-PORTRAIT",
+      "status": "PASSED",
+      "duration": 46,
+      "fileSize": "382.9 KB",
+      "format": "portrait",
+      "scenario": "complete",
+      "pages": 8
+    }
+  ]
+}

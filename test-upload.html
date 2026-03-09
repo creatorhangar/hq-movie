@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Upload</title>
+</head>
+<body>
+    <h1>Test Upload de Imagem</h1>
+    
+    <!-- Hidden persistent file input (como no HQ Movie) -->
+    <input type="file" id="file-input-persistent" accept="image/*" multiple style="display:none">
+    
+    <!-- Botão que dispara o upload -->
+    <button onclick="triggerUpload()">Clique para selecionar imagem</button>
+    
+    <div id="status"></div>
+    
+    <script>
+        function triggerUpload() {
+            console.log('Tentando abrir seletor de arquivos...');
+            const input = document.getElementById('file-input-persistent');
+            if (input) {
+                input.click();
+            } else {
+                document.getElementById('status').textContent = 'ERRO: Input não encontrado';
+            }
+        }
+        
+        document.getElementById('file-input-persistent').addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                document.getElementById('status').textContent = `Arquivo selecionado: ${files[0].name}`;
+            } else {
+                document.getElementById('status').textContent = 'Nenhum arquivo selecionado';
+            }
+        });
+    </script>
+</body>
+</html>

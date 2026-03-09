@@ -1,0 +1,224 @@
+{
+  "id": "id_htigile6s",
+  "metadata": {
+    "name": "ACTION-PORTRAIT",
+    "createdAt": 1772823118812,
+    "updatedAt": 1772823118812
+  },
+  "videoFormat": "portrait",
+  "backgroundMusic": {
+    "file": "../../test-audio/music-action.wav",
+    "volume": 0.6,
+    "loop": true
+  },
+  "videoAudio": {
+    "ducking": {
+      "enabled": true,
+      "level": 0.3
+    }
+  },
+  "customLayouts": [],
+  "favoriteLayoutId": null,
+  "pages": [
+    {
+      "id": "id_9v24akp99",
+      "layoutId": "p1-full",
+      "kenBurns": "panLeft",
+      "duration": 5,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "slide",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_qbuens527",
+          "type": "sfx",
+          "text": "BOOM!",
+          "x": 216,
+          "y": 216,
+          "w": 200,
+          "h": 80,
+          "direction": "center",
+          "font": "sans",
+          "fontSize": 24,
+          "color": "#000000"
+        },
+        {
+          "id": "id_dytbautz2",
+          "type": "sfx",
+          "text": "CRASH!",
+          "x": 792,
+          "y": 648,
+          "w": 200,
+          "h": 80,
+          "direction": "center",
+          "font": "sans",
+          "fontSize": 24,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_3wk9f14ip",
+      "layoutId": "p2-split",
+      "kenBurns": "zoomIn",
+      "duration": 5,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "slide",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_7wq4fwyb0",
+          "type": "sfx",
+          "text": "POW!",
+          "x": 216,
+          "y": 216,
+          "w": 200,
+          "h": 80,
+          "direction": "center",
+          "font": "sans",
+          "fontSize": 24,
+          "color": "#000000"
+        },
+        {
+          "id": "id_q0ephuxw1",
+          "type": "sfx",
+          "text": "BAM!",
+          "x": 792,
+          "y": 648,
+          "w": 200,
+          "h": 80,
+          "direction": "center",
+          "font": "sans",
+          "fontSize": 24,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_mnyxycbgw",
+      "layoutId": "p3-trio",
+      "kenBurns": "panRight",
+      "duration": 5,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "slide",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_u0inzfy1v",
+          "type": "sfx",
+          "text": "SWOOSH!",
+          "x": 216,
+          "y": 216,
+          "w": 200,
+          "h": 80,
+          "direction": "center",
+          "font": "sans",
+          "fontSize": 24,
+          "color": "#000000"
+        },
+        {
+          "id": "id_cwnemntv8",
+          "type": "sfx",
+          "text": "WHAM!",
+          "x": 792,
+          "y": 648,
+          "w": 200,
+          "h": 80,
+          "direction": "center",
+          "font": "sans",
+          "fontSize": 24,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_d6mrcjphr",
+      "layoutId": "p4-grid",
+      "kenBurns": "zoomOut",
+      "duration": 5,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "slide",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_2jdckp521",
+          "type": "sfx",
+          "text": "KABOOM!",
+          "x": 216,
+          "y": 216,
+          "w": 200,
+          "h": 80,
+          "direction": "center",
+          "font": "sans",
+          "fontSize": 24,
+          "color": "#000000"
+        },
+        {
+          "id": "id_yohw3wccj",
+          "type": "sfx",
+          "text": "SMASH!",
+          "x": 792,
+          "y": 648,
+          "w": 200,
+          "h": 80,
+          "direction": "center",
+          "font": "sans",
+          "fontSize": 24,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_lcu3bhvd3",
+      "layoutId": "p1-full",
+      "kenBurns": "float",
+      "duration": 5,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_6g5r0iju9",
+          "type": "sfx",
+          "text": "BANG!",
+          "x": 216,
+          "y": 216,
+          "w": 200,
+          "h": 80,
+          "direction": "center",
+          "font": "sans",
+          "fontSize": 24,
+          "color": "#000000"
+        },
+        {
+          "id": "id_ofbyka5zz",
+          "type": "sfx",
+          "text": "THUD!",
+          "x": 792,
+          "y": 648,
+          "w": 200,
+          "h": 80,
+          "direction": "center",
+          "font": "sans",
+          "fontSize": 24,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    }
+  ]
+}

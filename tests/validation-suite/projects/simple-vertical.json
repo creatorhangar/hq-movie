@@ -1,0 +1,46 @@
+{
+  "id": "id_3ffezu12l",
+  "metadata": {
+    "name": "SIMPLE-VERTICAL",
+    "createdAt": 1772823118805,
+    "updatedAt": 1772823118805
+  },
+  "videoFormat": "vertical",
+  "backgroundMusic": null,
+  "videoAudio": {
+    "ducking": {
+      "enabled": false
+    }
+  },
+  "customLayouts": [],
+  "favoriteLayoutId": null,
+  "pages": [
+    {
+      "id": "id_it0uiy1v2",
+      "layoutId": "v1-splash",
+      "kenBurns": "static",
+      "duration": 4,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "none",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_o5m8l5132",
+          "type": "speech",
+          "text": "Bem-vindo ao teste!",
+          "x": 270,
+          "y": 768,
+          "w": 540,
+          "h": 120,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    }
+  ]
+}

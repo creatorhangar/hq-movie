@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Teste Visual - Balões v3 (Rounded Rect + Triangle Tail)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #1a1a2e; color: #fff; font-family: system-ui; padding: 20px; }
+    h1 { text-align: center; margin-bottom: 16px; color: #60a5fa; font-size: 20px; }
+    h2 { margin: 16px 0 8px; color: #14b8a6; border-bottom: 1px solid #333; padding-bottom: 4px; font-size: 15px; }
+    .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+    .cell { background: #2a2a3e; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; min-height: 160px; }
+    .wrap { position: relative; width: 140px; height: 80px; }
+    .lbl { margin-top: auto; font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  </style>
+</head>
+<body>
+  <h1>Balões v3 — Rounded Rect + Triangle Tail</h1>
+  <h2>SPEECH (Fala)</h2>
+  <div class="grid" id="g1"></div>
+  <h2>WHISPER (Sussurro) — Borda Tracejada</h2>
+  <div class="grid" id="g2"></div>
+
+  <script>
+    // Inline renderer — exact copy from app.js
+    const R = {
+      _shadow() {
+        return '<defs><filter id="bbShadow" x="-18%" y="-18%" width="146%" height="150%"><feDropShadow dx="1" dy="2" stdDeviation="2.5" flood-color="rgba(0,0,0,0.22)"/></filter></defs>';
+      },
+      dialog(w, h, tailDir, o) {
+        const PAD = 28;
+        const CR = Math.min(w, h) * 0.15;
+        const sw = o.sw || 2.5;
+        const dir = (!tailDir || tailDir === 'center' || tailDir === 'none') ? null : tailDir;
+        const rectPath = `M ${CR},0 L ${w-CR},0 Q ${w},0 ${w},${CR} L ${w},${h-CR} Q ${w},${h} ${w-CR},${h} L ${CR},${h} Q 0,${h} 0,${h-CR} L 0,${CR} Q 0,0 ${CR},0 Z`;
+        const TL = Math.min(w, h) * 0.28;
+        const TW = Math.min(w, h) * 0.18;
+        const tp = {
+          s:  `M ${w*0.4},${h} L ${w*0.5},${h+TL} L ${w*0.4+TW*2},${h} Z`,
+          n:  `M ${w*0.4},0 L ${w*0.5},${-TL} L ${w*0.4+TW*2},0 Z`,
+          e:  `M ${w},${h*0.35} L ${w+TL},${h*0.5} L ${w},${h*0.35+TW*2} Z`,
+          w:  `M 0,${h*0.35} L ${-TL},${h*0.5} L 0,${h*0.35+TW*2} Z`,
+          sw: `M ${w*0.2},${h} L ${w*0.05},${h+TL} L ${w*0.2+TW*1.5},${h} Z`,
+          se: `M ${w*0.6},${h} L ${w*0.85},${h+TL} L ${w*0.6+TW*1.5},${h} Z`,
+          nw: `M ${w*0.2},0 L ${w*0.05},${-TL} L ${w*0.2+TW*1.5},0 Z`,
+          ne: `M ${w*0.6},0 L ${w*0.85},${-TL} L ${w*0.6+TW*1.5},0 Z`,
+        };
+        const tail = dir && tp[dir] ? `<path d="${tp[dir]}" fill="${o.fill}" stroke="${o.stroke}" stroke-width="${sw}" stroke-linejoin="round"/>` : '';
+        const svgW = w + PAD*2, svgH = h + PAD*2;
+        return `<svg width="${svgW}" height="${svgH}" viewBox="${-PAD} ${-PAD} ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;position:absolute;left:${-PAD}px;top:${-PAD}px;pointer-events:none;">${this._shadow()}<g filter="url(#bbShadow)">${tail}<path d="${rectPath}" fill="${o.fill}" stroke="${o.stroke}" stroke-width="${sw}" stroke-linejoin="round"/></g></svg>`;
+      },
+      whisper(w, h, tailDir, o) {
+        const PAD = 28;
+        const CR = Math.min(w, h) * 0.15;
+        const sw = o.sw || 2.5;
+        const dir = (!tailDir || tailDir === 'center' || tailDir === 'none') ? null : tailDir;
+        const rectPath = `M ${CR},0 L ${w-CR},0 Q ${w},0 ${w},${CR} L ${w},${h-CR} Q ${w},${h} ${w-CR},${h} L ${CR},${h} Q 0,${h} 0,${h-CR} L 0,${CR} Q 0,0 ${CR},0 Z`;
+        const TL = Math.min(w, h) * 0.22;
+        const TW = Math.min(w, h) * 0.14;
+        const tp = {
+          s:  `M ${w*0.4},${h} L ${w*0.5},${h+TL} L ${w*0.4+TW*2},${h} Z`,
+          n:  `M ${w*0.4},0 L ${w*0.5},${-TL} L ${w*0.4+TW*2},0 Z`,
+          e:  `M ${w},${h*0.35} L ${w+TL},${h*0.5} L ${w},${h*0.35+TW*2} Z`,
+          w:  `M 0,${h*0.35} L ${-TL},${h*0.5} L 0,${h*0.35+TW*2} Z`,
+          sw: `M ${w*0.2},${h} L ${w*0.05},${h+TL} L ${w*0.2+TW*1.5},${h} Z`,
+          se: `M ${w*0.6},${h} L ${w*0.85},${h+TL} L ${w*0.6+TW*1.5},${h} Z`,
+          nw: `M ${w*0.2},0 L ${w*0.05},${-TL} L ${w*0.2+TW*1.5},0 Z`,
+          ne: `M ${w*0.6},0 L ${w*0.85},${-TL} L ${w*0.6+TW*1.5},0 Z`,
+        };
+        const tail = dir && tp[dir] ? `<path d="${tp[dir]}" fill="${o.fill}" stroke="${o.stroke}" stroke-width="${sw}" stroke-linejoin="round" stroke-dasharray="5 4"/>` : '';
+        const svgW = w + PAD*2, svgH = h + PAD*2;
+        return `<svg width="${svgW}" height="${svgH}" viewBox="${-PAD} ${-PAD} ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;position:absolute;left:${-PAD}px;top:${-PAD}px;pointer-events:none;">${this._shadow()}<g filter="url(#bbShadow)">${tail}<path d="${rectPath}" fill="${o.fill}" stroke="${o.stroke}" stroke-width="${sw}" stroke-dasharray="8 5" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
+      }
+    };
+
+    const dirs = ['s','n','e','w','sw','se','nw','ne','none'];
+    const labels = { s:'↓ Sul', n:'↑ Norte', e:'→ Leste', w:'← Oeste', sw:'↙ SW', se:'↘ SE', nw:'↖ NW', ne:'↗ NE', none:'○ Nenhum' };
+    const o = { fill:'#ffffff', stroke:'#222222', sw:2.5 };
+
+    dirs.forEach(d => {
+      ['g1','g2'].forEach(gid => {
+        const c = document.createElement('div'); c.className = 'cell';
+        const wr = document.createElement('div'); wr.className = 'wrap';
+        wr.innerHTML = gid === 'g1' ? R.dialog(140,80,d,o) : R.whisper(140,80,d,o);
+        const lb = document.createElement('div'); lb.className = 'lbl'; lb.textContent = labels[d];
+        c.appendChild(wr); c.appendChild(lb);
+        document.getElementById(gid).appendChild(c);
+      });
+    });
+  </script>
+</body>
+</html>

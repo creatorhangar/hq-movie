@@ -1,0 +1,46 @@
+{
+  "id": "id_77u4s4s3j",
+  "metadata": {
+    "name": "SIMPLE-SQUARE",
+    "createdAt": 1772823118811,
+    "updatedAt": 1772823118811
+  },
+  "videoFormat": "square",
+  "backgroundMusic": null,
+  "videoAudio": {
+    "ducking": {
+      "enabled": false
+    }
+  },
+  "customLayouts": [],
+  "favoriteLayoutId": null,
+  "pages": [
+    {
+      "id": "id_dwpjmg11o",
+      "layoutId": "s1-full",
+      "kenBurns": "static",
+      "duration": 4,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "none",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_11vqfumq0",
+          "type": "speech",
+          "text": "Formato quadrado testado.",
+          "x": 270,
+          "y": 432,
+          "w": 540,
+          "h": 120,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    }
+  ]
+}

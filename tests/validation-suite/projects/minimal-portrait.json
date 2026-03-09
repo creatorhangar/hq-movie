@@ -1,0 +1,45 @@
+{
+  "id": "id_vyeul7l8g",
+  "metadata": {
+    "name": "MINIMAL-PORTRAIT",
+    "createdAt": 1772823118813,
+    "updatedAt": 1772823118813
+  },
+  "videoFormat": "portrait",
+  "backgroundMusic": null,
+  "videoAudio": {
+    "ducking": {
+      "enabled": false
+    }
+  },
+  "customLayouts": [],
+  "favoriteLayoutId": null,
+  "pages": [
+    {
+      "id": "id_8ae5awebk",
+      "layoutId": "p1-full",
+      "kenBurns": "zoomIn",
+      "duration": 8,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "cut",
+      "images": [],
+      "texts": [],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_5qym3ygqw",
+      "layoutId": "p1-full",
+      "kenBurns": "zoomOut",
+      "duration": 8,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "cut",
+      "images": [],
+      "texts": [],
+      "showTextBelow": false,
+      "narrative": ""
+    }
+  ]
+}

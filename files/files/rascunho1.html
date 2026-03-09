@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Grid Master: Asset Hub v3</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#a413ec",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#161118", // Slightly darker than requested to match component list style
+                        "surface-dark": "#1c1022",
+                        "surface-light": "#332839",
+                    },
+                    fontFamily: {
+                        display: ["Spline Sans", "sans-serif"],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar for cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #161118;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #332839;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a3b52;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display flex flex-col h-screen overflow-hidden">
+    <!-- Top Navigation -->
+    <header
+        class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-surface-light bg-surface-dark px-6 py-3 shrink-0 z-20">
+        <div class="flex items-center gap-4 text-white">
+            <div class="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
+                <span class="material-symbols-outlined text-xl">grid_view</span>
+            </div>
+            <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Grid Master: Asset Hub</h2>
+        </div>
+        <div class="flex flex-1 justify-end gap-6 items-center">
+            <div class="hidden md:flex gap-2">
+                <button
+                    class="flex items-center justify-center rounded-lg h-9 px-4 bg-primary hover:bg-primary/90 transition-colors text-white text-sm font-bold shadow-lg shadow-primary/20">
+                    <span class="material-symbols-outlined text-lg mr-2">save</span>
+                    Save Project
+                </button>
+                <button
+                    class="flex items-center justify-center rounded-lg h-9 px-4 bg-surface-light hover:bg-surface-light/80 transition-colors text-white text-sm font-bold border border-white/5">
+                    <span class="material-symbols-outlined text-lg mr-2">ios_share</span>
+                    Export
+                </button>
+            </div>
+            <div class="h-6 w-px bg-surface-light"></div>
+            <div class="flex items-center gap-3">
+                <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-9 ring-2 ring-primary/30"
+                    data-alt="User profile picture"
+                    style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAo0CzM8wB70Y6BOHoaF5WQs9CkM5-HRKfFROmQHO3sVQ6B5q-vJKWBfb3TzfNJzuqPgZzQefCq-tafGuGtpBdT6h45gRoKu9rhxVIc4UCmFdITAtxr4LX8_otyAZ1q2dgeuHbnu7EFcMDtUGxsrcRYJaJA_XbQ4j1cNPmFCwLosW3xKXUjqlZTX2GhTtvEb5ke-IpA5_5a1ViOl5tbGsV3zrg7Mqb6i8SS_VRatDAmJo6sANF9ZOyDH4NJqz6MLD80qamfAvvTUfE");'>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- Main Content Area -->
+    <main class="flex flex-1 overflow-hidden relative">
+        <!-- Left Sidebar: Story Outline -->
+        <aside class="w-64 bg-surface-dark border-r border-surface-light flex flex-col shrink-0 z-10 hidden lg:flex">
+            <div class="p-4 border-b border-surface-light">
+                <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-1">Navigation</h3>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 space-y-1">
+                <!-- Active State -->
+                <div
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary border border-primary/20 cursor-pointer">
+                    <span class="material-symbols-outlined">view_list</span>
+                    <span class="font-medium text-sm">Story Outline</span>
+                </div>
+                <div
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-surface-light transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined">group</span>
+                    <span class="font-medium text-sm">Characters</span>
+                </div>
+                <div
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-surface-light transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined">settings</span>
+                    <span class="font-medium text-sm">Settings</span>
+                </div>
+                <div class="mt-6 mb-2 px-3">
+                    <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Scenes</h4>
+                </div>
+                <div class="space-y-1">
+                    <div
+                        class="group flex items-start gap-3 p-3 rounded-lg hover:bg-surface-light transition-colors cursor-pointer">
+                        <span
+                            class="material-symbols-outlined text-slate-500 group-hover:text-primary mt-0.5 text-lg">movie</span>
+                        <div>
+                            <p class="text-sm font-medium text-slate-200">Scene 1: Intro</p>
+                            <p class="text-xs text-slate-500 line-clamp-1">Exterior city shot...</p>
+                        </div>
+                    </div>
+                    <div
+                        class="group flex items-start gap-3 p-3 rounded-lg bg-surface-light border-l-2 border-primary cursor-pointer">
+                        <span class="material-symbols-outlined text-primary mt-0.5 text-lg">movie_edit</span>
+                        <div>
+                            <p class="text-sm font-medium text-white">Scene 2: Meeting</p>
+                            <p class="text-xs text-slate-400 line-clamp-1">Cafe entrance...</p>
+                        </div>
+                    </div>
+                    <div
+                        class="group flex items-start gap-3 p-3 rounded-lg hover:bg-surface-light transition-colors cursor-pointer">
+                        <span
+                            class="material-symbols-outlined text-slate-500 group-hover:text-primary mt-0.5 text-lg">movie</span>
+                        <div>
+                            <p class="text-sm font-medium text-slate-200">Scene 3: Conflict</p>
+                            <p class="text-xs text-slate-500 line-clamp-1">Argument breaks out...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <!-- Center Canvas Area -->
+        <section class="flex-1 flex flex-col min-w-0 bg-[#0f0b11] relative">
+            <!-- Canvas Container -->
+            <div class="flex-1 p-6 flex flex-col h-full overflow-hidden">
+                <div
+                    class="flex-1 flex flex-col max-w-5xl mx-auto w-full h-full bg-surface-dark border border-surface-light rounded-xl shadow-2xl overflow-hidden">
+                    <!-- Top 70%: Image Grid (9 Slots) -->
+                    <div class="h-[70%] bg-[#120d14] p-4 border-b border-surface-light overflow-y-auto">
+                        <div class="grid grid-cols-3 grid-rows-3 gap-3 h-full min-h-[500px]">
+                            <!-- Slot 1: Large Image -->
+                            <div
+                                class="col-span-2 row-span-2 relative group rounded-lg overflow-hidden border-2 border-dashed border-slate-700 bg-surface-light/30 hover:border-primary/50 transition-colors">
+                                <img alt="Cyberpunk city street at night"
+                                    class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                                    data-alt="Cyberpunk city street at night"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7r1dTx3bcvj52uPPY4teyIqNRRkJl14M_1NJSDjGTKNOLrMAIKWQ61dJs4Hcb2xPcG0A-8AKEg98l9bce64eAN_L-RmF3bpB4KTAWRTbGPogZm-OPb4FOdFhZPBs6h-bB6IJpR_Xqqjp9QYgEEbEDRGH3oK-vAO6Zayn2fQGgrzhv05SdnJl3zNYUkw3Q0OdXkcRx_pPZ0-M5OQ4dXkoNTTEnDSmdXfkdC2gsy7I3Xj9Sso0DhJG205aDbXNsdoxodX-KpA9gLEY" />
+                                <div
+                                    class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                    <button class="bg-black/70 p-1.5 rounded text-white hover:text-primary"><span
+                                            class="material-symbols-outlined text-sm">edit</span></button>
+                                    <button class="bg-black/70 p-1.5 rounded text-white hover:text-red-400"><span
+                                            class="material-symbols-outlined text-sm">close</span></button>
+                                </div>
+                            </div>
+                            <!-- Slot 2 -->
+                            <div
+                                class="relative group rounded-lg overflow-hidden border-2 border-dashed border-slate-700 bg-surface-light/30 flex items-center justify-center hover:border-primary/50 cursor-pointer">
+                                <span
+                                    class="material-symbols-outlined text-4xl text-slate-600 group-hover:text-primary transition-colors">add_photo_alternate</span>
+                            </div>
+                            <!-- Slot 3 -->
+                            <div
+                                class="relative group rounded-lg overflow-hidden border-2 border-dashed border-slate-700 bg-surface-light/30 flex items-center justify-center hover:border-primary/50 cursor-pointer">
+                                <img alt="Neon sign in a dark alley" class="absolute inset-0 w-full h-full object-cover"
+                                    data-alt="Neon sign in a dark alley"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuARcykE8RNw93slbzsRUI9dHcVFUOI7nyNpy2JMStC2lt0WhdbfWnlv4JeCmSlIfb8Ub38p2m6iibGbIjmvCjKki0Kh2BQ3i90GHSYFTNglT8ANE3yuQkBYFWHmtg09D9nVXu3pGAqnUnzt0JNygSwvLHI10SXbBAPqro12Jt5-vYEjYzKNw9M2J_MyDWPntBa4-GtTYjrSa-TQythPSGa4HKVl8g4KdL3l5GbyPJ_anVVA0cBgTV3nKtzkb1-WflqUKhS3WbMlJ3w" />
+                            </div>
+                            <!-- Slot 4-6 (Bottom Row) -->
+                            <div class="col-span-3 grid grid-cols-3 gap-3">
+                                <div
+                                    class="relative group rounded-lg overflow-hidden border-2 border-dashed border-slate-700 bg-surface-light/30 flex items-center justify-center hover:border-primary/50 cursor-pointer">
+                                    <span
+                                        class="material-symbols-outlined text-4xl text-slate-600 group-hover:text-primary transition-colors">add_photo_alternate</span>
+                                </div>
+                                <div
+                                    class="relative group rounded-lg overflow-hidden border-2 border-dashed border-slate-700 bg-surface-light/30 flex items-center justify-center hover:border-primary/50 cursor-pointer">
+                                    <span
+                                        class="material-symbols-outlined text-4xl text-slate-600 group-hover:text-primary transition-colors">add_photo_alternate</span>
+                                </div>
+                                <div
+                                    class="relative group rounded-lg overflow-hidden border-2 border-dashed border-slate-700 bg-surface-light/30 flex items-center justify-center hover:border-primary/50 cursor-pointer">
+                                    <span
+                                        class="material-symbols-outlined text-4xl text-slate-600 group-hover:text-primary transition-colors">add_photo_alternate</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Bottom 30%: Rich Text Editor -->
+                    <div class="h-[30%] bg-surface-dark flex flex-col">
+                        <!-- Toolbar -->
+                        <div class="flex items-center gap-2 p-2 border-b border-surface-light bg-[#1e1621]">
+                            <select
+                                class="bg-surface-light text-slate-200 text-xs rounded border-none py-1 pl-2 pr-6 focus:ring-1 focus:ring-primary">
+                                <option>Spline Sans</option>
+                                <option>Comic Neue</option>
+                                <option>Roboto</option>
+                            </select>
+                            <select
+                                class="bg-surface-light text-slate-200 text-xs rounded border-none py-1 pl-2 pr-6 focus:ring-1 focus:ring-primary">
+                                <option>16px</option>
+                                <option>18px</option>
+                                <option>24px</option>
+                            </select>
+                            <div class="w-px h-4 bg-slate-700 mx-1"></div>
+                            <button class="p-1 text-slate-400 hover:text-white rounded hover:bg-surface-light"><span
+                                    class="material-symbols-outlined text-lg">format_bold</span></button>
+                            <button class="p-1 text-slate-400 hover:text-white rounded hover:bg-surface-light"><span
+                                    class="material-symbols-outlined text-lg">format_italic</span></button>
+                            <button class="p-1 text-slate-400 hover:text-white rounded hover:bg-surface-light"><span
+                                    class="material-symbols-outlined text-lg">format_underlined</span></button>
+                            <div class="w-px h-4 bg-slate-700 mx-1"></div>
+                            <button class="p-1 text-slate-400 hover:text-white rounded hover:bg-surface-light"><span
+                                    class="material-symbols-outlined text-lg">format_align_left</span></button>
+                            <button class="p-1 text-slate-400 hover:text-white rounded hover:bg-surface-light"><span
+                                    class="material-symbols-outlined text-lg">format_align_center</span></button>
+                            <button class="p-1 text-slate-400 hover:text-white rounded hover:bg-surface-light"><span
+                                    class="material-symbols-outlined text-lg">format_align_right</span></button>
+                        </div>
+                        <!-- Text Area -->
+                        <div class="flex-1 p-4 relative">
+                            <textarea
+                                class="w-full h-full bg-transparent border-none resize-none focus:ring-0 text-slate-200 placeholder-slate-600 leading-relaxed"
+                                placeholder="Write your dialogue or scene description here...">The protagonist enters the cafe, looking around nervously. The neon lights from the street reflect off the wet pavement outside, casting long, colorful shadows across the floor.</textarea>
+                            <div class="absolute bottom-3 right-4 text-xs text-slate-500">
+                                142 chars
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Bottom Carousel: Timeline -->
+            <div class="h-32 bg-surface-dark border-t border-surface-light shrink-0 flex flex-col">
+                <div class="flex items-center justify-between px-4 py-2 bg-[#120d14]">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Page Timeline</span>
+                    <div class="flex gap-2">
+                        <button class="text-slate-400 hover:text-primary"><span
+                                class="material-symbols-outlined text-lg">zoom_out</span></button>
+                        <button class="text-slate-400 hover:text-primary"><span
+                                class="material-symbols-outlined text-lg">zoom_in</span></button>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-x-auto flex items-center gap-4 px-4 py-2">
+                    <!-- Page 1 -->
+                    <div class="flex flex-col gap-1 shrink-0 group cursor-pointer">
+                        <div
+                            class="w-24 h-16 bg-surface-light rounded border border-slate-700 group-hover:border-primary transition-colors overflow-hidden relative">
+                            <div class="absolute inset-0 bg-slate-800 opacity-50"></div>
+                            <span
+                                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs">Page
+                                1</span>
+                        </div>
+                        <span class="text-[10px] text-center text-slate-500">Intro</span>
+                    </div>
+                    <!-- Page 2 (Active) -->
+                    <div class="flex flex-col gap-1 shrink-0 group cursor-pointer">
+                        <div
+                            class="w-24 h-16 bg-surface-light rounded border-2 border-primary overflow-hidden relative">
+                            <img alt="Small thumbnail of page 2" class="w-full h-full object-cover"
+                                data-alt="Small thumbnail of page 2"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsdBtZldrqrXMWWn40iqpYHNi0Bso5UrHdYOHeKKGNk4vuYm96IplskwPCZi3iC3LYLrKuI1q4ZigRS8qmfpoEastim95HxY7tIiOymib5VdMQGD9KbozLCXL2yJjiazmvSF73lb9vmRxLfrYXdl5ahQkuPLTl_5xYanO95LuBE_UkFa1mGIts7u_YhTJqZbuULH-4ZSGslt-jkReiEcYb2fdFStkSKRJsPfu4BDJsi9L6wzzEO0UitwNhcQZnxGyhvNEsEETvkLs" />
+                        </div>
+                        <span class="text-[10px] text-center text-primary font-medium">Meeting</span>
+                    </div>
+                    <!-- Page 3 -->
+                    <div class="flex flex-col gap-1 shrink-0 group cursor-pointer">
+                        <div
+                            class="w-24 h-16 bg-surface-light rounded border border-slate-700 group-hover:border-primary transition-colors overflow-hidden relative">
+                            <div class="absolute inset-0 bg-slate-800 opacity-50"></div>
+                            <span
+                                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs">Page
+                                3</span>
+                        </div>
+                        <span class="text-[10px] text-center text-slate-500">Conflict</span>
+                    </div>
+                    <!-- Page 4 -->
+                    <div class="flex flex-col gap-1 shrink-0 group cursor-pointer">
+                        <div
+                            class="w-24 h-16 bg-surface-light rounded border border-slate-700 group-hover:border-primary transition-colors overflow-hidden relative">
+                            <div class="absolute inset-0 bg-slate-800 opacity-50"></div>
+                            <span
+                                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs">Page
+                                4</span>
+                        </div>
+                        <span class="text-[10px] text-center text-slate-500">Chase</span>
+                    </div>
+                    <!-- Add New -->
+                    <div class="flex flex-col gap-1 shrink-0 group cursor-pointer">
+                        <div
+                            class="w-24 h-16 bg-transparent rounded border border-dashed border-slate-600 hover:border-primary flex items-center justify-center transition-colors">
+                            <span class="material-symbols-outlined text-slate-500">add</span>
+                        </div>
+                        <span class="text-[10px] text-center text-slate-500">Add Page</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Right Sidebar: Asset Library -->
+        <aside class="w-80 bg-surface-dark border-l border-surface-light flex flex-col shrink-0 z-10">
+            <div class="p-4 border-b border-surface-light flex justify-between items-center">
+                <h3 class="text-sm font-semibold text-white uppercase tracking-wider">Asset Library</h3>
+                <button class="text-slate-400 hover:text-white"><span
+                        class="material-symbols-outlined">filter_list</span></button>
+            </div>
+            <!-- Search -->
+            <div class="p-4 pb-2">
+                <div class="relative">
+                    <input
+                        class="w-full bg-[#120d14] border border-surface-light rounded-lg py-2 pl-9 pr-3 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-slate-500"
+                        placeholder="Search assets..." type="text" />
+                    <span
+                        class="material-symbols-outlined absolute left-2.5 top-2.5 text-slate-500 text-lg">search</span>
+                </div>
+            </div>
+            <!-- Categories -->
+            <div class="px-4 py-2 flex gap-2 overflow-x-auto no-scrollbar">
+                <button
+                    class="px-3 py-1 rounded-full bg-primary text-white text-xs font-medium whitespace-nowrap">All</button>
+                <button
+                    class="px-3 py-1 rounded-full bg-surface-light text-slate-300 hover:text-white text-xs font-medium whitespace-nowrap">Characters</button>
+                <button
+                    class="px-3 py-1 rounded-full bg-surface-light text-slate-300 hover:text-white text-xs font-medium whitespace-nowrap">Backgrounds</button>
+                <button
+                    class="px-3 py-1 rounded-full bg-surface-light text-slate-300 hover:text-white text-xs font-medium whitespace-nowrap">Props</button>
+            </div>
+            <!-- Grid Assets -->
+            <div class="flex-1 overflow-y-auto p-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Asset Item 1 -->
+                    <div
+                        class="group relative aspect-square bg-surface-light rounded-lg overflow-hidden border border-transparent hover:border-primary cursor-grab active:cursor-grabbing">
+                        <img alt="Hero character portrait" class="w-full h-full object-cover"
+                            data-alt="Hero character portrait"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3EFRcTtZSX5L2qWxGUo3Xv9dnM_svWROzydD3uDNrguF_V1lDOhgZcuXuCXZfGBtG0qLiAt7HjSQzR-x9rtVe7AqLNDj4Sr2hHwywJ97IUnDds1WRfYYFP1UwPDqgMFxJJdu3dXSneLNZQhrafPFsdT89-OsCfDyzbEy1-vrdwiJoOmh0n950MKiMsh_C3s2x6KMe8dULNt-8x-L4o4DG1-luWEAUOsCkl4QyuThZ8pubdHH4kZvcovTRs9cBPsRwbVj2x9MRbvk" />
+                        <div
+                            class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                            <span class="text-xs text-white font-medium truncate">Hero Portrait</span>
+                        </div>
+                        <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100">
+                            <span
+                                class="material-symbols-outlined text-white text-lg drop-shadow-md">drag_indicator</span>
+                        </div>
+                    </div>
+                    <!-- Asset Item 2 -->
+                    <div
+                        class="group relative aspect-square bg-surface-light rounded-lg overflow-hidden border border-transparent hover:border-primary cursor-grab active:cursor-grabbing">
+                        <img alt="Cyberpunk city background" class="w-full h-full object-cover"
+                            data-alt="Cyberpunk city background"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXW4O194kXhoRIVZ27vbRdC6sKVJb79nJZQpcSGs26r3sVtbvHD9LYzjRNVhwFX00T-GtHYp2PLzCmohN1dUHv014nfM35-X6uJgOQJp9aB7pB_DcAQPVBnrdeJwsW9Jjhkt4PYxLgW1NHtBccb3mROzY7gnmuiES3mF3bnWOvMBvGY6ntLC_o_bdCyubMHleu2sWO3d89v1jYD2OVGxFU_yhNecDl-XAYt2lNPrpcvUQOfSHzWmejOaB9IMYZk3QtfL5iwcmxdnQ" />
+                        <div
+                            class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                            <span class="text-xs text-white font-medium truncate">City BG</span>
+                        </div>
+                    </div>
+                    <!-- Asset Item 3 -->
+                    <div
+                        class="group relative aspect-square bg-surface-light rounded-lg overflow-hidden border border-transparent hover:border-primary cursor-grab active:cursor-grabbing">
+                        <img alt="Abstract energy blast effect" class="w-full h-full object-cover"
+                            data-alt="Abstract energy blast effect"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHqzC_tX-4wmr_X50MLGjOGBXtPFXaavix_9iepG2lkIfapg7YyLH-HdmHD-aNHPT5xW2rWt2mI_kxQuNEdxJhRwBSpAvEHs-KKi_P2yNZTfBFFwfz0MS0id42Vg3U2cGaNkZECxW7gi7mioGbhRoCdFndJOJg8QyR4x_MwArxq_1o8xh_0y_H5nrdCA7o5SB9UE8j2VpPlX2ruZ-LRQvyRvY2JzDZq3Nwg7AnMGVezR8_iuI1AFYO6j3SJy_tlksgGoOhI8sdT2c" />
+                        <div
+                            class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                            <span class="text-xs text-white font-medium truncate">Energy Blast</span>
+                        </div>
+                    </div>
+                    <!-- Asset Item 4 -->
+                    <div
+                        class="group relative aspect-square bg-surface-light rounded-lg overflow-hidden border border-transparent hover:border-primary cursor-grab active:cursor-grabbing">
+                        <img alt="Space nebula background" class="w-full h-full object-cover"
+                            data-alt="Space nebula background"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7FsjSfQuV8gApMMZdReE_7ixHF0TAwn0rpqEyrXH2-VQhf5qx64piiPtLeeMkWdrWglT2F9t3446C9do3WSkjnyVh8ZVR1xCDccebvm2IJEI3L06-OdcVvQHmDFH40TDXv2AcTGGQN77OUzfOLTuK6Q5VfDlpNJ7wAU_xq0hirOCKzozqqIcMQMLyE0i6CRjosv476mMVChQJRnZuqOvlurBsxxgA-HQOgtgaHkBGjk_5-wpNxNDqPsy-1qWaXuncCxSGiKUNC8E" />
+                        <div
+                            class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                            <span class="text-xs text-white font-medium truncate">Nebula</span>
+                        </div>
+                    </div>
+                    <!-- Asset Item 5 -->
+                    <div
+                        class="group relative aspect-square bg-surface-light rounded-lg overflow-hidden border border-transparent hover:border-primary cursor-grab active:cursor-grabbing">
+                        <div class="w-full h-full flex items-center justify-center bg-[#120d14]">
+                            <span class="material-symbols-outlined text-4xl text-slate-600">chat_bubble</span>
+                        </div>
+                        <div
+                            class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                            <span class="text-xs text-white font-medium truncate">Speech Bubble</span>
+                        </div>
+                    </div>
+                    <!-- Asset Item 6 -->
+                    <div
+                        class="group relative aspect-square bg-surface-light rounded-lg overflow-hidden border border-transparent hover:border-primary cursor-grab active:cursor-grabbing">
+                        <div class="w-full h-full flex items-center justify-center bg-[#120d14]">
+                            <span class="material-symbols-outlined text-4xl text-slate-600">bolt</span>
+                        </div>
+                        <div
+                            class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                            <span class="text-xs text-white font-medium truncate">Action Icon</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <button
+                        class="w-full py-2 rounded-lg border border-dashed border-slate-600 text-slate-400 hover:text-white hover:border-white transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                        <span class="material-symbols-outlined">upload_file</span>
+                        Upload New Asset
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </main>
+</body>
+
+</html>

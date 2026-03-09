@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HQ Movie - Gerador de Áudio para Testes</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        h1 { color: #14b8a6; margin-bottom: 8px; font-size: 28px; }
+        h2 { color: #0d9488; margin: 24px 0 12px; font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+        h3 { color: #5eead4; margin: 16px 0 8px; font-size: 14px; }
+        .subtitle { color: #888; margin-bottom: 24px; font-size: 14px; }
+        
+        .panel {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .progress-container {
+            background: #0f0f0f;
+            border-radius: 8px;
+            height: 24px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #14b8a6, #0d9488);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        button {
+            background: #14b8a6;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            transition: all 0.15s;
+        }
+        button:hover { background: #0d9488; transform: translateY(-1px); }
+        button:disabled { background: #333; cursor: not-allowed; transform: none; }
+        button.secondary {
+            background: transparent;
+            border: 1px solid #14b8a6;
+            color: #14b8a6;
+        }
+        button.secondary:hover { background: rgba(20,184,166,0.1); }
+        button.small { padding: 6px 12px; font-size: 11px; }
+        button.danger { background: #dc2626; }
+        button.danger:hover { background: #b91c1c; }
+        
+        .status-text {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .status-text.success { color: #22c55e; }
+        .status-text.error { color: #ef4444; }
+        .status-text.warning { color: #f59e0b; }
+        
+        .grid { display: grid; gap: 12px; }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        @media (max-width: 800px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
+        
+        .audio-card {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .audio-card.ready { border-color: #22c55e; }
+        .audio-card.pending { border-color: #f59e0b; }
+        .audio-card h4 {
+            font-size: 12px;
+            color: #14b8a6;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .audio-card .meta {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .audio-card audio {
+            width: 100%;
+            height: 32px;
+            margin: 8px 0;
+        }
+        .audio-card .actions {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        
+        .narration-text {
+            background: #1a1a2e;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 13px;
+            color: #e0e0e0;
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+        
+        .drop-zone {
+            border: 2px dashed #333;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #14b8a6;
+            background: rgba(20,184,166,0.05);
+        }
+        .drop-zone.has-file {
+            border-color: #22c55e;
+            background: rgba(34,197,94,0.05);
+        }
+        .drop-zone input { display: none; }
+        
+        .log {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 12px;
+        }
+        .log-entry { margin: 2px 0; }
+        .log-success { color: #22c55e; }
+        .log-error { color: #ef4444; }
+        .log-info { color: #888; }
+        .log-warning { color: #f59e0b; }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .summary-item {
+            background: #0f0f0f;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        .summary-item .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #14b8a6;
+        }
+        .summary-item .label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+        }
+        .tab {
+            padding: 8px 16px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-size: 13px;
+            color: #888;
+        }
+        .tab.active {
+            background: #0f0f0f;
+            border-bottom-color: #0f0f0f;
+            color: #14b8a6;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .instructions {
+            background: #1a1a2e;
+            border-left: 3px solid #14b8a6;
+            padding: 12px 16px;
+            font-size: 12px;
+            margin: 12px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        .instructions a {
+            color: #14b8a6;
+            text-decoration: none;
+        }
+        .instructions a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Gerador de Áudio para Testes</h1>
+        <p class="subtitle">Gera automaticamente músicas sintéticas e auxilia na criação de narrações para testar o HQ Movie</p>
+        
+        <!-- Main Actions -->
+        <div class="panel">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <button onclick="generateAll()" id="btn-generate">🎬 Gerar Tudo Automaticamente</button>
+                    <button onclick="downloadZip()" id="btn-zip" class="secondary" disabled>📦 Download ZIP</button>
+                </div>
+                <div class="status-text" id="main-status">Pronto para gerar</div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="main-progress">0%</div>
+            </div>
+            
+            <div class="summary" id="summary">
+                <div class="summary-item">
+                    <div class="value" id="sum-music">0/5</div>
+                    <div class="label">Músicas</div>
+                </div>
+                <div class="summary-item">
+                    <div class="value" id="sum-narr-pt">0/10</div>
+                    <div class="label">Narrações PT-BR</div>
+                </div>
+                <div class="summary-item">
+                    <div class="value" id="sum-narr-en">0/10</div>
+                    <div class="label">Narrações EN</div>
+                </div>
+                <div class="summary-item">
+                    <div class="value" id="sum-total">0</div>
+                    <div class="label">Total de Arquivos</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('music')">🎵 Músicas (5)</div>
+            <div class="tab" onclick="showTab('narr-pt')">🇧🇷 Narrações PT-BR (10)</div>
+            <div class="tab" onclick="showTab('narr-en')">🇺🇸 Narrações EN (10)</div>
+            <div class="tab" onclick="showTab('log')">📋 Log</div>
+        </div>
+        
+        <!-- Music Tab -->
+        <div class="tab-content active" id="tab-music">
+            <div class="panel">
+                <h2>🎵 Músicas de Fundo (Geração Automática)</h2>
+                <p class="status-text">Músicas sintéticas geradas via Web Audio API - 100% automático</p>
+                
+                <button onclick="generateAllMusic()" class="small">🔄 Regenerar Todas</button>
+                
+                <div class="grid grid-2" id="music-grid" style="margin-top: 16px;">
+                    <!-- Music cards will be inserted here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Narration PT-BR Tab -->
+        <div class="tab-content" id="tab-narr-pt">
+            <div class="panel">
+                <h2>🇧🇷 Narrações em Português (Semi-Automático)</h2>
+                
+                <div class="instructions">
+                    <strong>Como gerar narrações:</strong><br>
+                    1. Clique em "Copiar Texto" no card desejado<br>
+                    2. Acesse <a href="https://ttsmaker.com" target="_blank">ttsmaker.com</a> (grátis, sem cadastro)<br>
+                    3. Cole o texto, selecione voz PT-BR, gere o MP3<br>
+                    4. Arraste o arquivo para a área de upload do card correspondente
+                </div>
+                
+                <div class="grid grid-2" id="narr-pt-grid">
+                    <!-- Narration cards will be inserted here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Narration EN Tab -->
+        <div class="tab-content" id="tab-narr-en">
+            <div class="panel">
+                <h2>🇺🇸 Narrações em Inglês (Semi-Automático)</h2>
+                
+                <div class="instructions">
+                    <strong>How to generate narrations:</strong><br>
+                    1. Click "Copy Text" on the desired card<br>
+                    2. Go to <a href="https://ttsmaker.com" target="_blank">ttsmaker.com</a> (free, no signup)<br>
+                    3. Paste text, select EN-US voice, generate MP3<br>
+                    4. Drag the file to the upload area of the corresponding card
+                </div>
+                
+                <div class="grid grid-2" id="narr-en-grid">
+                    <!-- Narration cards will be inserted here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Log Tab -->
+        <div class="tab-content" id="tab-log">
+            <div class="panel">
+                <h2>📋 Log de Geração</h2>
+                <button onclick="clearLog()" class="small secondary">🗑 Limpar Log</button>
+                <div class="log" id="log"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    // DATA: Narration texts
+    // ═══════════════════════════════════════════════════════════════
+    
+    const NARRATIONS_PT = [
+        { id: 1, text: "Era uma vez, em uma terra distante", duration: 3 },
+        { id: 2, text: "O herói enfrentou grandes desafios", duration: 3 },
+        { id: 3, text: "Mas nada seria fácil nesta jornada", duration: 3 },
+        { id: 4, text: "E assim a aventura começa", duration: 2 },
+        { id: 5, text: "Enquanto isso, na cidade", duration: 2 },
+        { id: 6, text: "O vilão preparava seu plano", duration: 3 },
+        { id: 7, text: "Até que um dia tudo mudou", duration: 3 },
+        { id: 8, text: "A batalha final estava próxima", duration: 3 },
+        { id: 9, text: "E assim termina nossa história", duration: 3 },
+        { id: 10, text: "Continua...", duration: 1 }
+    ];
+    
+    const NARRATIONS_EN = [
+        { id: 1, text: "Once upon a time, in a distant land", duration: 3 },
+        { id: 2, text: "The hero faced great challenges", duration: 3 },
+        { id: 3, text: "But nothing would be easy on this journey", duration: 3 },
+        { id: 4, text: "And so the adventure begins", duration: 2 },
+        { id: 5, text: "Meanwhile, in the city", duration: 2 },
+        { id: 6, text: "The villain prepared his plan", duration: 3 },
+        { id: 7, text: "Until one day everything changed", duration: 3 },
+        { id: 8, text: "The final battle was near", duration: 3 },
+        { id: 9, text: "And so ends our story", duration: 3 },
+        { id: 10, text: "To be continued...", duration: 1 }
+    ];
+    
+    const MUSIC_PRESETS = [
+        { id: 'action', name: 'Action Loop', duration: 30, bpm: 120, description: 'Batida intensa para cenas de ação' },
+        { id: 'calm', name: 'Ambient Calm', duration: 30, bpm: 80, description: 'Atmosfera relaxante e suave' },
+        { id: 'epic', name: 'Epic Drama', duration: 60, bpm: 90, description: 'Crescendo dramático para momentos épicos' },
+        { id: 'suspense', name: 'Suspense', duration: 30, bpm: 100, description: 'Tensão e mistério' },
+        { id: 'happy', name: 'Happy', duration: 30, bpm: 140, description: 'Melodia alegre e animada' }
+    ];
+    
+    // ═══════════════════════════════════════════════════════════════
+    // STATE
+    // ═══════════════════════════════════════════════════════════════
+    
+    const state = {
+        music: {},      // id -> { blob, url, ready }
+        narrPt: {},     // id -> { blob, url, ready }
+        narrEn: {},     // id -> { blob, url, ready }
+        isGenerating: false
+    };
+    
+    // ═══════════════════════════════════════════════════════════════
+    // LOGGING
+    // ═══════════════════════════════════════════════════════════════
+    
+    function log(msg, type = 'info') {
+        const logEl = document.getElementById('log');
+        const time = new Date().toLocaleTimeString();
+        const entry = document.createElement('div');
+        entry.className = `log-entry log-${type}`;
+        entry.textContent = `[${time}] ${msg}`;
+        logEl.appendChild(entry);
+        logEl.scrollTop = logEl.scrollHeight;
+        console.log(`[${type}] ${msg}`);
+    }
+    
+    function clearLog() {
+        document.getElementById('log').innerHTML = '';
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // UI HELPERS
+    // ═══════════════════════════════════════════════════════════════
+    
+    function showTab(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        
+        document.querySelector(`.tab-content#tab-${tabId}`).classList.add('active');
+        document.querySelectorAll('.tab').forEach(t => {
+            if (t.textContent.toLowerCase().includes(tabId.replace('-', ' ')) || 
+                (tabId === 'music' && t.textContent.includes('Músicas')) ||
+                (tabId === 'narr-pt' && t.textContent.includes('PT-BR')) ||
+                (tabId === 'narr-en' && t.textContent.includes('EN')) ||
+                (tabId === 'log' && t.textContent.includes('Log'))) {
+                t.classList.add('active');
+            }
+        });
+    }
+    
+    function updateProgress(pct, text) {
+        document.getElementById('main-progress').style.width = pct + '%';
+        document.getElementById('main-progress').textContent = pct + '%';
+        if (text) document.getElementById('main-status').textContent = text;
+    }
+    
+    function updateSummary() {
+        const musicReady = Object.values(state.music).filter(m => m.ready).length;
+        const narrPtReady = Object.values(state.narrPt).filter(n => n.ready).length;
+        const narrEnReady = Object.values(state.narrEn).filter(n => n.ready).length;
+        const total = musicReady + narrPtReady + narrEnReady;
+        
+        document.getElementById('sum-music').textContent = `${musicReady}/5`;
+        document.getElementById('sum-narr-pt').textContent = `${narrPtReady}/10`;
+        document.getElementById('sum-narr-en').textContent = `${narrEnReady}/10`;
+        document.getElementById('sum-total').textContent = total;
+        
+        // Enable ZIP button if we have at least music
+        document.getElementById('btn-zip').disabled = musicReady < 5;
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // MUSIC GENERATION (Web Audio API)
+    // ═══════════════════════════════════════════════════════════════
+    
+    async function generateMusic(preset) {
+        const { id, duration, bpm } = preset;
+        log(`Gerando música: ${preset.name} (${duration}s, ${bpm} BPM)...`);
+        
+        const sampleRate = 44100;
+        const numSamples = duration * sampleRate;
+        const audioCtx = new OfflineAudioContext(2, numSamples, sampleRate);
+        
+        const beatInterval = 60 / bpm;
+        const masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.5;
+        masterGain.connect(audioCtx.destination);
+        
+        try {
+            switch (id) {
+                case 'action':
+                    await generateActionMusic(audioCtx, masterGain, duration, bpm);
+                    break;
+                case 'calm':
+                    await generateCalmMusic(audioCtx, masterGain, duration, bpm);
+                    break;
+                case 'epic':
+                    await generateEpicMusic(audioCtx, masterGain, duration, bpm);
+                    break;
+                case 'suspense':
+                    await generateSuspenseMusic(audioCtx, masterGain, duration, bpm);
+                    break;
+                case 'happy':
+                    await generateHappyMusic(audioCtx, masterGain, duration, bpm);
+                    break;
+            }
+            
+            const renderedBuffer = await audioCtx.startRendering();
+            const wavBlob = audioBufferToWav(renderedBuffer);
+            const url = URL.createObjectURL(wavBlob);
+            
+            state.music[id] = { blob: wavBlob, url, ready: true };
+            log(`✅ Música "${preset.name}" gerada (${(wavBlob.size/1024).toFixed(1)} KB)`, 'success');
+            
+            updateMusicCard(id);
+            updateSummary();
+            return true;
+            
+        } catch (err) {
+            log(`❌ Erro ao gerar "${preset.name}": ${err.message}`, 'error');
+            return false;
+        }
+    }
+    
+    // Action: Square wave + noise drums
+    async function generateActionMusic(ctx, master, duration, bpm) {
+        const beatTime = 60 / bpm;
+        
+        // Bass drum pattern
+        for (let t = 0; t < duration; t += beatTime) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(80, t);
+            osc.frequency.exponentialRampToValueAtTime(40, t + 0.1);
+            gain.gain.setValueAtTime(0.8, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+            osc.connect(gain);
+            gain.connect(master);
+            osc.start(t);
+            osc.stop(t + 0.15);
+        }
+        
+        // Hi-hat pattern (noise)
+        for (let t = beatTime/2; t < duration; t += beatTime/2) {
+            const bufferSize = ctx.sampleRate * 0.05;
+            const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            const noise = ctx.createBufferSource();
+            noise.buffer = noiseBuffer;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 8000;
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.3, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(master);
+            noise.start(t);
+        }
+        
+        // Square wave synth
+        const synth = ctx.createOscillator();
+        const synthGain = ctx.createGain();
+        synth.type = 'square';
+        synth.frequency.value = 110;
+        synthGain.gain.value = 0.15;
+        synth.connect(synthGain);
+        synthGain.connect(master);
+        synth.start(0);
+        synth.stop(duration);
+    }
+    
+    // Calm: Sine wave pads
+    async function generateCalmMusic(ctx, master, duration, bpm) {
+        const chords = [
+            [261.63, 329.63, 392.00], // C major
+            [293.66, 369.99, 440.00], // D minor
+            [329.63, 415.30, 493.88], // E minor
+            [349.23, 440.00, 523.25]  // F major
+        ];
+        
+        const chordDuration = duration / chords.length;
+        
+        chords.forEach((chord, i) => {
+            const startTime = i * chordDuration;
+            chord.forEach(freq => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq / 2; // Lower octave
+                
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(0.15, startTime + 1);
+                gain.gain.setValueAtTime(0.15, startTime + chordDuration - 1);
+                gain.gain.linearRampToValueAtTime(0, startTime + chordDuration);
+                
+                osc.connect(gain);
+                gain.connect(master);
+                osc.start(startTime);
+                osc.stop(startTime + chordDuration);
+            });
+        });
+    }
+    
+    // Epic: Sawtooth strings with crescendo
+    async function generateEpicMusic(ctx, master, duration, bpm) {
+        const notes = [130.81, 146.83, 164.81, 174.61, 196.00, 220.00, 246.94, 261.63];
+        const noteDuration = duration / notes.length;
+        
+        notes.forEach((freq, i) => {
+            const startTime = i * noteDuration;
+            const intensity = (i + 1) / notes.length;
+            
+            // Main sawtooth
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.value = freq;
+            
+            gain.gain.setValueAtTime(0.05 * intensity, startTime);
+            gain.gain.linearRampToValueAtTime(0.2 * intensity, startTime + noteDuration * 0.8);
+            gain.gain.linearRampToValueAtTime(0.05 * intensity, startTime + noteDuration);
+            
+            // Filter for warmth
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 2000 + (intensity * 4000);
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(master);
+            osc.start(startTime);
+            osc.stop(startTime + noteDuration + 0.5);
+            
+            // Harmony (fifth)
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sawtooth';
+            osc2.frequency.value = freq * 1.5;
+            gain2.gain.value = 0.1 * intensity;
+            osc2.connect(gain2);
+            gain2.connect(master);
+            osc2.start(startTime);
+            osc2.stop(startTime + noteDuration + 0.5);
+        });
+    }
+    
+    // Suspense: Low frequency pulse
+    async function generateSuspenseMusic(ctx, master, duration, bpm) {
+        const beatTime = 60 / bpm;
+        
+        // Deep drone
+        const drone = ctx.createOscillator();
+        const droneGain = ctx.createGain();
+        drone.type = 'triangle';
+        drone.frequency.value = 55; // Low A
+        droneGain.gain.value = 0.2;
+        
+        // LFO for wobble
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfo.frequency.value = 0.5;
+        lfoGain.gain.value = 10;
+        lfo.connect(lfoGain);
+        lfoGain.connect(drone.frequency);
+        
+        drone.connect(droneGain);
+        droneGain.connect(master);
+        drone.start(0);
+        lfo.start(0);
+        drone.stop(duration);
+        lfo.stop(duration);
+        
+        // Pulse hits
+        for (let t = 0; t < duration; t += beatTime * 2) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 40;
+            gain.gain.setValueAtTime(0.4, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+            osc.connect(gain);
+            gain.connect(master);
+            osc.start(t);
+            osc.stop(t + 0.5);
+        }
+    }
+    
+    // Happy: Major chords melody
+    async function generateHappyMusic(ctx, master, duration, bpm) {
+        const beatTime = 60 / bpm;
+        const melody = [523.25, 587.33, 659.25, 587.33, 523.25, 493.88, 523.25, 659.25]; // C5 scale
+        const noteDuration = beatTime * 0.8;
+        
+        let noteIndex = 0;
+        for (let t = 0; t < duration; t += beatTime) {
+            const freq = melody[noteIndex % melody.length];
+            
+            // Melody
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.25, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + noteDuration);
+            osc.connect(gain);
+            gain.connect(master);
+            osc.start(t);
+            osc.stop(t + noteDuration);
+            
+            // Bass on beats 1 and 3
+            if (noteIndex % 2 === 0) {
+                const bass = ctx.createOscillator();
+                const bassGain = ctx.createGain();
+                bass.type = 'triangle';
+                bass.frequency.value = freq / 4;
+                bassGain.gain.setValueAtTime(0.3, t);
+                bassGain.gain.exponentialRampToValueAtTime(0.01, t + beatTime * 0.5);
+                bass.connect(bassGain);
+                bassGain.connect(master);
+                bass.start(t);
+                bass.stop(t + beatTime * 0.5);
+            }
+            
+            noteIndex++;
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // WAV ENCODING
+    // ═══════════════════════════════════════════════════════════════
+    
+    function audioBufferToWav(buffer) {
+        const numChannels = buffer.numberOfChannels;
+        const sampleRate = buffer.sampleRate;
+        const format = 1; // PCM
+        const bitDepth = 16;
+        
+        const bytesPerSample = bitDepth / 8;
+        const blockAlign = numChannels * bytesPerSample;
+        
+        const samples = buffer.length;
+        const dataSize = samples * blockAlign;
+        const bufferSize = 44 + dataSize;
+        
+        const arrayBuffer = new ArrayBuffer(bufferSize);
+        const view = new DataView(arrayBuffer);
+        
+        // WAV header
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, bufferSize - 8, true);
+        writeString(view, 8, 'WAVE');
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, format, true);
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * blockAlign, true);
+        view.setUint16(32, blockAlign, true);
+        view.setUint16(34, bitDepth, true);
+        writeString(view, 36, 'data');
+        view.setUint32(40, dataSize, true);
+        
+        // Interleave channels and write samples
+        const channels = [];
+        for (let i = 0; i < numChannels; i++) {
+            channels.push(buffer.getChannelData(i));
+        }
+        
+        let offset = 44;
+        for (let i = 0; i < samples; i++) {
+            for (let ch = 0; ch < numChannels; ch++) {
+                const sample = Math.max(-1, Math.min(1, channels[ch][i]));
+                const int16 = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                view.setInt16(offset, int16, true);
+                offset += 2;
+            }
+        }
+        
+        return new Blob([arrayBuffer], { type: 'audio/wav' });
+    }
+    
+    function writeString(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // NARRATION HANDLING (Semi-automatic)
+    // ═══════════════════════════════════════════════════════════════
+    
+    function copyText(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            log(`📋 Texto copiado: "${text.substring(0, 30)}..."`, 'success');
+        }).catch(err => {
+            log(`❌ Erro ao copiar: ${err.message}`, 'error');
+        });
+    }
+    
+    function handleNarrationUpload(lang, id, file) {
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const blob = new Blob([e.target.result], { type: file.type });
+            const url = URL.createObjectURL(blob);
+            
+            if (lang === 'pt') {
+                state.narrPt[id] = { blob, url, ready: true, filename: file.name };
+            } else {
+                state.narrEn[id] = { blob, url, ready: true, filename: file.name };
+            }
+            
+            log(`✅ Narração ${lang.toUpperCase()}-${id} carregada: ${file.name}`, 'success');
+            updateNarrationCard(lang, id);
+            updateSummary();
+        };
+        reader.readAsArrayBuffer(file);
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // UI RENDERING
+    // ═══════════════════════════════════════════════════════════════
+    
+    function renderMusicCards() {
+        const grid = document.getElementById('music-grid');
+        grid.innerHTML = MUSIC_PRESETS.map(preset => `
+            <div class="audio-card ${state.music[preset.id]?.ready ? 'ready' : ''}" id="music-card-${preset.id}">
+                <h4>🎵 ${preset.name}</h4>
+                <div class="meta">${preset.duration}s • ${preset.bpm} BPM • ${preset.description}</div>
+                <div id="music-player-${preset.id}">
+                    ${state.music[preset.id]?.ready ? 
+                        `<audio controls src="${state.music[preset.id].url}"></audio>` :
+                        '<div class="status-text">Aguardando geração...</div>'
+                    }
+                </div>
+                <div class="actions">
+                    <button class="small" onclick="generateMusic(MUSIC_PRESETS.find(p=>p.id==='${preset.id}'))">🔄 Gerar</button>
+                    ${state.music[preset.id]?.ready ? 
+                        `<button class="small secondary" onclick="downloadSingle('music', '${preset.id}')">⬇ Download</button>` : ''
+                    }
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    function updateMusicCard(id) {
+        const card = document.getElementById(`music-card-${id}`);
+        const player = document.getElementById(`music-player-${id}`);
+        
+        if (state.music[id]?.ready) {
+            card.classList.add('ready');
+            player.innerHTML = `<audio controls src="${state.music[id].url}"></audio>`;
+        }
+        
+        renderMusicCards(); // Re-render to update actions
+    }
+    
+    function renderNarrationCards(lang) {
+        const narrations = lang === 'pt' ? NARRATIONS_PT : NARRATIONS_EN;
+        const stateObj = lang === 'pt' ? state.narrPt : state.narrEn;
+        const gridId = `narr-${lang}-grid`;
+        
+        const grid = document.getElementById(gridId);
+        grid.innerHTML = narrations.map(narr => {
+            const isReady = stateObj[narr.id]?.ready;
+            return `
+                <div class="audio-card ${isReady ? 'ready' : 'pending'}" id="narr-card-${lang}-${narr.id}">
+                    <h4>${lang === 'pt' ? '🇧🇷' : '🇺🇸'} Narração ${narr.id.toString().padStart(2, '0')}</h4>
+                    <div class="meta">~${narr.duration}s</div>
+                    <div class="narration-text">"${narr.text}"</div>
+                    
+                    ${isReady ? `
+                        <audio controls src="${stateObj[narr.id].url}"></audio>
+                        <div class="status-text success">✅ ${stateObj[narr.id].filename || 'Carregado'}</div>
+                    ` : `
+                        <div class="drop-zone" id="drop-${lang}-${narr.id}"
+                            ondragover="event.preventDefault(); this.classList.add('dragover')"
+                            ondragleave="this.classList.remove('dragover')"
+                            ondrop="event.preventDefault(); this.classList.remove('dragover'); handleNarrationUpload('${lang}', ${narr.id}, event.dataTransfer.files[0])"
+                            onclick="document.getElementById('file-${lang}-${narr.id}').click()">
+                            <input type="file" id="file-${lang}-${narr.id}" accept="audio/*" 
+                                onchange="handleNarrationUpload('${lang}', ${narr.id}, this.files[0])">
+                            📁 Arraste o arquivo MP3/WAV aqui ou clique para selecionar
+                        </div>
+                    `}
+                    
+                    <div class="actions">
+                        <button class="small secondary" onclick="copyText('${narr.text.replace(/'/g, "\\'")}')">📋 Copiar Texto</button>
+                        ${isReady ? `
+                            <button class="small secondary" onclick="downloadSingle('narr-${lang}', ${narr.id})">⬇ Download</button>
+                            <button class="small danger" onclick="removeNarration('${lang}', ${narr.id})">🗑</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function updateNarrationCard(lang, id) {
+        renderNarrationCards(lang);
+    }
+    
+    function removeNarration(lang, id) {
+        if (lang === 'pt') {
+            delete state.narrPt[id];
+        } else {
+            delete state.narrEn[id];
+        }
+        renderNarrationCards(lang);
+        updateSummary();
+        log(`🗑 Narração ${lang.toUpperCase()}-${id} removida`, 'warning');
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // MAIN ACTIONS
+    // ═══════════════════════════════════════════════════════════════
+    
+    async function generateAllMusic() {
+        log('🎵 Iniciando geração de todas as músicas...', 'info');
+        let success = 0;
+        
+        for (let i = 0; i < MUSIC_PRESETS.length; i++) {
+            updateProgress(Math.round((i / MUSIC_PRESETS.length) * 100), `Gerando música ${i + 1}/${MUSIC_PRESETS.length}...`);
+            const ok = await generateMusic(MUSIC_PRESETS[i]);
+            if (ok) success++;
+            await new Promise(r => setTimeout(r, 100));
+        }
+        
+        updateProgress(100, `${success}/${MUSIC_PRESETS.length} músicas geradas`);
+        log(`🎵 Geração de músicas concluída: ${success}/${MUSIC_PRESETS.length}`, success === MUSIC_PRESETS.length ? 'success' : 'warning');
+    }
+    
+    async function generateAll() {
+        if (state.isGenerating) return;
+        state.isGenerating = true;
+        
+        document.getElementById('btn-generate').disabled = true;
+        log('🎬 Iniciando geração completa...', 'info');
+        
+        // Generate all music
+        await generateAllMusic();
+        
+        // Update UI
+        renderMusicCards();
+        updateSummary();
+        
+        document.getElementById('btn-generate').disabled = false;
+        state.isGenerating = false;
+        
+        log('✅ Geração automática concluída! Músicas prontas.', 'success');
+        log('📝 Para narrações: use as abas PT-BR/EN para copiar textos e fazer upload dos arquivos gerados externamente.', 'info');
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // DOWNLOAD
+    // ═══════════════════════════════════════════════════════════════
+    
+    function downloadSingle(type, id) {
+        let blob, filename;
+        
+        if (type === 'music') {
+            blob = state.music[id]?.blob;
+            filename = `music-${id}.wav`;
+        } else if (type === 'narr-pt') {
+            blob = state.narrPt[id]?.blob;
+            filename = `narr-pt-${id.toString().padStart(2, '0')}.wav`;
+        } else if (type === 'narr-en') {
+            blob = state.narrEn[id]?.blob;
+            filename = `narr-en-${id.toString().padStart(2, '0')}.wav`;
+        }
+        
+        if (!blob) return;
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        log(`⬇ Download: ${filename}`, 'success');
+    }
+    
+    async function downloadZip() {
+        log('📦 Criando pacote ZIP...', 'info');
+        
+        const zip = new JSZip();
+        
+        // Add README
+        zip.file('README.txt', `HQ Movie - Test Audio Package
+Generated: ${new Date().toISOString()}
+
+Contents:
+- music/ - 5 synthetic background tracks (WAV)
+- narrations/pt-br/ - Portuguese narrations
+- narrations/en/ - English narrations
+
+Usage:
+1. Extract this ZIP
+2. In HQ Movie, upload audio files to pages
+3. Music files: use as background music
+4. Narration files: use as page narrations
+
+File naming:
+- music-{id}.wav (action, calm, epic, suspense, happy)
+- narr-pt-XX.wav (Portuguese narration 01-10)
+- narr-en-XX.wav (English narration 01-10)
+`);
+        
+        // Add music
+        const musicFolder = zip.folder('music');
+        for (const [id, data] of Object.entries(state.music)) {
+            if (data.ready) {
+                musicFolder.file(`music-${id}.wav`, data.blob);
+            }
+        }
+        
+        // Add narrations PT-BR
+        const narrPtFolder = zip.folder('narrations/pt-br');
+        for (const [id, data] of Object.entries(state.narrPt)) {
+            if (data.ready) {
+                const ext = data.filename?.split('.').pop() || 'wav';
+                narrPtFolder.file(`narr-pt-${id.toString().padStart(2, '0')}.${ext}`, data.blob);
+            }
+        }
+        
+        // Add narrations EN
+        const narrEnFolder = zip.folder('narrations/en');
+        for (const [id, data] of Object.entries(state.narrEn)) {
+            if (data.ready) {
+                const ext = data.filename?.split('.').pop() || 'wav';
+                narrEnFolder.file(`narr-en-${id.toString().padStart(2, '0')}.${ext}`, data.blob);
+            }
+        }
+        
+        // Generate and download
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'test-audio.zip';
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        const totalFiles = Object.values(state.music).filter(m => m.ready).length +
+                          Object.values(state.narrPt).filter(n => n.ready).length +
+                          Object.values(state.narrEn).filter(n => n.ready).length;
+        
+        log(`✅ ZIP criado com ${totalFiles} arquivos (${(blob.size/1024/1024).toFixed(2)} MB)`, 'success');
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════════════════════════════
+    
+    function init() {
+        renderMusicCards();
+        renderNarrationCards('pt');
+        renderNarrationCards('en');
+        updateSummary();
+        log('🎵 Sistema pronto. Clique em "Gerar Tudo Automaticamente" para começar.', 'info');
+    }
+    
+    // Start
+    init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{
+  "id": "id_w6iyl24wd",
+  "metadata": {
+    "name": "SIMPLE-PORTRAIT",
+    "createdAt": 1772823118812,
+    "updatedAt": 1772823118812
+  },
+  "videoFormat": "portrait",
+  "backgroundMusic": null,
+  "videoAudio": {
+    "ducking": {
+      "enabled": false
+    }
+  },
+  "customLayouts": [],
+  "favoriteLayoutId": null,
+  "pages": [
+    {
+      "id": "id_65kqqxneh",
+      "layoutId": "p1-full",
+      "kenBurns": "static",
+      "duration": 4,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "none",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_4o5qe0fm9",
+          "type": "speech",
+          "text": "Retrato 4:3 funcionando.",
+          "x": 360,
+          "y": 432,
+          "w": 720,
+          "h": 120,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    }
+  ]
+}

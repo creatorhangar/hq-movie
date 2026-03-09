@@ -1,0 +1,11 @@
+{
+  "project": "ACTION-WIDESCREEN",
+  "format": "widescreen",
+  "dimensions": "1920x1080",
+  "duration": 25,
+  "fileSize": 12500000,
+  "pages": 5,
+  "balloons": 10,
+  "hasAudio": true,
+  "exportedAt": "2026-03-06T18:53:18.248Z"
+}

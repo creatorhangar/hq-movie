@@ -1,0 +1,11 @@
+{
+  "project": "DIALOGUE-VERTICAL",
+  "format": "vertical",
+  "dimensions": "1080x1920",
+  "duration": 24,
+  "fileSize": 12000000,
+  "pages": 4,
+  "balloons": 8,
+  "hasAudio": false,
+  "exportedAt": "2026-03-06T18:53:18.245Z"
+}

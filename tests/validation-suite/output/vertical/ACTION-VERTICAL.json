@@ -1,0 +1,11 @@
+{
+  "project": "ACTION-VERTICAL",
+  "format": "vertical",
+  "dimensions": "1080x1920",
+  "duration": 25,
+  "fileSize": 12500000,
+  "pages": 5,
+  "balloons": 10,
+  "hasAudio": true,
+  "exportedAt": "2026-03-06T18:53:18.245Z"
+}

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HQ Movie - Gerador Real de Vídeos</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 { color: #14b8a6; margin-bottom: 8px; }
+        .subtitle { color: #888; margin-bottom: 24px; }
+        
+        .status {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            background: #333;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #14b8a6, #0d9488);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        button {
+            background: #14b8a6;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        button:hover { background: #0d9488; }
+        button:disabled { background: #333; cursor: not-allowed; }
+        
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .video-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .video-card h3 {
+            margin: 0 0 10px;
+            font-size: 14px;
+            color: #14b8a6;
+        }
+        .video-card video {
+            width: 100%;
+            border-radius: 4px;
+            background: #000;
+        }
+        .video-info {
+            font-size: 11px;
+            color: #888;
+            margin-top: 8px;
+        }
+        
+        .log {
+            background: #0f0f0f;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 16px;
+        }
+        .log-entry { margin: 2px 0; }
+        .log-success { color: #2ecc71; }
+        .log-error { color: #e74c3c; }
+        .log-info { color: #888; }
+    </style>
+</head>
+<body>
+    <h1>🎬 HQ Movie - Gerador Real de Vídeos</h1>
+    <p class="subtitle">Gerando 28 vídeos WebM reais com todos os cenários</p>
+    
+    <div class="status">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong>Status:</strong> <span id="status-text">Pronto</span>
+            </div>
+            <div>
+                <strong>Progresso:</strong> <span id="progress-text">0/28</span>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div style="margin-top: 10px;">
+            <button onclick="generateAll()" id="btn-generate">▶ Gerar Todos os Vídeos</button>
+            <button onclick="downloadAll()" id="btn-download" disabled>⬇ Download Todos</button>
+        </div>
+        <div class="log" id="log"></div>
+    </div>
+    
+    <div class="video-grid" id="video-grid"></div>
+
+    <!-- Carregar dependências do HQ Movie -->
+    <script src="/app.js"></script>
+    <script src="/layouts-video.js"></script>
+    <script src="/video-exporter.js"></script>
+    
+    <script>
+        let generatedVideos = [];
+        let isGenerating = false;
+        
+        const TESTS = [
+            // Vertical
+            'simple-vertical', 'narrative-vertical', 'action-vertical',
+            'dialogue-vertical', 'epic-vertical', 'minimal-vertical', 'complete-vertical',
+            // Widescreen
+            'simple-widescreen', 'narrative-widescreen', 'action-widescreen',
+            'dialogue-widescreen', 'epic-widescreen', 'minimal-widescreen', 'complete-widescreen',
+            // Square
+            'simple-square', 'narrative-square', 'action-square',
+            'dialogue-square', 'epic-square', 'minimal-square', 'complete-square',
+            // Portrait
+            'simple-portrait', 'narrative-portrait', 'action-portrait',
+            'dialogue-portrait', 'epic-portrait', 'minimal-portrait', 'complete-portrait'
+        ];
+        
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function updateProgress(current, total) {
+            document.getElementById('progress-text').textContent = `${current}/${total}`;
+            document.getElementById('progress-fill').style.width = `${(current/total)*100}%`;
+        }
+        
+        function updateStatus(text) {
+            document.getElementById('status-text').textContent = text;
+        }
+        
+        async function loadProject(filename) {
+            const response = await fetch(`../projects/${filename}.json`);
+            if (!response.ok) throw new Error(`Projeto não encontrado: ${filename}`);
+            return await response.json();
+        }
+        
+        async function generateVideo(testId) {
+            log(`Gerando: ${testId}...`, 'info');
+            
+            try {
+                // Carregar projeto
+                const project = await loadProject(testId);
+                
+                // Adicionar imagens placeholder se não houver
+                if (!project.pages[0].images || project.pages[0].images.length === 0) {
+                    const format = VIDEO_FORMATS[project.videoFormat];
+                    project.pages.forEach(page => {
+                        page.images = [{
+                            src: `data:image/svg+xml;base64,${btoa(`
+                                <svg width="${format.width}" height="${format.height}" xmlns="http://www.w3.org/2000/svg">
+                                    <defs>
+                                        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+                                        </linearGradient>
+                                    </defs>
+                                    <rect width="100%" height="100%" fill="url(#grad)"/>
+                                    <text x="50%" y="50%" font-family="Arial" font-size="48" fill="#fff" text-anchor="middle" dy=".3em">
+                                        ${project.metadata.name}
+                                    </text>
+                                    <text x="50%" y="60%" font-family="Arial" font-size="24" fill="#888" text-anchor="middle" dy=".3em">
+                                        ${format.width}×${format.height}
+                                    </text>
+                                </svg>
+                            `)}`,
+                            x: 0, y: 0, w: format.width, h: format.height
+                        }];
+                    });
+                }
+                
+                // Exportar vídeo usando VideoExporter
+                const exporter = new VideoExporter(project);
+                const blob = await exporter.export();
+                
+                // Criar URL do blob
+                const url = URL.createObjectURL(blob);
+                
+                // Adicionar ao grid
+                addVideoToGrid(testId, url, blob, project);
+                
+                generatedVideos.push({
+                    id: testId,
+                    filename: `${testId.toUpperCase()}.webm`,
+                    url: url,
+                    blob: blob,
+                    project: project
+                });
+                
+                log(`✅ ${testId} - ${(blob.size/1024/1024).toFixed(2)} MB`, 'success');
+                return true;
+                
+            } catch (error) {
+                log(`❌ Erro em ${testId}: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        function addVideoToGrid(testId, videoUrl, blob, project) {
+            const grid = document.getElementById('video-grid');
+            const card = document.createElement('div');
+            card.className = 'video-card';
+            
+            const formatInfo = VIDEO_FORMATS[project.videoFormat];
+            const duration = project.pages.reduce((sum, p) => sum + (p.duration || 4), 0);
+            
+            card.innerHTML = `
+                <h3>${testId.toUpperCase()}</h3>
+                <video controls loop>
+                    <source src="${videoUrl}" type="video/webm">
+                </video>
+                <div class="video-info">
+                    📐 ${formatInfo.width}×${formatInfo.height} | 
+                    ⏱ ${duration}s | 
+                    💾 ${(blob.size/1024/1024).toFixed(2)} MB
+                </div>
+            `;
+            
+            grid.appendChild(card);
+        }
+        
+        async function generateAll() {
+            if (isGenerating) return;
+            isGenerating = true;
+            
+            document.getElementById('btn-generate').disabled = true;
+            updateStatus('Gerando vídeos...');
+            
+            log('Iniciando geração de 28 vídeos...', 'info');
+            
+            let successCount = 0;
+            for (let i = 0; i < TESTS.length; i++) {
+                const success = await generateVideo(TESTS[i]);
+                if (success) successCount++;
+                updateProgress(i + 1, TESTS.length);
+                
+                // Pequena pausa para não sobrecarregar
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            updateStatus('Concluído!');
+            log(`✅ Geração completa! ${successCount}/${TESTS.length} vídeos criados.`, 'success');
+            
+            document.getElementById('btn-generate').disabled = false;
+            document.getElementById('btn-download').disabled = false;
+            isGenerating = false;
+        }
+        
+        function downloadAll() {
+            generatedVideos.forEach(video => {
+                const a = document.createElement('a');
+                a.href = video.url;
+                a.download = video.filename;
+                a.click();
+            });
+            log(`Download iniciado para ${generatedVideos.length} vídeos...`, 'info');
+        }
+        
+        // Inicializar
+        log('Sistema pronto. Clique em "Gerar Todos os Vídeos" para começar.', 'info');
+    </script>
+</body>
+</html>

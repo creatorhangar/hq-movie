@@ -1,0 +1,71 @@
+{
+  "id": "id_3pa998wza",
+  "metadata": {
+    "name": "Test Vertical 9:16 - Pan Cima",
+    "createdAt": 1772733604762,
+    "updatedAt": 1772733604762
+  },
+  "videoFormat": "vertical",
+  "videoAudio": {
+    "backgroundMusic": null,
+    "backgroundMusicVolume": 0.3
+  },
+  "customLayouts": [],
+  "favoriteLayoutId": null,
+  "pages": [
+    {
+      "id": "id_nlq51lzx2",
+      "layoutId": "v1-splash",
+      "kenBurns": "panUp",
+      "duration": 4,
+      "durationLocked": false,
+      "audioNarration": null,
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_ft6trewon",
+          "type": "speech",
+          "text": "Olá!",
+          "x": 108,
+          "y": 192,
+          "w": 270,
+          "h": 100,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        },
+        {
+          "id": "id_7q0ejwnfg",
+          "type": "thought",
+          "text": "Esta é uma frase de tamanho médio para testar o sistema de balões.",
+          "x": 540,
+          "y": 576,
+          "w": 324,
+          "h": 120,
+          "direction": "se",
+          "font": "marker",
+          "fontSize": 14,
+          "color": "#000000"
+        },
+        {
+          "id": "id_c1bilzstt",
+          "type": "narration",
+          "text": "Esta é uma frase muito mais longa que vai testar como o sistema lida com texto extenso dentro dos balões de fala, pensamento e narração. O objetivo é verificar se há quebra de linha adequada.",
+          "x": 108,
+          "y": 1152,
+          "w": 864,
+          "h": 150,
+          "direction": "center",
+          "font": "serif",
+          "fontSize": 14,
+          "color": "#000000",
+          "snapPosition": "bottom"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    }
+  ]
+}

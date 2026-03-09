@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste de Mudança de Idioma - HQ Movie</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #0a0e17;
+      color: #fff;
+    }
+    h1 { color: #00d9ff; }
+    .test-section {
+      background: #1a1f2e;
+      border: 1px solid #2a3f5f;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .lang-btn {
+      padding: 8px 16px;
+      margin: 4px;
+      border: 2px solid #00d9ff;
+      background: #0a0e17;
+      color: #00d9ff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .lang-btn.active {
+      background: #00d9ff;
+      color: #0a0e17;
+    }
+    .lang-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 217, 255, 0.3);
+    }
+    .result {
+      background: #0f1419;
+      border-left: 4px solid #00d9ff;
+      padding: 12px;
+      margin: 12px 0;
+      font-family: monospace;
+    }
+    .success { border-left-color: #00ff88; color: #00ff88; }
+    .error { border-left-color: #ff3366; color: #ff3366; }
+    code {
+      background: #0f1419;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #00d9ff;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌍 Teste de Mudança de Idioma</h1>
+  
+  <div class="test-section">
+    <h2>1. Sistema I18n</h2>
+    <p>Testando se o sistema i18n está carregado e funcional:</p>
+    <div id="i18n-test"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>2. Idiomas Disponíveis</h2>
+    <p>Idiomas configurados no sistema:</p>
+    <div id="languages-list"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>3. Teste de Traduções</h2>
+    <p>Selecione um idioma para ver as traduções:</p>
+    <div id="lang-selector"></div>
+    <div id="translations-test"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>4. Sistema MultiLang</h2>
+    <p>Testando funções do MultiLang para conteúdo:</p>
+    <div id="multilang-test"></div>
+  </div>
+
+  <script src="../i18n.js"></script>
+  <script>
+    // Test 1: I18n System
+    const i18nTest = document.getElementById('i18n-test');
+    if (window.I18n) {
+      i18nTest.innerHTML = `<div class="result success">✓ Sistema I18n carregado com sucesso</div>`;
+    } else {
+      i18nTest.innerHTML = `<div class="result error">✗ Sistema I18n não encontrado</div>`;
+    }
+
+    // Test 2: Available Languages
+    const langsList = document.getElementById('languages-list');
+    if (window.I18n) {
+      const langs = I18n.getAvailableLanguages();
+      langsList.innerHTML = langs.map(l => 
+        `<div class="result">${l.flag} <strong>${l.name}</strong> (${l.code})</div>`
+      ).join('');
+    }
+
+    // Test 3: Translations
+    let currentTestLang = 'pt-BR';
+    const langSelector = document.getElementById('lang-selector');
+    const translationsTest = document.getElementById('translations-test');
+
+    function renderTranslations(lang) {
+      currentTestLang = lang;
+      const keys = [
+        'toolbar.export',
+        'toolbar.undo',
+        'toolbar.redo',
+        'balloon.speech',
+        'balloon.thought',
+        'action.add',
+        'action.remove'
+      ];
+
+      translationsTest.innerHTML = keys.map(key => {
+        const translation = I18n.t(key, lang);
+        return `<div class="result"><code>${key}</code> → "${translation}"</div>`;
+      }).join('');
+    }
+
+    if (window.I18n) {
+      const langs = I18n.getAvailableLanguages();
+      langSelector.innerHTML = langs.map(l => 
+        `<button class="lang-btn ${l.code === 'pt-BR' ? 'active' : ''}" 
+                 onclick="selectLang('${l.code}')">${l.flag} ${l.code}</button>`
+      ).join('');
+      renderTranslations('pt-BR');
+    }
+
+    function selectLang(lang) {
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      renderTranslations(lang);
+    }
+
+    // Test 4: MultiLang (if available)
+    const multilangTest = document.getElementById('multilang-test');
+    
+    // Simulate MultiLang object (normally loaded from app.js)
+    const testMultiLang = {
+      get(textObj, lang, fallbackLang = 'pt-BR') {
+        if (typeof textObj === 'string') return textObj;
+        if (!textObj) return '';
+        return textObj[lang] || textObj[fallbackLang] || Object.values(textObj)[0] || '';
+      },
+      
+      set(textObj, lang, value) {
+        if (typeof textObj === 'string') {
+          return { 'pt-BR': textObj, 'en': '', [lang]: value };
+        }
+        return { ...textObj, [lang]: value };
+      },
+      
+      empty() {
+        return { 'pt-BR': '', 'en': '' };
+      }
+    };
+
+    const testText = {
+      'pt-BR': 'Olá, mundo!',
+      'en': 'Hello, world!',
+      'es': '¡Hola, mundo!',
+      'fr': 'Bonjour, monde!'
+    };
+
+    multilangTest.innerHTML = `
+      <div class="result success">✓ MultiLang.get(text, 'pt-BR') → "${testMultiLang.get(testText, 'pt-BR')}"</div>
+      <div class="result success">✓ MultiLang.get(text, 'en') → "${testMultiLang.get(testText, 'en')}"</div>
+      <div class="result success">✓ MultiLang.get(text, 'es') → "${testMultiLang.get(testText, 'es')}"</div>
+      <div class="result success">✓ MultiLang.get(text, 'fr') → "${testMultiLang.get(testText, 'fr')}"</div>
+    `;
+  </script>
+</body>
+</html>

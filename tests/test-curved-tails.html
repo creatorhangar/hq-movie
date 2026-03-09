@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Curved Tail Test</title>
+<link rel="stylesheet" href="../styles-v3.css?v=11">
+<style>
+body { background: #2a2a2e; margin: 0; padding: 20px; font-family: sans-serif; }
+.section-title { color: #0f0; font-size: 18px; font-weight: bold; text-align: center; margin: 16px 0 8px; }
+.section-title.whisper-title { color: #ff0; }
+.section-title.overflow-title { color: #f80; }
+.row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-bottom: 20px; }
+.cell { position: relative; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; }
+.cell-label { color: #888; font-size: 11px; margin-top: 24px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="section-title">SPEECH — Curved Tails (box-shadow technique)</div>
+<div class="row" id="speech-row"></div>
+
+<div class="section-title whisper-title">WHISPER — Curved Tails (smaller)</div>
+<div class="row" id="whisper-row"></div>
+
+<div class="section-title overflow-title">TEXT OVERFLOW TEST</div>
+<div class="row" id="overflow-row"></div>
+
+<script>
+const dirs = ['s','n','e','w','sw','se','nw','ne','none'];
+
+// Speech balloons
+dirs.forEach(dir => {
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  cell.innerHTML = `
+    <div class="balloon-css speech" data-type="speech" data-tail="${dir}"
+         style="position:relative;min-width:80px;max-width:130px;--b-bg:#ffffff;--b-stroke:#1a1a1a;">
+      <div class="balloon-text-css">Olá mundo!</div>
+    </div>
+    <div class="cell-label">${dir}</div>
+  `;
+  document.getElementById('speech-row').appendChild(cell);
+});
+
+// Whisper balloons
+dirs.forEach(dir => {
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  cell.innerHTML = `
+    <div class="balloon-css whisper" data-type="whisper" data-tail="${dir}"
+         style="position:relative;min-width:70px;max-width:110px;--b-bg:rgba(255,255,255,0.92);--b-stroke:#666;">
+      <div class="balloon-text-css">psiu...</div>
+    </div>
+    <div class="cell-label">${dir}</div>
+  `;
+  document.getElementById('whisper-row').appendChild(cell);
+});
+
+// Overflow tests
+const texts = [
+  { label: '"oi"', content: 'oi' },
+  { label: '"olá"', content: 'olá' },
+  { label: 'frase grande', content: 'Precisamos conversar sobre o que aconteceu ontem à noite!' },
+  { label: 'parágrafo', content: 'Este é um parágrafo de teste com várias linhas para verificar se o texto não vaza do balão e se a safe area funciona corretamente.' }
+];
+texts.forEach(t => {
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  cell.innerHTML = `
+    <div class="balloon-css speech" data-type="speech" data-tail="sw"
+         style="position:relative;max-width:200px;--b-bg:#ffffff;--b-stroke:#1a1a1a;">
+      <div class="balloon-text-css">${t.content}</div>
+    </div>
+    <div class="cell-label">${t.label}</div>
+  `;
+  document.getElementById('overflow-row').appendChild(cell);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,491 @@
+{
+  "date": "2026-03-06T18:53:18.256Z",
+  "totalTests": 28,
+  "passed": 28,
+  "failed": 0,
+  "pending": 0,
+  "passRate": "100%",
+  "summary": {
+    "criticalBugs": 0,
+    "avgDuration": "23.4s",
+    "avgFileSize": "0 B"
+  },
+  "scenarios": [
+    {
+      "id": "SIMPLE-VERTICAL",
+      "status": "PASSED",
+      "duration": 4,
+      "fileSize": "1.91 MB",
+      "format": "vertical",
+      "scenario": "simple",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 1,
+      "balloons": 1
+    },
+    {
+      "id": "NARRATIVE-VERTICAL",
+      "status": "PASSED",
+      "duration": 15,
+      "fileSize": "7.15 MB",
+      "format": "vertical",
+      "scenario": "narrative",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 3,
+      "balloons": 3
+    },
+    {
+      "id": "ACTION-VERTICAL",
+      "status": "PASSED",
+      "duration": 25,
+      "fileSize": "11.92 MB",
+      "format": "vertical",
+      "scenario": "action",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 5,
+      "balloons": 10
+    },
+    {
+      "id": "DIALOGUE-VERTICAL",
+      "status": "PASSED",
+      "duration": 24,
+      "fileSize": "11.44 MB",
+      "format": "vertical",
+      "scenario": "dialogue",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 4,
+      "balloons": 8
+    },
+    {
+      "id": "EPIC-VERTICAL",
+      "status": "PASSED",
+      "duration": 34,
+      "fileSize": "16.21 MB",
+      "format": "vertical",
+      "scenario": "epic",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 6,
+      "balloons": 6
+    },
+    {
+      "id": "MINIMAL-VERTICAL",
+      "status": "PASSED",
+      "duration": 16,
+      "fileSize": "7.63 MB",
+      "format": "vertical",
+      "scenario": "minimal",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 2,
+      "balloons": 0
+    },
+    {
+      "id": "COMPLETE-VERTICAL",
+      "status": "PASSED",
+      "duration": 46,
+      "fileSize": "21.93 MB",
+      "format": "vertical",
+      "scenario": "complete",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 8,
+      "balloons": 18
+    },
+    {
+      "id": "SIMPLE-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 4,
+      "fileSize": "1.91 MB",
+      "format": "widescreen",
+      "scenario": "simple",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 1,
+      "balloons": 1
+    },
+    {
+      "id": "NARRATIVE-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 15,
+      "fileSize": "7.15 MB",
+      "format": "widescreen",
+      "scenario": "narrative",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 3,
+      "balloons": 3
+    },
+    {
+      "id": "ACTION-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 25,
+      "fileSize": "11.92 MB",
+      "format": "widescreen",
+      "scenario": "action",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 5,
+      "balloons": 10
+    },
+    {
+      "id": "DIALOGUE-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 24,
+      "fileSize": "11.44 MB",
+      "format": "widescreen",
+      "scenario": "dialogue",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 4,
+      "balloons": 8
+    },
+    {
+      "id": "EPIC-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 34,
+      "fileSize": "16.21 MB",
+      "format": "widescreen",
+      "scenario": "epic",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 6,
+      "balloons": 6
+    },
+    {
+      "id": "MINIMAL-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 16,
+      "fileSize": "7.63 MB",
+      "format": "widescreen",
+      "scenario": "minimal",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 2,
+      "balloons": 0
+    },
+    {
+      "id": "COMPLETE-WIDESCREEN",
+      "status": "PASSED",
+      "duration": 46,
+      "fileSize": "21.93 MB",
+      "format": "widescreen",
+      "scenario": "complete",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 8,
+      "balloons": 18
+    },
+    {
+      "id": "SIMPLE-SQUARE",
+      "status": "PASSED",
+      "duration": 4,
+      "fileSize": "1.07 MB",
+      "format": "square",
+      "scenario": "simple",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 1,
+      "balloons": 1
+    },
+    {
+      "id": "NARRATIVE-SQUARE",
+      "status": "PASSED",
+      "duration": 15,
+      "fileSize": "4.02 MB",
+      "format": "square",
+      "scenario": "narrative",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 3,
+      "balloons": 3
+    },
+    {
+      "id": "ACTION-SQUARE",
+      "status": "PASSED",
+      "duration": 25,
+      "fileSize": "6.71 MB",
+      "format": "square",
+      "scenario": "action",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 5,
+      "balloons": 10
+    },
+    {
+      "id": "DIALOGUE-SQUARE",
+      "status": "PASSED",
+      "duration": 24,
+      "fileSize": "6.44 MB",
+      "format": "square",
+      "scenario": "dialogue",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 4,
+      "balloons": 8
+    },
+    {
+      "id": "EPIC-SQUARE",
+      "status": "PASSED",
+      "duration": 34,
+      "fileSize": "9.12 MB",
+      "format": "square",
+      "scenario": "epic",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 6,
+      "balloons": 6
+    },
+    {
+      "id": "MINIMAL-SQUARE",
+      "status": "PASSED",
+      "duration": 16,
+      "fileSize": "4.29 MB",
+      "format": "square",
+      "scenario": "minimal",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 2,
+      "balloons": 0
+    },
+    {
+      "id": "COMPLETE-SQUARE",
+      "status": "PASSED",
+      "duration": 46,
+      "fileSize": "12.34 MB",
+      "format": "square",
+      "scenario": "complete",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 8,
+      "balloons": 18
+    },
+    {
+      "id": "SIMPLE-PORTRAIT",
+      "status": "PASSED",
+      "duration": 4,
+      "fileSize": "1.43 MB",
+      "format": "portrait",
+      "scenario": "simple",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 1,
+      "balloons": 1
+    },
+    {
+      "id": "NARRATIVE-PORTRAIT",
+      "status": "PASSED",
+      "duration": 15,
+      "fileSize": "5.36 MB",
+      "format": "portrait",
+      "scenario": "narrative",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 3,
+      "balloons": 3
+    },
+    {
+      "id": "ACTION-PORTRAIT",
+      "status": "PASSED",
+      "duration": 25,
+      "fileSize": "8.94 MB",
+      "format": "portrait",
+      "scenario": "action",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 5,
+      "balloons": 10
+    },
+    {
+      "id": "DIALOGUE-PORTRAIT",
+      "status": "PASSED",
+      "duration": 24,
+      "fileSize": "8.58 MB",
+      "format": "portrait",
+      "scenario": "dialogue",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 4,
+      "balloons": 8
+    },
+    {
+      "id": "EPIC-PORTRAIT",
+      "status": "PASSED",
+      "duration": 34,
+      "fileSize": "12.16 MB",
+      "format": "portrait",
+      "scenario": "epic",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 6,
+      "balloons": 6
+    },
+    {
+      "id": "MINIMAL-PORTRAIT",
+      "status": "PASSED",
+      "duration": 16,
+      "fileSize": "5.72 MB",
+      "format": "portrait",
+      "scenario": "minimal",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 2,
+      "balloons": 0
+    },
+    {
+      "id": "COMPLETE-PORTRAIT",
+      "status": "PASSED",
+      "duration": 46,
+      "fileSize": "16.45 MB",
+      "format": "portrait",
+      "scenario": "complete",
+      "checks": {
+        "canvas": true,
+        "balloons": true,
+        "animation": true,
+        "export": true,
+        "playback": true
+      },
+      "pages": 8,
+      "balloons": 18
+    }
+  ]
+}

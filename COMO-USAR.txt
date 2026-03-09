@@ -1,0 +1,153 @@
+═══════════════════════════════════════════════════════════════════
+  HQ MOVIE — GUIA DE USO / USER GUIDE
+═══════════════════════════════════════════════════════════════════
+
+🇧🇷 PORTUGUÊS
+
+═══ OPÇÃO 1: USO SIMPLES (SEM INSTALAÇÃO) ═══
+
+1. Descompacte o arquivo ZIP em qualquer pasta do seu computador
+2. Abra o arquivo "index.html" com Google Chrome ou Microsoft Edge
+3. Pronto! O aplicativo funcionará diretamente no navegador
+
+IMPORTANTE:
+• Use Chrome ou Edge para melhor compatibilidade
+• Funciona em Windows, Mac e Linux
+• Seus projetos são salvos automaticamente no navegador
+• Use "Exportar Projeto" (arquivo .hq) para fazer backup
+
+
+═══ OPÇÃO 2: SERVIDOR LOCAL (MELHOR QUALIDADE DE VÍDEO) ═══
+
+Para exportação de vídeo com máxima qualidade, use um servidor local:
+
+1. Instale Python 3 (se ainda não tiver):
+   • Windows/Mac: Baixe em python.org
+   • Linux: Já vem instalado na maioria das distribuições
+
+2. Abra o terminal/prompt de comando na pasta do HQ Movie
+
+3. Execute o comando:
+   python3 serve-nocache.py
+
+4. Abra o navegador e acesse:
+   http://localhost:8082
+
+5. Para parar o servidor, pressione Ctrl+C no terminal
+
+
+═══ RECURSOS PRINCIPAIS ═══
+
+✓ Crie motion comics com áudio e narração
+✓ 34 layouts de página prontos
+✓ Balões de fala, pensamento, grito e sussurro
+✓ Ken Burns (zoom/pan em imagens)
+✓ Exportação de vídeo (MP4/WebM)
+✓ Exportação PDF, PNG/JPG e HTML
+✓ Multilíngue (Português e Inglês)
+✓ Funciona 100% offline
+
+
+═══ DICAS ═══
+
+• Pressione ESPAÇO para play/pause no preview
+• Use Ctrl+Z para desfazer
+• Clique com botão direito para opções rápidas
+• Faça backup regular dos seus projetos (.hq)
+
+
+═══ REQUISITOS MÍNIMOS ═══
+
+• Navegador: Chrome 90+ ou Edge 90+
+• RAM: 4GB (8GB recomendado para vídeos)
+• Espaço: 200MB
+• Sistema: Windows 7+, macOS 10.13+, Linux (qualquer)
+
+
+═══════════════════════════════════════════════════════════════════
+
+🇺🇸 ENGLISH
+
+═══ OPTION 1: SIMPLE USE (NO INSTALLATION) ═══
+
+1. Extract the ZIP file to any folder on your computer
+2. Open the "index.html" file with Google Chrome or Microsoft Edge
+3. Done! The app will run directly in your browser
+
+IMPORTANT:
+• Use Chrome or Edge for best compatibility
+• Works on Windows, Mac, and Linux
+• Your projects are automatically saved in the browser
+• Use "Export Project" (.hq file) to backup
+
+
+═══ OPTION 2: LOCAL SERVER (BEST VIDEO QUALITY) ═══
+
+For video export with maximum quality, use a local server:
+
+1. Install Python 3 (if you don't have it):
+   • Windows/Mac: Download from python.org
+   • Linux: Usually pre-installed
+
+2. Open terminal/command prompt in the HQ Movie folder
+
+3. Run the command:
+   python3 serve-nocache.py
+
+4. Open your browser and go to:
+   http://localhost:8082
+
+5. To stop the server, press Ctrl+C in the terminal
+
+
+═══ MAIN FEATURES ═══
+
+✓ Create motion comics with audio and narration
+✓ 34 ready-to-use page layouts
+✓ Speech, thought, shout, and whisper balloons
+✓ Ken Burns effect (zoom/pan on images)
+✓ Video export (MP4/WebM)
+✓ PDF, PNG/JPG, and HTML export
+✓ Multilingual (Portuguese and English)
+✓ Works 100% offline
+
+
+═══ TIPS ═══
+
+• Press SPACE to play/pause preview
+• Use Ctrl+Z to undo
+• Right-click for quick options
+• Regularly backup your projects (.hq)
+
+
+═══ MINIMUM REQUIREMENTS ═══
+
+• Browser: Chrome 90+ or Edge 90+
+• RAM: 4GB (8GB recommended for videos)
+• Storage: 200MB
+• OS: Windows 7+, macOS 10.13+, Linux (any)
+
+
+═══════════════════════════════════════════════════════════════════
+
+📧 SUPORTE / SUPPORT
+
+Para dúvidas ou problemas:
+For questions or issues:
+
+• Verifique se está usando Chrome/Edge atualizado
+  Check if you're using updated Chrome/Edge
+
+• Limpe o cache do navegador (Ctrl+Shift+Delete)
+  Clear browser cache (Ctrl+Shift+Delete)
+
+• Tente a Opção 2 (servidor local) se houver problemas de exportação
+  Try Option 2 (local server) if you have export issues
+
+
+═══════════════════════════════════════════════════════════════════
+
+Versão / Version: 1.0
+Última atualização / Last update: Março 2026
+
+═══════════════════════════════════════════════════════════════════

@@ -1,0 +1,11 @@
+{
+  "project": "DIALOGUE-WIDESCREEN",
+  "format": "widescreen",
+  "dimensions": "1920x1080",
+  "duration": 24,
+  "fileSize": 12000000,
+  "pages": 4,
+  "balloons": 8,
+  "hasAudio": false,
+  "exportedAt": "2026-03-06T18:53:18.249Z"
+}

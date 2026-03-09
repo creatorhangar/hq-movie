@@ -1,0 +1,122 @@
+{
+  "id": "id_4cd1jyirq",
+  "metadata": {
+    "name": "NARRATIVE-SQUARE",
+    "createdAt": 1772823118811,
+    "updatedAt": 1772823118811
+  },
+  "videoFormat": "square",
+  "videoAudio": {
+    "ducking": {
+      "enabled": true,
+      "level": 0.2,
+      "fadeMs": 500
+    }
+  },
+  "backgroundMusic": null,
+  "activeLanguage": "pt-BR",
+  "narrativeMode": "per-page",
+  "customLayouts": [],
+  "favoriteLayoutId": null,
+  "pages": [
+    {
+      "id": "id_vvyhpihyd",
+      "layoutId": "s1-full",
+      "kenBurns": "zoomIn",
+      "duration": 4,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-01.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_mfpxyoxwu",
+          "type": "narration",
+          "text": "Nossa história começa aqui.",
+          "x": 108,
+          "y": 756,
+          "w": 864,
+          "h": 100,
+          "direction": "center",
+          "font": "serif",
+          "fontSize": 14,
+          "color": "#000000",
+          "snapPosition": "bottom"
+        }
+      ],
+      "showTextBelow": true,
+      "narrative": "Era uma vez, em uma cidade distante..."
+    },
+    {
+      "id": "id_k4x585owz",
+      "layoutId": "s4-hsplit",
+      "kenBurns": "panRight",
+      "duration": 5,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-02.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_ylbwppzdn",
+          "type": "narration",
+          "text": "Mas nada seria fácil.",
+          "x": 108,
+          "y": 756,
+          "w": 864,
+          "h": 100,
+          "direction": "center",
+          "font": "serif",
+          "fontSize": 14,
+          "color": "#000000",
+          "snapPosition": "bottom"
+        }
+      ],
+      "showTextBelow": true,
+      "narrative": "O herói enfrenta seu primeiro desafio."
+    },
+    {
+      "id": "id_9nbdqau25",
+      "layoutId": "s1-full",
+      "kenBurns": "zoomOut",
+      "duration": 6,
+      "durationLocked": false,
+      "narration": {
+        "pt-BR": {
+          "file": "../../test-audio/narr-pt-03.wav",
+          "volume": 1
+        }
+      },
+      "transition": "fade",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_n0o0p8kv4",
+          "type": "narration",
+          "text": "Continua...",
+          "x": 108,
+          "y": 756,
+          "w": 864,
+          "h": 100,
+          "direction": "center",
+          "font": "serif",
+          "fontSize": 14,
+          "color": "#000000",
+          "snapPosition": "bottom"
+        }
+      ],
+      "showTextBelow": true,
+      "narrative": "E assim, a jornada começa."
+    }
+  ]
+}

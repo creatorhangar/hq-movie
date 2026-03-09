@@ -1,0 +1,179 @@
+{
+  "id": "id_7d156hj5r",
+  "metadata": {
+    "name": "DIALOGUE-SQUARE",
+    "createdAt": 1772823118811,
+    "updatedAt": 1772823118811
+  },
+  "videoFormat": "square",
+  "videoAudio": {
+    "ducking": {
+      "enabled": false
+    }
+  },
+  "backgroundMusic": null,
+  "customLayouts": [],
+  "favoriteLayoutId": null,
+  "pages": [
+    {
+      "id": "id_n4nli8elg",
+      "layoutId": "s4-hsplit",
+      "kenBurns": "static",
+      "duration": 6,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "cut",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_5teijwy6i",
+          "type": "speech",
+          "text": "Olá! Como vai?",
+          "x": 54,
+          "y": 162,
+          "w": 432,
+          "h": 100,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        },
+        {
+          "id": "id_yo9pccoj7",
+          "type": "speech",
+          "text": "Vou bem, e você?",
+          "x": 594,
+          "y": 594,
+          "w": 432,
+          "h": 100,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_9daauqwdn",
+      "layoutId": "s4-hsplit",
+      "kenBurns": "static",
+      "duration": 6,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "cut",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_n0erj1qbz",
+          "type": "thought",
+          "text": "(Ele parece nervoso...)",
+          "x": 54,
+          "y": 162,
+          "w": 432,
+          "h": 100,
+          "direction": "se",
+          "font": "marker",
+          "fontSize": 14,
+          "color": "#000000"
+        },
+        {
+          "id": "id_ieqeewq33",
+          "type": "whisper",
+          "text": "Preciso te contar um segredo.",
+          "x": 594,
+          "y": 594,
+          "w": 432,
+          "h": 100,
+          "direction": "sw",
+          "font": "sans",
+          "fontSize": 12,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_ka9hzhymy",
+      "layoutId": "s4-hsplit",
+      "kenBurns": "static",
+      "duration": 6,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "cut",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_7fm57kmcn",
+          "type": "shout",
+          "text": "O QUÊ?!",
+          "x": 54,
+          "y": 162,
+          "w": 432,
+          "h": 100,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 18,
+          "color": "#000000"
+        },
+        {
+          "id": "id_bwz315l4j",
+          "type": "speech",
+          "text": "Sim, é verdade.",
+          "x": 594,
+          "y": 594,
+          "w": 432,
+          "h": 100,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    },
+    {
+      "id": "id_xgf3n7k8d",
+      "layoutId": "s4-hsplit",
+      "kenBurns": "static",
+      "duration": 6,
+      "durationLocked": false,
+      "narration": null,
+      "transition": "cut",
+      "images": [],
+      "texts": [
+        {
+          "id": "id_q048r1uch",
+          "type": "speech",
+          "text": "Incrível!",
+          "x": 54,
+          "y": 162,
+          "w": 432,
+          "h": 100,
+          "direction": "s",
+          "font": "comic",
+          "fontSize": 16,
+          "color": "#000000"
+        },
+        {
+          "id": "id_f8mhzh9ox",
+          "type": "thought",
+          "text": "(Missão cumprida.)",
+          "x": 594,
+          "y": 594,
+          "w": 432,
+          "h": 100,
+          "direction": "se",
+          "font": "marker",
+          "fontSize": 14,
+          "color": "#000000"
+        }
+      ],
+      "showTextBelow": false,
+      "narrative": ""
+    }
+  ]
+}

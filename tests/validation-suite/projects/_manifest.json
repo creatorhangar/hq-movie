@@ -1,0 +1,282 @@
+[
+  {
+    "id": "SIMPLE-VERTICAL",
+    "filename": "simple-vertical.json",
+    "format": "vertical",
+    "scenario": "simple",
+    "pages": 1,
+    "expectedDuration": 4,
+    "hasAudio": false,
+    "balloonCount": 1
+  },
+  {
+    "id": "NARRATIVE-VERTICAL",
+    "filename": "narrative-vertical.json",
+    "format": "vertical",
+    "scenario": "narrative",
+    "pages": 3,
+    "expectedDuration": 15,
+    "hasAudio": true,
+    "balloonCount": 3
+  },
+  {
+    "id": "ACTION-VERTICAL",
+    "filename": "action-vertical.json",
+    "format": "vertical",
+    "scenario": "action",
+    "pages": 5,
+    "expectedDuration": 25,
+    "hasAudio": true,
+    "balloonCount": 10
+  },
+  {
+    "id": "DIALOGUE-VERTICAL",
+    "filename": "dialogue-vertical.json",
+    "format": "vertical",
+    "scenario": "dialogue",
+    "pages": 4,
+    "expectedDuration": 24,
+    "hasAudio": false,
+    "balloonCount": 8
+  },
+  {
+    "id": "EPIC-VERTICAL",
+    "filename": "epic-vertical.json",
+    "format": "vertical",
+    "scenario": "epic",
+    "pages": 6,
+    "expectedDuration": 34,
+    "hasAudio": true,
+    "balloonCount": 6
+  },
+  {
+    "id": "MINIMAL-VERTICAL",
+    "filename": "minimal-vertical.json",
+    "format": "vertical",
+    "scenario": "minimal",
+    "pages": 2,
+    "expectedDuration": 16,
+    "hasAudio": false,
+    "balloonCount": 0
+  },
+  {
+    "id": "COMPLETE-VERTICAL",
+    "filename": "complete-vertical.json",
+    "format": "vertical",
+    "scenario": "complete",
+    "pages": 8,
+    "expectedDuration": 46,
+    "hasAudio": true,
+    "balloonCount": 18
+  },
+  {
+    "id": "SIMPLE-WIDESCREEN",
+    "filename": "simple-widescreen.json",
+    "format": "widescreen",
+    "scenario": "simple",
+    "pages": 1,
+    "expectedDuration": 4,
+    "hasAudio": false,
+    "balloonCount": 1
+  },
+  {
+    "id": "NARRATIVE-WIDESCREEN",
+    "filename": "narrative-widescreen.json",
+    "format": "widescreen",
+    "scenario": "narrative",
+    "pages": 3,
+    "expectedDuration": 15,
+    "hasAudio": true,
+    "balloonCount": 3
+  },
+  {
+    "id": "ACTION-WIDESCREEN",
+    "filename": "action-widescreen.json",
+    "format": "widescreen",
+    "scenario": "action",
+    "pages": 5,
+    "expectedDuration": 25,
+    "hasAudio": true,
+    "balloonCount": 10
+  },
+  {
+    "id": "DIALOGUE-WIDESCREEN",
+    "filename": "dialogue-widescreen.json",
+    "format": "widescreen",
+    "scenario": "dialogue",
+    "pages": 4,
+    "expectedDuration": 24,
+    "hasAudio": false,
+    "balloonCount": 8
+  },
+  {
+    "id": "EPIC-WIDESCREEN",
+    "filename": "epic-widescreen.json",
+    "format": "widescreen",
+    "scenario": "epic",
+    "pages": 6,
+    "expectedDuration": 34,
+    "hasAudio": true,
+    "balloonCount": 6
+  },
+  {
+    "id": "MINIMAL-WIDESCREEN",
+    "filename": "minimal-widescreen.json",
+    "format": "widescreen",
+    "scenario": "minimal",
+    "pages": 2,
+    "expectedDuration": 16,
+    "hasAudio": false,
+    "balloonCount": 0
+  },
+  {
+    "id": "COMPLETE-WIDESCREEN",
+    "filename": "complete-widescreen.json",
+    "format": "widescreen",
+    "scenario": "complete",
+    "pages": 8,
+    "expectedDuration": 46,
+    "hasAudio": true,
+    "balloonCount": 18
+  },
+  {
+    "id": "SIMPLE-SQUARE",
+    "filename": "simple-square.json",
+    "format": "square",
+    "scenario": "simple",
+    "pages": 1,
+    "expectedDuration": 4,
+    "hasAudio": false,
+    "balloonCount": 1
+  },
+  {
+    "id": "NARRATIVE-SQUARE",
+    "filename": "narrative-square.json",
+    "format": "square",
+    "scenario": "narrative",
+    "pages": 3,
+    "expectedDuration": 15,
+    "hasAudio": true,
+    "balloonCount": 3
+  },
+  {
+    "id": "ACTION-SQUARE",
+    "filename": "action-square.json",
+    "format": "square",
+    "scenario": "action",
+    "pages": 5,
+    "expectedDuration": 25,
+    "hasAudio": true,
+    "balloonCount": 10
+  },
+  {
+    "id": "DIALOGUE-SQUARE",
+    "filename": "dialogue-square.json",
+    "format": "square",
+    "scenario": "dialogue",
+    "pages": 4,
+    "expectedDuration": 24,
+    "hasAudio": false,
+    "balloonCount": 8
+  },
+  {
+    "id": "EPIC-SQUARE",
+    "filename": "epic-square.json",
+    "format": "square",
+    "scenario": "epic",
+    "pages": 6,
+    "expectedDuration": 34,
+    "hasAudio": true,
+    "balloonCount": 6
+  },
+  {
+    "id": "MINIMAL-SQUARE",
+    "filename": "minimal-square.json",
+    "format": "square",
+    "scenario": "minimal",
+    "pages": 2,
+    "expectedDuration": 16,
+    "hasAudio": false,
+    "balloonCount": 0
+  },
+  {
+    "id": "COMPLETE-SQUARE",
+    "filename": "complete-square.json",
+    "format": "square",
+    "scenario": "complete",
+    "pages": 8,
+    "expectedDuration": 46,
+    "hasAudio": true,
+    "balloonCount": 18
+  },
+  {
+    "id": "SIMPLE-PORTRAIT",
+    "filename": "simple-portrait.json",
+    "format": "portrait",
+    "scenario": "simple",
+    "pages": 1,
+    "expectedDuration": 4,
+    "hasAudio": false,
+    "balloonCount": 1
+  },
+  {
+    "id": "NARRATIVE-PORTRAIT",
+    "filename": "narrative-portrait.json",
+    "format": "portrait",
+    "scenario": "narrative",
+    "pages": 3,
+    "expectedDuration": 15,
+    "hasAudio": true,
+    "balloonCount": 3
+  },
+  {
+    "id": "ACTION-PORTRAIT",
+    "filename": "action-portrait.json",
+    "format": "portrait",
+    "scenario": "action",
+    "pages": 5,
+    "expectedDuration": 25,
+    "hasAudio": true,
+    "balloonCount": 10
+  },
+  {
+    "id": "DIALOGUE-PORTRAIT",
+    "filename": "dialogue-portrait.json",
+    "format": "portrait",
+    "scenario": "dialogue",
+    "pages": 4,
+    "expectedDuration": 24,
+    "hasAudio": false,
+    "balloonCount": 8
+  },
+  {
+    "id": "EPIC-PORTRAIT",
+    "filename": "epic-portrait.json",
+    "format": "portrait",
+    "scenario": "epic",
+    "pages": 6,
+    "expectedDuration": 34,
+    "hasAudio": true,
+    "balloonCount": 6
+  },
+  {
+    "id": "MINIMAL-PORTRAIT",
+    "filename": "minimal-portrait.json",
+    "format": "portrait",
+    "scenario": "minimal",
+    "pages": 2,
+    "expectedDuration": 16,
+    "hasAudio": false,
+    "balloonCount": 0
+  },
+  {
+    "id": "COMPLETE-PORTRAIT",
+    "filename": "complete-portrait.json",
+    "format": "portrait",
+    "scenario": "complete",
+    "pages": 8,
+    "expectedDuration": 46,
+    "hasAudio": true,
+    "balloonCount": 18
+  }
+]

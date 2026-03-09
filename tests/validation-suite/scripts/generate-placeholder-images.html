@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Imagens Placeholder - HQ Movie</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 { color: #14b8a6; margin-bottom: 8px; }
+        .subtitle { color: #888; margin-bottom: 24px; }
+        
+        .format-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .format-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        .format-card h3 { margin: 0 0 8px; color: #14b8a6; font-size: 14px; }
+        .format-card .dims { color: #888; font-size: 12px; }
+        .format-card canvas {
+            max-width: 100%;
+            margin-top: 12px;
+            border-radius: 4px;
+        }
+        
+        .controls {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        button {
+            background: #14b8a6;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        button:hover { background: #0d9488; }
+        
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .preview-item {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 8px;
+        }
+        .preview-item img {
+            width: 100%;
+            border-radius: 4px;
+        }
+        .preview-item .name {
+            font-size: 11px;
+            color: #888;
+            margin-top: 6px;
+            text-align: center;
+        }
+        
+        .log {
+            background: #0f0f0f;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Gerador de Imagens Placeholder</h1>
+    <p class="subtitle">Gera imagens de teste para os 4 formatos de vídeo</p>
+    
+    <div class="format-grid">
+        <div class="format-card">
+            <h3>📱 Vertical</h3>
+            <div class="dims">1080 × 1920</div>
+            <canvas id="canvas-vertical" width="108" height="192"></canvas>
+        </div>
+        <div class="format-card">
+            <h3>🖥️ Widescreen</h3>
+            <div class="dims">1920 × 1080</div>
+            <canvas id="canvas-widescreen" width="192" height="108"></canvas>
+        </div>
+        <div class="format-card">
+            <h3>⬜ Square</h3>
+            <div class="dims">1080 × 1080</div>
+            <canvas id="canvas-square" width="108" height="108"></canvas>
+        </div>
+        <div class="format-card">
+            <h3>📺 Portrait</h3>
+            <div class="dims">1440 × 1080</div>
+            <canvas id="canvas-portrait" width="144" height="108"></canvas>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button onclick="generateAll()">🎨 Gerar Todas as Imagens</button>
+        <button onclick="downloadAll()">⬇️ Download ZIP</button>
+        <span style="color: #888; font-size: 12px; margin-left: 16px;">
+            Gera 8 imagens por formato (32 total)
+        </span>
+    </div>
+    
+    <div class="preview-grid" id="preview-grid"></div>
+    <div class="log" id="log"></div>
+
+    <script>
+        const FORMATS = {
+            vertical: { w: 1080, h: 1920, label: 'Vertical 9:16' },
+            widescreen: { w: 1920, h: 1080, label: 'Widescreen 16:9' },
+            square: { w: 1080, h: 1080, label: 'Square 1:1' },
+            portrait: { w: 1440, h: 1080, label: 'Portrait 4:3' }
+        };
+        
+        const THEMES = [
+            { bg: '#1a1a2e', fg: '#e94560', label: 'Action' },
+            { bg: '#0f3460', fg: '#e94560', label: 'Drama' },
+            { bg: '#16213e', fg: '#0f3460', label: 'Mystery' },
+            { bg: '#1b262c', fg: '#bbe1fa', label: 'Sci-Fi' },
+            { bg: '#2d4059', fg: '#ea5455', label: 'Horror' },
+            { bg: '#222831', fg: '#00adb5', label: 'Cyber' },
+            { bg: '#393e46', fg: '#ffd369', label: 'Fantasy' },
+            { bg: '#40514e', fg: '#11999e', label: 'Nature' }
+        ];
+        
+        let generatedImages = [];
+        
+        function log(msg) {
+            const el = document.getElementById('log');
+            el.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+            el.scrollTop = el.scrollHeight;
+        }
+        
+        function generatePlaceholder(format, theme, index) {
+            const canvas = document.createElement('canvas');
+            canvas.width = format.w;
+            canvas.height = format.h;
+            const ctx = canvas.getContext('2d');
+            
+            // Background gradient
+            const grad = ctx.createLinearGradient(0, 0, format.w, format.h);
+            grad.addColorStop(0, theme.bg);
+            grad.addColorStop(1, adjustColor(theme.bg, -20));
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, format.w, format.h);
+            
+            // Abstract shapes
+            ctx.fillStyle = theme.fg + '40';
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.arc(
+                    Math.random() * format.w,
+                    Math.random() * format.h,
+                    50 + Math.random() * 200,
+                    0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+            
+            // Title
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${Math.min(format.w, format.h) * 0.08}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(theme.label, format.w / 2, format.h / 2 - 40);
+            
+            // Index
+            ctx.font = `${Math.min(format.w, format.h) * 0.15}px Arial`;
+            ctx.fillStyle = theme.fg;
+            ctx.fillText(`#${index + 1}`, format.w / 2, format.h / 2 + 60);
+            
+            // Format label
+            ctx.font = `${Math.min(format.w, format.h) * 0.04}px Arial`;
+            ctx.fillStyle = '#ffffff80';
+            ctx.fillText(`${format.w}×${format.h}`, format.w / 2, format.h - 50);
+            
+            return canvas.toDataURL('image/jpeg', 0.85);
+        }
+        
+        function adjustColor(hex, amount) {
+            const num = parseInt(hex.slice(1), 16);
+            const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+            const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
+            const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
+            return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)}`;
+        }
+        
+        function generateAll() {
+            generatedImages = [];
+            const grid = document.getElementById('preview-grid');
+            grid.innerHTML = '';
+            
+            log('Gerando imagens placeholder...');
+            
+            Object.entries(FORMATS).forEach(([formatId, format]) => {
+                THEMES.forEach((theme, index) => {
+                    const dataUrl = generatePlaceholder(format, theme, index);
+                    const filename = `${formatId}-${index + 1}-${theme.label.toLowerCase()}.jpg`;
+                    
+                    generatedImages.push({ filename, dataUrl, formatId });
+                    
+                    const item = document.createElement('div');
+                    item.className = 'preview-item';
+                    item.innerHTML = `
+                        <img src="${dataUrl}" alt="${filename}">
+                        <div class="name">${filename}</div>
+                    `;
+                    grid.appendChild(item);
+                });
+                
+                log(`✅ ${formatId}: 8 imagens geradas`);
+            });
+            
+            // Update preview canvases
+            Object.keys(FORMATS).forEach(formatId => {
+                const canvas = document.getElementById(`canvas-${formatId}`);
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                };
+                img.src = generatedImages.find(i => i.formatId === formatId).dataUrl;
+            });
+            
+            log(`✅ Total: ${generatedImages.length} imagens geradas`);
+        }
+        
+        async function downloadAll() {
+            if (generatedImages.length === 0) {
+                log('⚠️ Gere as imagens primeiro!');
+                return;
+            }
+            
+            log('Preparando download...');
+            
+            // Create individual downloads (ZIP would require external lib)
+            for (const img of generatedImages) {
+                const a = document.createElement('a');
+                a.href = img.dataUrl;
+                a.download = img.filename;
+                // Don't actually download all - just show instructions
+            }
+            
+            log('💡 Para salvar: clique com botão direito em cada imagem e "Salvar como"');
+            log('📂 Ou use uma extensão de browser para batch download');
+        }
+        
+        // Init
+        log('Sistema pronto. Clique em "Gerar Todas as Imagens".');
+    </script>
+</body>
+</html>
