@@ -1,10 +1,14 @@
-# Dependencies
+# Cloudflare Pages - Ignorar arquivos desnecessários no deploy
+
+# Dependencies (não precisa em produção)
 node_modules/
 package-lock.json
+package.json
 
 # Development
 serve.pid
 *.log
+serve-nocache.py
 
 # OS
 .DS_Store
@@ -14,6 +18,10 @@ Thumbs.db
 .vscode/
 .idea/
 .windsurf/
+
+# Git
+.git/
+.gitignore
 
 # Generated
 generated-videos/
@@ -27,3 +35,12 @@ test-*.js
 files/
 AUDITORIA-FONTES.md
 REPORT-LAUNCH-LEAVE.md
+LAUNCH-AND-LEAVE.md
+ARCHITECTURE.md
+DATA_MODEL.md
+I18N-GUIDE.md
+HOW_TO_DEPLOY.md
+
+# Wrangler config (gerado automaticamente)
+wrangler.jsonc
+.wrangler/

@@ -1,0 +1,37 @@
+name = "hqmovie"
+compatibility_date = "2025-09-27"
+
+[site]
+bucket = "."
+
+# Excluir arquivos desnecessários do deploy
+[site.exclude]
+patterns = [
+  "node_modules/**",
+  "tests/**",
+  "files/**",
+  ".git/**",
+  ".windsurf/**",
+  "*.log",
+  "serve.pid",
+  "serve-nocache.py",
+  "test-*.html",
+  "test-*.js",
+  "package.json",
+  "package-lock.json",
+  "AUDITORIA-FONTES.md",
+  "REPORT-LAUNCH-LEAVE.md",
+  "LAUNCH-AND-LEAVE.md",
+  "ARCHITECTURE.md",
+  "DATA_MODEL.md",
+  "I18N-GUIDE.md",
+  "HOW_TO_DEPLOY.md"
+]
+
+# Headers para COOP/COEP (exportação de vídeo)
+[[headers]]
+for = "/*"
+
+[headers.values]
+Cross-Origin-Opener-Policy = "same-origin"
+Cross-Origin-Embedder-Policy = "require-corp"
