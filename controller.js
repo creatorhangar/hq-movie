@@ -729,6 +729,7 @@ const App = {
         const p = Store.get('currentProject'); if (!p || !p.cover) return;
         Store.pushUndo();
         p.cover.backgroundImage = src;
+        p._thumbDirty = true;
         Store.set({ currentProject: p }); Store.save();
         renderCanvas();
     },

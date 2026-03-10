@@ -1,5 +1,5 @@
 // HQ Movie — Service Worker (Cache-First)
-const CACHE_NAME = 'hq-movie-v68-cover-pro';
+const CACHE_NAME = 'hq-movie-v69-thumbnails-fonts';
 const ASSETS = [
     '/',
     '/index.html',

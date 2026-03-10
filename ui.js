@@ -303,8 +303,9 @@ function renderProjectsList() {
   if (!projects.length) { section.innerHTML = ''; return; }
   const cards = projects.map(p => {
     const d = new Date(p.metadata.updatedAt);
+    const preview = p.thumbnail ? `<img src="${p.thumbnail}" loading="lazy" style="width:100%;height:100%;object-fit:cover;" alt="Preview">` : Icons.page;
     return `<div class="project-card" onclick="App.openProject('${p.id}')">
-      <div class="card-preview">${Icons.page}</div>
+      <div class="card-preview">${preview}</div>
       <h4 class="truncate">${S(p.metadata.name)}</h4>
       <div class="card-meta"><span>${p.pages?.length || 0} pag</span><span>${d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span></div>
       <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();App.deleteProjectConfirm('${p.id}')" style="margin-top:4px;width:100%">${Icons.trash} Apagar</button>

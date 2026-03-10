@@ -578,7 +578,7 @@ const Store = {
   },
   undo() { const s = [...this._s.undoStack]; if (!s.length) return; const prev = s.pop(); const redo = [...this._s.redoStack, structuredClone(this._s.currentProject)]; this.set({ currentProject: prev, undoStack: s, redoStack: redo }); this.save(); },
   redo() { const s = [...this._s.redoStack]; if (!s.length) return; const next = s.pop(); const undo = [...this._s.undoStack, structuredClone(this._s.currentProject)]; this.set({ currentProject: next, undoStack: undo, redoStack: s }); this.save(); },
-  async save() { const p = this._s.currentProject; if (!p) return; p.metadata.updatedAt = Date.now(); await db.projects.put(structuredClone(p)); const ind = document.getElementById('save-indicator'); if (ind) { ind.innerHTML = `${Icons.save} Salvando...`; ind.style.color = 'var(--accent)'; setTimeout(() => { ind.innerHTML = '✓ Salvo'; ind.style.color = 'var(--success)'; }, 600); } },
+  async save() { const p = this._s.currentProject; if (!p) return; p.metadata.updatedAt = Date.now(); if (typeof ThumbnailGenerator !== 'undefined' && p._thumbDirty) { try { const thumb = await ThumbnailGenerator.generate(p); if (thumb) { p.thumbnail = thumb; p._thumbDirty = false; } } catch {} } await db.projects.put(structuredClone(p)); const ind = document.getElementById('save-indicator'); if (ind) { ind.innerHTML = `${Icons.save} Salvando...`; ind.style.color = 'var(--accent)'; setTimeout(() => { ind.innerHTML = '✓ Salvo'; ind.style.color = 'var(--success)'; }, 600); } },
   async loadProjects() { 
     const all = await db.projects.toArray(); 
     // Auto-upgrade legacy typography
