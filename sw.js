@@ -1,5 +1,5 @@
 // HQ Movie — Service Worker (Cache-First)
-const CACHE_NAME = 'hq-movie-v66-slideshow';
+const CACHE_NAME = 'hq-movie-v67-professional';
 const ASSETS = [
     '/',
     '/index.html',

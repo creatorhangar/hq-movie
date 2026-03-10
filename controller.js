@@ -4210,14 +4210,14 @@ const App = {
         if (location.protocol !== 'https:' && 
             location.hostname !== 'localhost' && 
             location.hostname !== '127.0.0.1') {
-            console.error('❌ MediaRecorder requer HTTPS em produção');
-            Toast.show('⚠️ Gravação de áudio só funciona em HTTPS ou localhost.', 'error');
+            console.error('MediaRecorder requires HTTPS in production');
+            Toast.show('Warning: Audio recording only works on HTTPS or localhost.', 'error');
             return;
         }
         
         // Verificar suporte do navegador
         if (!navigator.mediaDevices || !window.MediaRecorder) {
-            Toast.show('⚠️ Seu navegador não suporta gravação de áudio. Use Chrome, Safari ou Edge.', 'error');
+            Toast.show('Warning: Your browser does not support audio recording. Use Chrome, Safari or Edge.', 'error');
             return;
         }
         
@@ -4310,7 +4310,7 @@ const App = {
             for (const format of formats) {
                 if (MediaRecorder.isTypeSupported(format)) {
                     mimeType = format;
-                    console.log('🎙️ Formato de áudio detectado:', format);
+                    console.log('Audio format detected:', format);
                     break;
                 }
             }
@@ -6007,7 +6007,7 @@ const App = {
 
         tooltip.innerHTML = `
             <div class="ft-header">
-                <span class="ft-title">✏️ Editar Balão #${index + 1}</span>
+                <span class="ft-title">Edit Balloon #${index + 1}</span>
                 <button class="ft-close" onclick="App.closeBalloonTooltip()" title="Fechar (Esc)">✕</button>
             </div>
             <div class="ft-text-area">
@@ -6508,10 +6508,10 @@ const App = {
             statusLabel = `↓ Fonte reduzida para ${finalSize}px`;
             statusColor = '#f59e0b';
         } else if (status === 'truncate') {
-            statusLabel = '⚠️ Texto truncado com ...';
+            statusLabel = 'Warning: Text truncated with ...';
             statusColor = '#ef4444';
         } else if (status === 'warn') {
-            statusLabel = `⚠️ Texto muito longo - ${requiredHeight}px necessário`;
+            statusLabel = `Warning: Text too long - ${requiredHeight}px required`;
             statusColor = '#ef4444';
         }
         return {
@@ -6680,9 +6680,9 @@ const App = {
             const gapStr = gaps.length <= 5 
                 ? gaps.map(g => g + 1).join(', ')
                 : `${gaps.slice(0, 5).map(g => g + 1).join(', ')}... (+${gaps.length - 5})`;
-            Toast.show(`⚠️ Páginas sem segmento: ${gapStr}`, 'warning', 4000);
+            Toast.show(`Warning: Pages without segment: ${gapStr}`, 'warning', 4000);
         } else {
-            Toast.show('✅ Todas as páginas têm segmento', 'success');
+            Toast.show('All pages have segments', 'success');
         }
         return gaps;
     },
@@ -6694,9 +6694,9 @@ const App = {
         if (missing.length > 0) {
             const byLang = { 'pt-BR': 0, 'en': 0 };
             missing.forEach(m => byLang[m.lang]++);
-            Toast.show(`⚠️ Traduções faltando: PT-BR(${byLang['pt-BR']}) EN(${byLang['en']})`, 'warning', 4000);
+            Toast.show(`Warning: Missing translations: PT-BR(${byLang['pt-BR']}) EN(${byLang['en']})`, 'warning', 4000);
         } else {
-            Toast.show('✅ Todas as traduções completas', 'success');
+            Toast.show('All translations complete', 'success');
         }
         return missing;
     },
@@ -8228,7 +8228,7 @@ const App = {
             }
         } catch (err) {
             Toast.show('Erro ao exportar: ' + err.message, 'error');
-            if (btn) { btn.disabled = false; btn.textContent = '❌ Erro — tentar de novo'; btn.style.background = ''; }
+            if (btn) { btn.disabled = false; btn.textContent = 'Error - Try again'; btn.style.background = ''; }
         }
     },
 
@@ -8306,7 +8306,7 @@ const App = {
             Toast.show('Exportação concluída!', 'success');
         } catch (err) {
             Toast.show('Erro ao exportar: ' + err.message, 'error');
-            if (btn) { btn.disabled = false; btn.textContent = '❌ Erro — tentar de novo'; btn.style.background = ''; }
+            if (btn) { btn.disabled = false; btn.textContent = 'Error - Try again'; btn.style.background = ''; }
         }
     },
 
@@ -8382,7 +8382,7 @@ const App = {
         // Mobile warning
         if (this.isMobile()) {
             const proceed = confirm(
-                '⚠️ Export em mobile pode ser lento (2-5 min) e consumir muita bateria.\n\n' +
+                'Warning: Export on mobile can be slow (2-5 min) and consume battery.\n\n' +
                 'Recomendamos usar desktop para melhor performance.\n\n' +
                 'Continuar mesmo assim?'
             );
@@ -8399,7 +8399,7 @@ const App = {
         const validation = this.validateProjectBeforeExport();
         if (!validation.valid) {
             // Show errors (simpler than a custom modal for now, just an alert/confirm)
-            const msg = "⚠️ Problemas encontrados:\n\n" + validation.errors.join("\n") + "\n\nDeseja exportar mesmo assim?";
+            const msg = "Warning: Issues found:\n\n" + validation.errors.join("\n") + "\n\nExport anyway?";
             if (!confirm(msg)) return;
         }
 
@@ -9927,7 +9927,7 @@ const App = {
         if (warnings.length > 0) {
             const warningsEl = document.getElementById('export-mode-warnings');
             if (warningsEl) {
-                warningsEl.innerHTML = warnings.map(w => `<div style="padding:4px 0;">⚠️ ${w.message}</div>`).join('');
+                warningsEl.innerHTML = warnings.map(w => `<div style="padding:4px 0;">Warning: ${w.message}</div>`).join('');
             }
         }
 

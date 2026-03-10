@@ -228,7 +228,7 @@ function renderExportPage() {
             <button onclick="App._setAssetPreset('edit')" class="asset-preset-btn" data-preset="edit" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:10px;cursor:pointer;transition:all 0.15s;" title="Otimizado para NLE">${Icons.scissors} Edição</button>
           </div>
 
-          <button onclick="App._startAssetExport()" id="asset-export-btn" style="width:100%;padding:10px;border-radius:8px;border:none;background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">${Icons.package} Exportar Assets (ZIP)</button>
+          <button onclick="App._startAssetExport()" id="asset-export-btn" style="width:100%;padding:10px;border-radius:8px;border:none;background:#4b5563;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">${Icons.package} Exportar Assets (ZIP)</button>
 
           <div id="asset-export-progress" style="display:none;margin-top:10px;">
             <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
@@ -236,7 +236,7 @@ function renderExportPage() {
               <span id="asset-pct-text" style="font-size:10px;color:#f59e0b;font-weight:700;">0%</span>
             </div>
             <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
-              <div id="asset-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#f59e0b,#ea580c);border-radius:3px;transition:width 0.2s;"></div>
+              <div id="asset-progress-bar" style="height:100%;width:0%;background:#6b7280;border-radius:3px;transition:width 0.2s;"></div>
             </div>
           </div>
         </div>
@@ -260,8 +260,8 @@ function renderDashboard() {
         <button class="btn btn-ghost btn-lg" onclick="document.getElementById('import-project-input').click()" style="display:flex; align-items:center; gap:8px;">${Icons.download} Importar .hq</button>
       </div>
       <div style="display:flex; gap:12px; margin-bottom:32px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn btn-lg" onclick="App.showBulkTextModal()" style="display:flex; align-items:center; gap:8px; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; border:none; font-weight:600;">${Icons.fileText} Criar de Script</button>
-        <button class="btn btn-lg" onclick="App.showBulkAudioModal()" style="display:flex; align-items:center; gap:8px; background:linear-gradient(135deg,#f59e0b,#ef4444); color:#fff; border:none; font-weight:600;">${Icons.music} Criar de Áudio</button>
+        <button class="btn btn-lg" onclick="App.showBulkTextModal()" style="display:flex; align-items:center; gap:8px; background:#4b5563; color:#fff; border:none; font-weight:600;">${Icons.fileText} Criar de Script</button>
+        <button class="btn btn-lg" onclick="App.showBulkAudioModal()" style="display:flex; align-items:center; gap:8px; background:#4b5563; color:#fff; border:none; font-weight:600;">${Icons.music} Criar de Áudio</button>
       </div>
 
       <!-- Templates Section -->
@@ -325,7 +325,7 @@ function renderEditor() {
       <div class="toolbar-divider"></div>
       <span class="logo-icon">${Icons.logo}</span>
       <input type="text" class="project-name-input" value="${S_ATTR(p.metadata.name)}" onchange="App.renameProject(this.value)" spellcheck="false">
-      <span id="save-indicator" class="save-indicator" style="font-size:10px;color:var(--success);margin-left:8px;opacity:0.8;">✓ Salvo</span>
+      <span id="save-indicator" class="save-indicator" style="font-size:10px;color:var(--success);margin-left:8px;opacity:0.8;">Saved</span>
     </div>
     <div class="toolbar-center">
       <div style="position:relative;display:inline-flex;">
@@ -749,7 +749,7 @@ function renderLeftPanel() {
       
       <div style="margin: 12px 8px 6px 8px;">
         <button onclick="App.openExcalidrawModal()" style="width:100%;padding:8px;border-radius:6px;border:1px dashed var(--accent);background:rgba(20,184,166,0.05);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;" onmouseenter="this.style.background='rgba(20,184,166,0.15)'" onmouseleave="this.style.background='rgba(20,184,166,0.05)'">
-          ✏️ Criar Arte (Excalidraw)
+          Criar Arte (Excalidraw)
         </button>
       </div>
     </div>
@@ -3073,8 +3073,8 @@ function renderRightPanel() {
                 </div>
               ` : `
                 <div style="display:flex;gap:4px;">
-                  <button onclick="App.uploadNarrationLang('pt-BR')" style="flex:1;padding:6px;border-radius:3px;background:transparent;border:1px dashed #22c55e;color:#22c55e;cursor:pointer;font-size:9px;">📁 Upload</button>
-                  ${typeof MediaRecorder !== 'undefined' ? '<button onclick="App.openRecordingModal(\\\'pt-BR\\\')" style="flex:1;padding:6px;border-radius:3px;background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#22c55e;cursor:pointer;font-size:9px;">🎙️ Record</button>' : ''}
+                  <button onclick="App.uploadNarrationLang('pt-BR')" style="flex:1;padding:6px;border-radius:3px;background:transparent;border:1px dashed #22c55e;color:#22c55e;cursor:pointer;font-size:9px;">Upload</button>
+                  ${typeof MediaRecorder !== 'undefined' ? '<button onclick="App.openRecordingModal(\\\'pt-BR\\\')" style="flex:1;padding:6px;border-radius:3px;background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#22c55e;cursor:pointer;font-size:9px;">Record</button>' : ''}
                 </div>
               `}
             </div>
@@ -3090,8 +3090,8 @@ function renderRightPanel() {
                 </div>
               ` : `
                 <div style="display:flex;gap:4px;">
-                  <button onclick="App.uploadNarrationLang('en')" style="flex:1;padding:6px;border-radius:3px;background:transparent;border:1px dashed #3b82f6;color:#3b82f6;cursor:pointer;font-size:9px;">📁 Upload</button>
-                  ${typeof MediaRecorder !== 'undefined' ? '<button onclick="App.openRecordingModal(\\\'en\\\')" style="flex:1;padding:6px;border-radius:3px;background:rgba(59,130,246,0.15);border:1px solid #3b82f6;color:#3b82f6;cursor:pointer;font-size:9px;">🎙️ Record</button>' : ''}
+                  <button onclick="App.uploadNarrationLang('en')" style="flex:1;padding:6px;border-radius:3px;background:transparent;border:1px dashed #3b82f6;color:#3b82f6;cursor:pointer;font-size:9px;">Upload</button>
+                  ${typeof MediaRecorder !== 'undefined' ? '<button onclick="App.openRecordingModal(\\\'en\\\')" style="flex:1;padding:6px;border-radius:3px;background:rgba(59,130,246,0.15);border:1px solid #3b82f6;color:#3b82f6;cursor:pointer;font-size:9px;">Record</button>' : ''}
                 </div>
               `}
             </div>
@@ -3103,7 +3103,7 @@ function renderRightPanel() {
             <div style="font-size:8px;color:var(--text3);margin-bottom:6px;line-height:1.3;">
               Áudio longo → divida → cada parte vira uma página.
             </div>
-            <button onclick="App.openAudioSplitEditor()" style="width:100%;padding:6px;border-radius:4px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#fff;cursor:pointer;font-size:10px;font-weight:600;">
+            <button onclick="App.openAudioSplitEditor()" style="width:100%;padding:6px;border-radius:4px;background:#4b5563;border:none;color:#fff;cursor:pointer;font-size:10px;font-weight:600;">
               ${Icons.scissors} Abrir Editor de Corte
             </button>
           </div>
