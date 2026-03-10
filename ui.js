@@ -8,8 +8,8 @@ function renderFormatSelector() {
   <div class="dashboard" id="dashboard">
     <div class="dashboard-header">
       <div class="logo-big">${Icons.logo.replace(/width="\d+"/, 'width="48"').replace(/height="\d+"/, 'height="48"')}</div>
-      <h1>Escolha o Formato</h1>
-      <p>Selecione o formato de vídeo para seu projeto</p>
+      <h1>${t('formats.chooseTitle')}</h1>
+      <p>${t('formats.chooseDescription')}</p>
     </div>
     <div class="format-selector" style="display:flex; gap:24px; justify-content:center; flex-wrap:wrap; margin:40px 0;">
       ${Object.values(VIDEO_FORMATS).map(fmt => `
@@ -32,7 +32,7 @@ function renderFormatSelector() {
       `).join('')}
     </div>
     <div style="text-align:center;">
-      <button class="btn btn-ghost" onclick="App.goHome()">← Voltar</button>
+      <button class="btn btn-ghost" onclick="App.goHome()">${t('formats.back')}</button>
     </div>
   </div>`;
 }
@@ -42,7 +42,7 @@ function renderFormatSelector() {
    ═══════════════════════════════════════ */
 function renderExportPage() {
   const proj = Store.get('currentProject');
-  if (!proj) return '<div>Nenhum projeto</div>';
+  if (!proj) return `<div>${t('export.noProject')}</div>`;
   const pages = proj.pages || [];
   const vf = proj.videoFormat ? VIDEO_FORMATS[proj.videoFormat] : null;
   const fmtName = vf ? vf.name : 'A4';
@@ -74,10 +74,10 @@ function renderExportPage() {
   <div style="min-height:100vh;background:var(--bg-main);color:var(--text-1);display:flex;flex-direction:column;">
     <!-- Header -->
     <div style="display:flex;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--bg-surface);">
-      <button onclick="Store.set({view:'editor'})" style="background:none;border:1px solid var(--border);color:var(--text-2);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">← Voltar ao Editor</button>
+      <button onclick="Store.set({view:'editor'})" style="background:none;border:1px solid var(--border);color:var(--text-2);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">${t('export.backToEditor')}</button>
       <div style="flex:1;text-align:center;">
-        <span style="font-size:16px;font-weight:700;">${proj.metadata?.name || 'Projeto'}</span>
-        <span style="font-size:12px;color:var(--text-3);margin-left:8px;">${pages.length} páginas · ${fmtName} · ${durStr}</span>
+        <span style="font-size:16px;font-weight:700;">${proj.metadata?.name || t('export.project')}</span>
+        <span style="font-size:12px;color:var(--text-3);margin-left:8px;">${pages.length} ${t('export.pages')} · ${fmtName} · ${durStr}</span>
       </div>
       <div style="width:120px;"></div>
     </div>
@@ -86,7 +86,7 @@ function renderExportPage() {
     <div style="flex:1;display:flex;gap:0;overflow:hidden;">
       <!-- Left: Preview area -->
       <div style="flex:1;display:flex;flex-direction:column;padding:24px;overflow-y:auto;">
-        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.05em;">Preview das Páginas</div>
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.05em;">${t('export.pagesPreview')}</div>
         <div style="display:flex;gap:16px;overflow-x:auto;padding-bottom:16px;" id="export-thumbnails">
           ${thumbnails}
         </div>
@@ -94,45 +94,45 @@ function renderExportPage() {
         <!-- Project summary -->
         <div style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
           <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;padding:16px;">
-            <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:6px;">Formato</div>
+            <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:6px;">${t('export.format')}</div>
             <div style="font-size:20px;font-weight:700;">${vf ? vf.icon : Icons.file} ${fmtName}</div>
             <div style="font-size:11px;color:var(--text-3);margin-top:2px;">${fmtRes}px</div>
           </div>
           <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;padding:16px;">
-            <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:6px;">Duração Total</div>
+            <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:6px;">${t('export.totalDuration')}</div>
             <div style="font-size:20px;font-weight:700;">${Icons.clock} ${durStr}</div>
-            <div style="font-size:11px;color:var(--text-3);margin-top:2px;">${pages.length} páginas</div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:2px;">${pages.length} ${t('export.pages')}</div>
           </div>
           <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;padding:16px;">
-            <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:6px;">Animações</div>
-            <div style="font-size:20px;font-weight:700;">${Icons.film} Ken Burns</div>
-            <div style="font-size:11px;color:var(--text-3);margin-top:2px;">${pages.filter(p => p.kenBurns && p.kenBurns !== 'none' && p.kenBurns !== 'static').length} páginas animadas</div>
+            <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:6px;">${t('export.animations')}</div>
+            <div style="font-size:20px;font-weight:700;">${Icons.film} ${t('export.kenBurns')}</div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:2px;">${pages.filter(p => p.kenBurns && p.kenBurns !== 'none' && p.kenBurns !== 'static').length} ${t('export.animatedPages')}</div>
           </div>
         </div>
       </div>
 
       <!-- Right: Export options -->
       <div style="width:340px;background:var(--bg-surface);border-left:1px solid var(--border);padding:24px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;">
-        <div style="font-size:14px;font-weight:700;color:var(--accent);">Exportar</div>
+        <div style="font-size:14px;font-weight:700;color:var(--accent);">${t('export.title')}</div>
 
         <!-- EXPORT MODE SELECTOR -->
         <div style="background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1));border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:14px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">${Icons.film} Modo de Export</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:10px;">Exporte em formato diferente sem refazer o projeto</div>
-          <button onclick="App.showExportModeSelector()" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(99,102,241,0.5);background:rgba(99,102,241,0.15);color:#818cf8;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='rgba(99,102,241,0.25)'" onmouseout="this.style.background='rgba(99,102,241,0.15)'">Escolher Formato de Export</button>
+          <div style="font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">${Icons.film} ${t('export.exportMode')}</div>
+          <div style="font-size:10px;color:var(--text-3);margin-bottom:10px;">${t('export.exportModeHint')}</div>
+          <button onclick="App.showExportModeSelector()" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(99,102,241,0.5);background:rgba(99,102,241,0.15);color:#818cf8;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='rgba(99,102,241,0.25)'" onmouseout="this.style.background='rgba(99,102,241,0.15)'">${t('export.chooseFormat')}</button>
         </div>
 
         <!-- VIDEO EXPORT -->
         <div style="background:var(--bg-main);border:1px solid var(--border);border-radius:10px;padding:16px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;">${Icons.video} Exportar Vídeo</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">Motion comic com Ken Burns e transições — MP4 ou WebM</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;">${Icons.video} ${t('export.exportVideo')}</div>
+          <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">${t('export.videoDescription')}</div>
 
           <div style="margin-bottom:10px;">
-            <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:6px;">Qualidade</div>
+            <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:6px;">${t('export.quality')}</div>
             <div style="display:flex;gap:4px;" id="export-quality-btns">
-              <button onclick="App._setExportQuality('low')" class="export-opt-btn" data-val="low" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:11px;cursor:pointer;">Rápido</button>
-              <button onclick="App._setExportQuality('medium')" class="export-opt-btn" data-val="medium" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:11px;cursor:pointer;">Normal</button>
-              <button onclick="App._setExportQuality('high')" class="export-opt-btn active" data-val="high" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--accent);background:var(--accent-glow, rgba(20,184,166,0.1));color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">Alta</button>
+              <button onclick="App._setExportQuality('low')" class="export-opt-btn" data-val="low" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:11px;cursor:pointer;">${t('export.qualityFast')}</button>
+              <button onclick="App._setExportQuality('medium')" class="export-opt-btn" data-val="medium" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:11px;cursor:pointer;">${t('export.qualityNormal')}</button>
+              <button onclick="App._setExportQuality('high')" class="export-opt-btn active" data-val="high" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--accent);background:var(--accent-glow, rgba(20,184,166,0.1));color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">${t('export.qualityHigh')}</button>
             </div>
           </div>
 
@@ -145,7 +145,7 @@ function renderExportPage() {
           </div>
 
           <div style="margin-bottom:10px;">
-            <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:6px;">Formato</div>
+            <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:6px;">${t('export.format')}</div>
             <div style="display:flex;gap:4px;" id="export-format-btns">
               ${(typeof VideoExporter !== 'undefined' ? VideoExporter.getSupportedFormats() : [{family:'mp4',label:'MP4',supported:true},{family:'webm',label:'WebM',supported:true}]).map(f => {
                 const isDefault = f.family === 'auto';
@@ -156,7 +156,7 @@ function renderExportPage() {
           </div>
 
           <div style="margin-bottom:14px;">
-            <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:6px;">${Icons.globe} Idioma</div>
+            <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:6px;">${Icons.globe} ${t('export.language')}</div>
             <div style="display:flex;gap:4px;" id="export-lang-btns">
               <button onclick="App._setExportLanguage('pt-BR')" class="export-opt-btn ${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? 'active' : ''}" data-val="pt-BR" style="flex:1;padding:6px;border-radius:6px;border:1px solid ${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? 'var(--accent)' : 'var(--border)'};background:${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? 'var(--accent-glow, rgba(20,184,166,0.1))' : 'var(--bg-surface)'};color:${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? 'var(--accent)' : 'var(--text-2)'};font-size:11px;cursor:pointer;font-weight:${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? '600' : '400'};">${Icons.flagBR} PT-BR</button>
               <button onclick="App._setExportLanguage('en')" class="export-opt-btn ${Store.get('exportLanguage') === 'en' ? 'active' : ''}" data-val="en" style="flex:1;padding:6px;border-radius:6px;border:1px solid ${Store.get('exportLanguage') === 'en' ? 'var(--accent)' : 'var(--border)'};background:${Store.get('exportLanguage') === 'en' ? 'var(--accent-glow, rgba(20,184,166,0.1))' : 'var(--bg-surface)'};color:${Store.get('exportLanguage') === 'en' ? 'var(--accent)' : 'var(--text-2)'};font-size:11px;cursor:pointer;font-weight:${Store.get('exportLanguage') === 'en' ? '600' : '400'};">${Icons.flagUS} EN</button>
@@ -164,12 +164,12 @@ function renderExportPage() {
             </div>
           </div>
 
-          <button onclick="App._startVideoExport()" id="export-video-btn" style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">${Icons.video} Exportar Vídeo</button>
+          <button onclick="App._startVideoExport()" id="export-video-btn" style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">${Icons.video} ${t('export.exportVideo')}</button>
 
           <!-- Progress -->
           <div id="export-progress-area" style="display:none;margin-top:12px;">
             <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-              <span id="export-status-text" style="font-size:10px;color:var(--text-3);">Preparando...</span>
+              <span id="export-status-text" style="font-size:10px;color:var(--text-3);">${t('export.preparing')}</span>
               <span id="export-pct-text" style="font-size:10px;color:var(--accent);font-weight:700;">0%</span>
             </div>
             <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
@@ -180,59 +180,59 @@ function renderExportPage() {
 
         <!-- PNG EXPORT -->
         <div style="background:var(--bg-main);border:1px solid var(--border);border-radius:10px;padding:16px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">${Icons.camera} PNG Individual</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">Salvar cada página como imagem PNG de alta qualidade</div>
-          <button onclick="App._exportAllPng()" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;">Exportar Todas as Páginas</button>
+          <div style="font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">${Icons.camera} ${t('export.pngIndividual')}</div>
+          <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">${t('export.pngDescription')}</div>
+          <button onclick="App._exportAllPng()" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;">${t('export.exportAllPages')}</button>
         </div>
 
         <!-- STORY/FEED EXPORT -->
         <div style="background:var(--bg-main);border:1px solid var(--border);border-radius:10px;padding:16px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">${Icons.smartphone} Redes Sociais</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">Exportar para Story (9:16) ou Feed (4:5)</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">${Icons.smartphone} ${t('export.socialMedia')}</div>
+          <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">${t('export.socialMediaDescription')}</div>
           <div style="display:flex;gap:6px;">
-            <button onclick="App.doExport('story')" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:11px;cursor:pointer;">Story 9:16</button>
-            <button onclick="App.doExport('feed')" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:11px;cursor:pointer;">Feed 4:5</button>
+            <button onclick="App.doExport('story')" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:11px;cursor:pointer;">${t('export.story')}</button>
+            <button onclick="App.doExport('feed')" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:11px;cursor:pointer;">${t('export.feed')}</button>
           </div>
         </div>
 
         <!-- ASSET EXPORT (ZIP) -->
         <div style="background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(234,88,12,0.08));border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:16px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;">${Icons.package} Export Assets (ZIP)</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">Imagens numeradas + áudios + metadata para Premiere, DaVinci, After Effects</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;">${Icons.package} ${t('export.assetsZip')}</div>
+          <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">${t('export.assetsDescription')}</div>
 
           <div id="asset-export-summary" style="background:var(--bg-main);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--text-2);">
-            Analisando projeto...
+            ${t('export.analyzingProject')}
           </div>
 
           <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
             <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-2);cursor:pointer;">
-              <input type="checkbox" id="asset-chk-images" checked style="accent-color:var(--accent);"> ${Icons.imageIcon} Imagens (page_001.jpg, page_002.jpg...)
+              <input type="checkbox" id="asset-chk-images" checked style="accent-color:var(--accent);"> ${Icons.imageIcon} ${t('export.imagesOption')}
             </label>
             <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-2);cursor:pointer;">
-              <input type="checkbox" id="asset-chk-narration" checked style="accent-color:var(--accent);"> ${Icons.mic} Áudios de narração
+              <input type="checkbox" id="asset-chk-narration" checked style="accent-color:var(--accent);"> ${Icons.mic} ${t('export.narrationOption')}
             </label>
             <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-2);cursor:pointer;">
-              <input type="checkbox" id="asset-chk-music" checked style="accent-color:var(--accent);"> ${Icons.music} Música de fundo
+              <input type="checkbox" id="asset-chk-music" checked style="accent-color:var(--accent);"> ${Icons.music} ${t('export.musicOption')}
             </label>
             <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-2);cursor:pointer;">
-              <input type="checkbox" id="asset-chk-project" checked style="accent-color:var(--accent);"> ${Icons.save} Arquivo de projeto (.hq)
+              <input type="checkbox" id="asset-chk-project" checked style="accent-color:var(--accent);"> ${Icons.save} ${t('export.projectFileOption')}
             </label>
             <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-2);cursor:pointer;">
-              <input type="checkbox" id="asset-chk-readme" checked style="accent-color:var(--accent);"> ${Icons.fileText} README + metadata JSON
+              <input type="checkbox" id="asset-chk-readme" checked style="accent-color:var(--accent);"> ${Icons.fileText} ${t('export.readmeOption')}
             </label>
           </div>
 
           <div style="display:flex;gap:6px;margin-bottom:8px;">
-            <button onclick="App._setAssetPreset('lightweight')" class="asset-preset-btn" data-preset="lightweight" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:10px;cursor:pointer;transition:all 0.15s;" title="Só imagens numeradas">${Icons.feather} Light</button>
-            <button onclick="App._setAssetPreset('complete')" class="asset-preset-btn active" data-preset="complete" style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.1);color:#f59e0b;font-size:10px;cursor:pointer;font-weight:600;transition:all 0.15s;" title="Tudo organizado">${Icons.package} Completo</button>
-            <button onclick="App._setAssetPreset('edit')" class="asset-preset-btn" data-preset="edit" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:10px;cursor:pointer;transition:all 0.15s;" title="Otimizado para NLE">${Icons.scissors} Edição</button>
+            <button onclick="App._setAssetPreset('lightweight')" class="asset-preset-btn" data-preset="lightweight" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:10px;cursor:pointer;transition:all 0.15s;" title="${t('tooltip.lightPreset')}">${Icons.feather} ${t('export.presetLight')}</button>
+            <button onclick="App._setAssetPreset('complete')" class="asset-preset-btn active" data-preset="complete" style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.1);color:#f59e0b;font-size:10px;cursor:pointer;font-weight:600;transition:all 0.15s;" title="${t('tooltip.completePreset')}">${Icons.package} ${t('export.presetComplete')}</button>
+            <button onclick="App._setAssetPreset('edit')" class="asset-preset-btn" data-preset="edit" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:10px;cursor:pointer;transition:all 0.15s;" title="${t('tooltip.editPreset')}">${Icons.scissors} ${t('export.presetEdit')}</button>
           </div>
 
-          <button onclick="App._startAssetExport()" id="asset-export-btn" style="width:100%;padding:10px;border-radius:8px;border:none;background:#4b5563;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">${Icons.package} Exportar Assets (ZIP)</button>
+          <button onclick="App._startAssetExport()" id="asset-export-btn" style="width:100%;padding:10px;border-radius:8px;border:none;background:#4b5563;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">${Icons.package} ${t('export.exportAssets')}</button>
 
           <div id="asset-export-progress" style="display:none;margin-top:10px;">
             <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-              <span id="asset-status-text" style="font-size:10px;color:var(--text-3);">Preparando...</span>
+              <span id="asset-status-text" style="font-size:10px;color:var(--text-3);">${t('export.preparing')}</span>
               <span id="asset-pct-text" style="font-size:10px;color:#f59e0b;font-weight:700;">0%</span>
             </div>
             <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
@@ -250,43 +250,43 @@ function renderDashboard() {
   <div class="dashboard" id="dashboard">
     <div class="dashboard-header">
       <div class="logo-big">${Icons.logo.replace(/width="\d+"/, 'width="48"').replace(/height="\d+"/, 'height="48"')}</div>
-      <h1>HQ Movie</h1>
-      <p>Motion comics com áudio — 100% offline.</p>
+      <h1>${t('dashboard.title')}</h1>
+      <p>${t('dashboard.subtitle')}</p>
     </div>
     <div class="dashboard-actions">
       <div style="display:flex; gap:12px; margin-bottom:16px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn btn-primary btn-lg" onclick="App.showFormatSelector()" style="display:flex; align-items:center; gap:8px;">${Icons.plus} Novo Projeto</button>
-        <button class="btn btn-ghost btn-lg" onclick="App.createDemoProject()" style="display:flex; align-items:center; gap:8px;">${Icons.palette} Criar Demo</button>
-        <button class="btn btn-ghost btn-lg" onclick="document.getElementById('import-project-input').click()" style="display:flex; align-items:center; gap:8px;">${Icons.download} Importar .hq</button>
+        <button class="btn btn-primary btn-lg" onclick="App.showFormatSelector()" style="display:flex; align-items:center; gap:8px;">${Icons.plus} ${t('dashboard.newProject')}</button>
+        <button class="btn btn-ghost btn-lg" onclick="App.createDemoProject()" style="display:flex; align-items:center; gap:8px;">${Icons.palette} ${t('dashboard.createDemo')}</button>
+        <button class="btn btn-ghost btn-lg" onclick="document.getElementById('import-project-input').click()" style="display:flex; align-items:center; gap:8px;">${Icons.download} ${t('dashboard.import')}</button>
       </div>
       <div style="display:flex; gap:12px; margin-bottom:32px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn btn-lg" onclick="App.showBulkTextModal()" style="display:flex; align-items:center; gap:8px; background:#4b5563; color:#fff; border:none; font-weight:600;">${Icons.fileText} Criar de Script</button>
-        <button class="btn btn-lg" onclick="App.showBulkAudioModal()" style="display:flex; align-items:center; gap:8px; background:#4b5563; color:#fff; border:none; font-weight:600;">${Icons.music} Criar de Áudio</button>
+        <button class="btn btn-lg" onclick="App.showBulkTextModal()" style="display:flex; align-items:center; gap:8px; background:#4b5563; color:#fff; border:none; font-weight:600;">${Icons.fileText} ${t('dashboard.createFromScript')}</button>
+        <button class="btn btn-lg" onclick="App.showBulkAudioModal()" style="display:flex; align-items:center; gap:8px; background:#4b5563; color:#fff; border:none; font-weight:600;">${Icons.music} ${t('dashboard.createFromAudio')}</button>
       </div>
 
       <!-- Templates Section -->
       <div style="margin-bottom:40px;">
-        <div style="font-size:14px; font-weight:600; color:var(--text-2); margin-bottom:16px; text-transform:uppercase; letter-spacing:1px;">Começar com um Template</div>
+        <div style="font-size:14px; font-weight:600; color:var(--text-2); margin-bottom:16px; text-transform:uppercase; letter-spacing:1px;">${t('dashboard.templatesTitle')}</div>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:16px; max-width:900px; margin:0 auto;">
           <div class="template-card" onclick="App.createFromTemplate('motion-comic')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left;">
             <div style="font-size:24px; margin-bottom:8px;">${Icons.shield}</div>
-            <div style="font-weight:600; color:var(--text-1);">Motion Comic</div>
-            <div style="font-size:11px; color:var(--text-3); margin-top:4px;">4 págs • Grid 2x2</div>
+            <div style="font-weight:600; color:var(--text-1);">${t('templates.motionComic')}</div>
+            <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.motionComicDescription')}</div>
           </div>
           <div class="template-card" onclick="App.createFromTemplate('podcast')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left;">
             <div style="font-size:24px; margin-bottom:8px;">${Icons.radio}</div>
-            <div style="font-weight:600; color:var(--text-1);">Podcast Visual</div>
-            <div style="font-size:11px; color:var(--text-3); margin-top:4px;">8 págs • Fullscreen</div>
+            <div style="font-weight:600; color:var(--text-1);">${t('templates.podcast')}</div>
+            <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.podcastDescription')}</div>
           </div>
           <div class="template-card" onclick="App.createFromTemplate('tutorial')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left;">
             <div style="font-size:24px; margin-bottom:8px;">${Icons.bookOpen}</div>
-            <div style="font-weight:600; color:var(--text-1);">Tutorial</div>
-            <div style="font-size:11px; color:var(--text-3); margin-top:4px;">6 págs • Texto Grande</div>
+            <div style="font-weight:600; color:var(--text-1);">${t('templates.tutorial')}</div>
+            <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.tutorialDescription')}</div>
           </div>
           <div class="template-card" onclick="App.createFromTemplate('story')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left;">
             <div style="font-size:24px; margin-bottom:8px;">${Icons.smartphone}</div>
-            <div style="font-weight:600; color:var(--text-1);">Story Insta</div>
-            <div style="font-size:11px; color:var(--text-3); margin-top:4px;">5 págs • Vertical</div>
+            <div style="font-weight:600; color:var(--text-1);">${t('templates.story')}</div>
+            <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.storyDescription')}</div>
           </div>
         </div>
       </div>
@@ -307,11 +307,11 @@ function renderProjectsList() {
     return `<div class="project-card" onclick="App.openProject('${p.id}')">
       <div class="card-preview">${preview}</div>
       <h4 class="truncate">${S(p.metadata.name)}</h4>
-      <div class="card-meta"><span>${p.pages?.length || 0} pag</span><span>${d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span></div>
-      <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();App.deleteProjectConfirm('${p.id}')" style="margin-top:4px;width:100%">${Icons.trash} Apagar</button>
+      <div class="card-meta"><span>${p.pages?.length || 0} ${t('dashboard.pag')}</span><span>${d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span></div>
+      <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();App.deleteProjectConfirm('${p.id}')" style="margin-top:4px;width:100%">${Icons.trash} ${t('common.delete')}</button>
     </div>`;
   }).join('');
-  section.innerHTML = `<h2>Projetos Recentes</h2><div class="projects-grid" style="max-height:320px;overflow-y:auto;padding-right:4px;">${cards}</div>`;
+  section.innerHTML = `<h2>${t('dashboard.recentProjects')}</h2><div class="projects-grid" style="max-height:320px;overflow-y:auto;padding-right:4px;">${cards}</div>`;
 }
 
 function renderEditor() {
@@ -322,24 +322,24 @@ function renderEditor() {
   return `
   <div class="toolbar" id="toolbar">
     <div class="toolbar-left">
-      <button class="btn btn-icon" onclick="App.goHome()" title="Inicio" aria-label="Inicio">${Icons.home}</button>
+      <button class="btn btn-icon" onclick="App.goHome()" title="${t('tooltip.home')}" aria-label="${t('toolbar.home')}">${Icons.home}</button>
       <div class="toolbar-divider"></div>
       <span class="logo-icon">${Icons.logo}</span>
       <input type="text" class="project-name-input" value="${S_ATTR(p.metadata.name)}" onchange="App.renameProject(this.value)" spellcheck="false">
-      <span id="save-indicator" class="save-indicator" style="font-size:10px;color:var(--success);margin-left:8px;opacity:0.8;">Saved</span>
+      <span id="save-indicator" class="save-indicator" style="font-size:10px;color:var(--success);margin-left:8px;opacity:0.8;">${t('toolbar.saved')}</span>
     </div>
     <div class="toolbar-center">
       <div style="position:relative;display:inline-flex;">
-        <button class="btn btn-icon" onclick="App.undo()" title="Desfazer (Ctrl+Z)" style="${Store.get('undoStack')?.length ? '' : 'opacity:0.35;pointer-events:none;'}">${Icons.undo}</button>
+        <button class="btn btn-icon" onclick="App.undo()" title="${t('toolbar.undo')}" style="${Store.get('undoStack')?.length ? '' : 'opacity:0.35;pointer-events:none;'}">${Icons.undo}</button>
         ${Store.get('undoStack')?.length ? `<span style="position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:var(--accent);color:#fff;font-size:8px;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;">${Store.get('undoStack').length}</span>` : ''}
       </div>
       <div style="position:relative;display:inline-flex;">
-        <button class="btn btn-icon" onclick="App.redo()" title="Refazer (Ctrl+Y)" style="${Store.get('redoStack')?.length ? '' : 'opacity:0.35;pointer-events:none;'}">${Icons.redo}</button>
+        <button class="btn btn-icon" onclick="App.redo()" title="${t('toolbar.redo')}" style="${Store.get('redoStack')?.length ? '' : 'opacity:0.35;pointer-events:none;'}">${Icons.redo}</button>
         ${Store.get('redoStack')?.length ? `<span style="position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:var(--accent);color:#fff;font-size:8px;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;">${Store.get('redoStack').length}</span>` : ''}
       </div>
       <div class="toolbar-divider"></div>
-      <button class="btn btn-sm ${tbActive ? 'btn-active' : 'btn-ghost'}" onclick="App.toggleTextBelow()" title="Texto narrativo abaixo (30%)">${Icons.textBelow} Texto</button>
-      <button class="btn btn-sm ${Store.get('showGuides') ? 'btn-active' : 'btn-ghost'}" onclick="App.toggleGuides()" title="Guias de margem">${Icons.grid} Guias</button>
+      <button class="btn btn-sm ${tbActive ? 'btn-active' : 'btn-ghost'}" onclick="App.toggleTextBelow()" title="${t('toolbar.textBelow')}">${Icons.textBelow} ${t('toolbar.text')}</button>
+      <button class="btn btn-sm ${Store.get('showGuides') ? 'btn-active' : 'btn-ghost'}" onclick="App.toggleGuides()" title="${t('toolbar.guides')}">${Icons.grid} ${t('toolbar.guides')}</button>
       <div class="toolbar-divider"></div>
       <!-- Language Selector -->
       <div class="lang-selector" style="display:flex;gap:2px;background:var(--surface-2);border-radius:4px;padding:2px;">
@@ -348,12 +348,17 @@ function renderEditor() {
       </div>
     </div>
     <div class="toolbar-right">
-      <button class="btn btn-icon" onclick="App.toggleFullscreenPreview()" title="Preview tela cheia" aria-label="Preview tela cheia">${Icons.zoomFit}</button>
-      <button class="btn btn-icon" onclick="App.showShortcutsHelp()" title="Atalhos (Ctrl+/)" aria-label="Atalhos de teclado">?</button>
-      <button class="btn btn-icon" onclick="App.toggleLeft()" title="Ferramentas" aria-label="Painel de ferramentas">${Icons.menu}</button>
-      <button class="btn btn-icon" onclick="App.toggleRight()" title="Propriedades" aria-label="Painel de propriedades">${Icons.settings}</button>
+      <!-- UI Language Switcher -->
+      <div class="ui-lang-selector" style="display:flex;gap:2px;background:var(--surface-2);border-radius:4px;padding:2px;margin-right:8px;">
+        <button onclick="i18n.changeLocale('en')" title="English (UI)" class="ui-lang-btn ${i18n.getLocale() === 'en' ? 'active' : ''}" style="padding:3px 8px;border-radius:3px;border:none;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.15s;background:${i18n.getLocale() === 'en' ? 'var(--accent)' : 'transparent'};color:${i18n.getLocale() === 'en' ? '#fff' : 'var(--text-2)'};">EN</button>
+        <button onclick="i18n.changeLocale('pt-BR')" title="Português (UI)" class="ui-lang-btn ${i18n.getLocale() === 'pt-BR' ? 'active' : ''}" style="padding:3px 8px;border-radius:3px;border:none;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.15s;background:${i18n.getLocale() === 'pt-BR' ? 'var(--accent)' : 'transparent'};color:${i18n.getLocale() === 'pt-BR' ? '#fff' : 'var(--text-2)'};">PT</button>
+      </div>
+      <button class="btn btn-icon" onclick="App.toggleFullscreenPreview()" title="${t('toolbar.fullscreenPreview')}" aria-label="${t('toolbar.fullscreenPreview')}">${Icons.zoomFit}</button>
+      <button class="btn btn-icon" onclick="App.showShortcutsHelp()" title="${t('toolbar.shortcuts')}" aria-label="${t('toolbar.shortcuts')}">?</button>
+      <button class="btn btn-icon" onclick="App.toggleLeft()" title="${t('toolbar.tools')}" aria-label="${t('toolbar.tools')}">${Icons.menu}</button>
+      <button class="btn btn-icon" onclick="App.toggleRight()" title="${t('tooltip.properties')}" aria-label="${t('toolbar.properties')}">${Icons.settings}</button>
       <div class="toolbar-divider"></div>
-      <button class="btn btn-primary btn-sm" onclick="App.openExportPage()">${Icons.export} Exportar</button>
+      <button class="btn btn-primary btn-sm" onclick="App.openExportPage()">${Icons.export} ${t('toolbar.export')}</button>
     </div>
   </div>
   <div class="workspace" id="workspace">
@@ -461,10 +466,10 @@ function renderLayoutEditorSidebar() {
     return `<div onclick="App.layoutEditorSelectPanel(${i})" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;border:1.5px solid ${isSel ? col : 'transparent'};background:${isSel ? col+'15' : 'transparent'};transition:all 0.1s;" onmouseenter="if(!${isSel})this.style.background='var(--hover)'" onmouseleave="if(!${isSel})this.style.background='transparent'">
       <div style="width:22px;height:22px;border-radius:50%;background:${col};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0;">${panel.order||i+1}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:11px;font-weight:600;color:${isSel?'var(--text)':'var(--text2)'};">Painel ${panel.order||i+1}</div>
+        <div style="font-size:11px;font-weight:600;color:${isSel?'var(--text)':'var(--text2)'};">Panel ${panel.order||i+1}</div>
         <div style="font-size:9px;color:var(--text3);font-family:monospace;">${panel.w}x${panel.h} @ (${panel.x},${panel.y})</div>
       </div>
-      ${panels.length > 1 ? `<button onclick="event.stopPropagation();App.layoutEditorDeletePanel(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:2px;opacity:0.5;" title="Deletar">✕</button>` : ''}
+      ${panels.length > 1 ? `<button onclick="event.stopPropagation();App.layoutEditorDeletePanel(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:2px;opacity:0.5;" title="${t('layoutEditor.deletePanel')}">✕</button>` : ''}
     </div>`;
   }).join('');
 
@@ -477,12 +482,12 @@ function renderLayoutEditorSidebar() {
     const labelStyle = 'font-size:9px;color:var(--text3);font-weight:600;display:block;margin-bottom:2px;';
     numericHTML = `
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-        <div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:8px;">PAINEL ${sp.order||sel+1} — PROPRIEDADES</div>
+        <div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:8px;">${t('layoutEditor.panelProperties', {number: sp.order||sel+1})}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-          <div><label style="${labelStyle}">X</label><input type="number" value="${sp.x}" min="0" max="${_d.contentW-sp.w}" style="${inputStyle}" onchange="App.layoutEditorSetPanelProp(${sel},'x',this.value)"></div>
-          <div><label style="${labelStyle}">Y</label><input type="number" value="${sp.y}" min="0" max="${_d.contentH-sp.h}" style="${inputStyle}" onchange="App.layoutEditorSetPanelProp(${sel},'y',this.value)"></div>
-          <div><label style="${labelStyle}">W (largura)</label><input type="number" value="${sp.w}" min="80" max="${_d.contentW-sp.x}" style="${inputStyle}" onchange="App.layoutEditorSetPanelProp(${sel},'w',this.value)"></div>
-          <div><label style="${labelStyle}">H (altura)</label><input type="number" value="${sp.h}" min="60" max="${_d.contentH-sp.y}" style="${inputStyle}" onchange="App.layoutEditorSetPanelProp(${sel},'h',this.value)"></div>
+          <div><label style="${labelStyle}">${t('layoutEditor.x')}</label><input type="number" value="${sp.x}" min="0" max="${_d.contentW-sp.w}" style="${inputStyle}" onchange="App.layoutEditorSetPanelProp(${sel},'x',this.value)"></div>
+          <div><label style="${labelStyle}">${t('layoutEditor.y')}</label><input type="number" value="${sp.y}" min="0" max="${_d.contentH-sp.h}" style="${inputStyle}" onchange="App.layoutEditorSetPanelProp(${sel},'y',this.value)"></div>
+          <div><label style="${labelStyle}">${t('layoutEditor.w')}</label><input type="number" value="${sp.w}" min="80" max="${_d.contentW-sp.x}" style="${inputStyle}" onchange="App.layoutEditorSetPanelProp(${sel},'w',this.value)"></div>
+          <div><label style="${labelStyle}">${t('layoutEditor.h')}</label><input type="number" value="${sp.h}" min="60" max="${_d.contentH-sp.y}" style="${inputStyle}" onchange="App.layoutEditorSetPanelProp(${sel},'h',this.value)"></div>
         </div>
       </div>`;
   }
@@ -491,7 +496,7 @@ function renderLayoutEditorSidebar() {
   const gridBtnStyle = 'padding:5px 0;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text2);cursor:pointer;font-size:10px;font-weight:600;transition:all 0.1s;';
   const gridsHTML = `
     <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-      <div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px;">GRADE RAPIDA</div>
+      <div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px;">${t('layoutEditor.quickGrid')}</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">
         <button onclick="App.layoutEditorApplyGrid('2x1')" style="${gridBtnStyle}" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">2x1</button>
         <button onclick="App.layoutEditorApplyGrid('1x2')" style="${gridBtnStyle}" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">1x2</button>
@@ -506,21 +511,21 @@ function renderLayoutEditorSidebar() {
     <div style="padding:8px 0;overflow-y:auto;height:100%;">
       <div style="padding:8px 12px 10px;background:linear-gradient(135deg,rgba(20,184,166,0.12),rgba(20,184,166,0.04));border-bottom:1px solid var(--border);margin-bottom:8px;">
         <div style="font-size:12px;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:6px;">
-          <span style="font-size:16px;">✏</span> EDITOR DE LAYOUT
+          <span style="font-size:16px;">✏</span> ${t('layoutEditor.title')}
         </div>
-        <div style="font-size:10px;color:var(--text2);margin-top:2px;">${panels.length} paineis — clique para selecionar</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:2px;">${panels.length} ${t('sidebar.panels')} — ${t('layoutEditor.clickToSelect')}</div>
       </div>
       <div style="padding:0 8px;">
-        <div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px;">PAINEIS</div>
+        <div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px;">${t('layoutEditor.panels')}</div>
         <div style="display:flex;flex-direction:column;gap:2px;">
           ${panelListHTML}
         </div>
-        <button onclick="App.layoutEditorAddPanel()" style="margin-top:6px;width:100%;padding:6px;border:1px dashed var(--border3);background:transparent;color:var(--text2);border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;">+ Adicionar Painel</button>
+        <button onclick="App.layoutEditorAddPanel()" style="margin-top:6px;width:100%;padding:6px;border:1px dashed var(--border3);background:transparent;color:var(--text2);border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;">${t('layoutEditor.addPanel')}</button>
         ${numericHTML}
         ${gridsHTML}
         <div style="margin-top:14px;display:flex;gap:6px;">
-          <button onclick="App.exitLayoutEditor(true)" style="flex:1;padding:8px;border:none;background:var(--accent);color:#fff;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;">Salvar</button>
-          <button onclick="App.exitLayoutEditor(false)" style="flex:1;padding:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);border-radius:6px;cursor:pointer;font-size:12px;">Cancelar</button>
+          <button onclick="App.exitLayoutEditor(true)" style="flex:1;padding:8px;border:none;background:var(--accent);color:#fff;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;">${t('layoutEditor.save')}</button>
+          <button onclick="App.exitLayoutEditor(false)" style="flex:1;padding:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);border-radius:6px;cursor:pointer;font-size:12px;">${t('layoutEditor.cancel')}</button>
         </div>
       </div>
     </div>
@@ -547,12 +552,12 @@ function renderLeftPanel() {
     const statusColor = isEmpty ? 'var(--error, #ef4444)' : (hasImages && hasBalloons ? 'var(--success, #22c55e)' : 'var(--warning, #f59e0b)');
     return `<div class="scene-item ${i === active ? 'active' : ''}" onclick="App.setActivePage(${i})" oncontextmenu="event.preventDefault();App.showPageContextMenu(event,${i})" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','page:'+${i});event.dataTransfer.effectAllowed='move';" ondragover="event.preventDefault();this.style.borderTop='2px solid var(--accent)';" ondragleave="this.style.borderTop='none';" ondrop="event.preventDefault();this.style.borderTop='none';const src=parseInt(event.dataTransfer.getData('text/plain').split(':')[1]);if(!isNaN(src)&&src!==${i})App.movePage(src,${i}-src);" style="padding: 6px 10px; margin: 1px 8px; cursor: pointer; border-radius: 6px; border-left: ${i === active ? '3px solid var(--accent)' : '3px solid transparent'}; background: ${i === active ? 'var(--hover)' : 'transparent'}; display:flex; align-items:center; justify-content:space-between;">
       <div style="display:flex;align-items:center;gap:6px;">
-        <span style="width:6px;height:6px;border-radius:50%;background:${statusColor};flex-shrink:0;" title="${isEmpty ? 'Vazia' : (hasImages && hasBalloons ? 'Completa' : 'Em progresso')}"></span>
+        <span style="width:6px;height:6px;border-radius:50%;background:${statusColor};flex-shrink:0;" title="${isEmpty ? t('sidebar.empty') : (hasImages && hasBalloons ? t('sidebar.complete') : t('sidebar.inProgress'))}"></span>
         <span style="font-weight: 600; font-size:12px; color: ${i === active ? 'var(--text)' : 'var(--text2)'};">Pg ${i + 1}</span>
       </div>
       <div style="display:flex;align-items:center;gap:4px;">
         <span style="font-size: 10px; color: var(--text3)">${qCount > 0 ? qCount+'img' : ''}${hasBalloons ? ' '+balloonCount+'b' : ''} ${hasText}</span>
-        ${p.pages.length > 1 ? `<button onclick="event.stopPropagation();App.deletePage(${i})" title="Excluir página" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0;font-size:11px;line-height:1;opacity:0.5;">✕</button>` : ''}
+        ${p.pages.length > 1 ? `<button onclick="event.stopPropagation();App.deletePage(${i})" title="${t('sidebar.deletePage')}" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0;font-size:11px;line-height:1;opacity:0.5;">✕</button>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -592,18 +597,18 @@ function renderLeftPanel() {
   // Build cover section HTML (avoid nested template literal issues)
   let coverSectionHTML;
   if (p.cover) {
-    const coverTitle = p.cover.title ? p.cover.title.substring(0, 12) + (p.cover.title.length > 12 ? '…' : '') : '(sem título)';
+    const coverTitle = p.cover.title ? p.cover.title.substring(0, 12) + (p.cover.title.length > 12 ? '…' : '') : t('sidebar.noTitle');
     const coverBorder = coverActive ? '3px solid var(--accent)' : '3px solid transparent';
     const coverBg = coverActive ? 'var(--hover)' : 'rgba(20,184,166,0.06)';
     const coverColor = coverActive ? 'var(--text)' : 'var(--accent)';
     const coverActiveClass = coverActive ? 'active' : '';
     coverSectionHTML = '<div class="scene-item cover-scene-item ' + coverActiveClass + '" onclick="App.setActiveCover()" oncontextmenu="event.preventDefault();App.showCoverContextMenu(event)" title="Capa do quadrinho" style="padding:6px 10px;margin:1px 8px 3px 8px;cursor:pointer;border-radius:6px;border-left:' + coverBorder + ';background:' + coverBg + ';display:flex;align-items:center;justify-content:space-between;">'
-      + '<div style="display:flex;align-items:center;gap:6px;"><span style="display:inline-flex;vertical-align:middle;color:var(--accent);">' + Icons.palette + '</span><span style="font-weight:700;font-size:12px;color:' + coverColor + ';letter-spacing:0.5px;">Capa</span></div>'
+      + '<div style="display:flex;align-items:center;gap:6px;"><span style="display:inline-flex;vertical-align:middle;color:var(--accent);">' + Icons.palette + '</span><span style="font-weight:700;font-size:12px;color:' + coverColor + ';letter-spacing:0.5px;">' + t('sidebar.cover') + '</span></div>'
       + '<div style="display:flex;align-items:center;gap:4px;"><span style="font-size:9px;color:var(--accent);opacity:0.7;">' + coverTitle + '</span>'
-      + '<button onclick="event.stopPropagation();App.removeCover()" title="Remover capa" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0;font-size:11px;line-height:1;opacity:0.5;">✕</button></div></div>'
+      + '<button onclick="event.stopPropagation();App.removeCover()" title="' + t('sidebar.removeCover') + '" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0;font-size:11px;line-height:1;opacity:0.5;">✕</button></div></div>'
       + '<div style="margin:0 12px 4px 12px;height:1px;background:var(--border);"></div>';
   } else {
-    coverSectionHTML = '<button onclick="App.addCover()" class="cover-add-btn" style="margin:2px 12px 6px 12px;padding:7px 10px;background:rgba(20,184,166,0.08);border:1px dashed rgba(20,184,166,0.4);color:var(--accent);border-radius:6px;cursor:pointer;font-weight:600;font-size:11px;display:flex;align-items:center;gap:6px;transition:all 0.15s;" onmouseenter="this.style.background=\'rgba(20,184,166,0.16)\'" onmouseleave="this.style.background=\'rgba(20,184,166,0.08)\'">' + Icons.palette + ' + Adicionar Capa</button>';
+    coverSectionHTML = '<button onclick="App.addCover()" class="cover-add-btn" style="margin:2px 12px 6px 12px;padding:7px 10px;background:rgba(20,184,166,0.08);border:1px dashed rgba(20,184,166,0.4);color:var(--accent);border-radius:6px;cursor:pointer;font-weight:600;font-size:11px;display:flex;align-items:center;gap:6px;transition:all 0.15s;" onmouseenter="this.style.background=\'rgba(20,184,166,0.16)\'" onmouseleave="this.style.background=\'rgba(20,184,166,0.08)\'">' + Icons.palette + ' ' + t('sidebar.addCover') + '</button>';
   }
 
   // Back cover item in sidebar
@@ -615,11 +620,11 @@ function renderLeftPanel() {
       const bcBg = backCoverActive ? 'var(--hover)' : 'rgba(139,92,246,0.06)';
       const bcColor = backCoverActive ? 'var(--text)' : 'rgba(139,92,246,0.9)';
       backCoverSectionHTML = '<div class="scene-item cover-scene-item ' + (backCoverActive ? 'active' : '') + '" onclick="App.setActiveBackCover()" title="Contracapa" style="padding:6px 10px;margin:1px 8px 3px 8px;cursor:pointer;border-radius:6px;border-left:' + bcBorder + ';background:' + bcBg + ';display:flex;align-items:center;justify-content:space-between;">'
-        + '<div style="display:flex;align-items:center;gap:6px;"><span style="display:inline-flex;color:rgba(139,92,246,0.9);">' + Icons.copy + '</span><span style="font-weight:700;font-size:12px;color:' + bcColor + ';letter-spacing:0.5px;">Contracapa</span></div>'
+        + '<div style="display:flex;align-items:center;gap:6px;"><span style="display:inline-flex;color:rgba(139,92,246,0.9);">' + Icons.copy + '</span><span style="font-weight:700;font-size:12px;color:' + bcColor + ';letter-spacing:0.5px;">' + t('sidebar.backCover') + '</span></div>'
         + '<div style="display:flex;align-items:center;gap:4px;">'
-        + '<button onclick="event.stopPropagation();App.removeBackCover()" title="Remover contracapa" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0;font-size:11px;line-height:1;opacity:0.5;">✕</button></div></div>';
+        + '<button onclick="event.stopPropagation();App.removeBackCover()" title="' + t('sidebar.removeBackCover') + '" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0;font-size:11px;line-height:1;opacity:0.5;">✕</button></div></div>';
     } else {
-      backCoverSectionHTML = '<button onclick="App.addBackCover()" style="margin:1px 12px 3px 12px;padding:5px 10px;background:rgba(139,92,246,0.06);border:1px dashed rgba(139,92,246,0.3);color:rgba(139,92,246,0.8);border-radius:6px;cursor:pointer;font-weight:600;font-size:10px;display:flex;align-items:center;gap:6px;transition:all 0.15s;" onmouseenter="this.style.background=\'rgba(139,92,246,0.12)\'" onmouseleave="this.style.background=\'rgba(139,92,246,0.06)\'">' + Icons.copy + ' + Contracapa</button>';
+      backCoverSectionHTML = '<button onclick="App.addBackCover()" style="margin:1px 12px 3px 12px;padding:5px 10px;background:rgba(139,92,246,0.06);border:1px dashed rgba(139,92,246,0.3);color:rgba(139,92,246,0.8);border-radius:6px;cursor:pointer;font-weight:600;font-size:10px;display:flex;align-items:center;gap:6px;transition:all 0.15s;" onmouseenter="this.style.background=\'rgba(139,92,246,0.12)\'" onmouseleave="this.style.background=\'rgba(139,92,246,0.06)\'">' + Icons.copy + ' ' + t('sidebar.addBackCover') + '</button>';
     }
   }
 
@@ -628,22 +633,22 @@ function renderLeftPanel() {
   return `
     <div style="padding: 8px 0; overflow-y:auto; height:100%;">
       <div onclick="App.toggleSidebarSection('leftPages')" style="display:flex;align-items:center;padding:4px 12px;cursor:pointer;user-select:none;margin-bottom:6px;">
-        <span style="font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 1px; flex:1;">PÁGINAS</span>
+        <span style="font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 1px; flex:1;">${t('sidebar.pages')}</span>
         <span style="font-size:10px;color:var(--text3);">${pagesCollapsed ? '+' : '-'}</span>
       </div>
       ${!pagesCollapsed ? `<div class="scenes-list" style="display:flex; flex-direction:column; gap:2px;">
         ${coverSectionHTML}
         ${backCoverSectionHTML}
         ${scenes}
-         <button onclick="App.addPage()" style="margin: 4px 12px; padding: 8px; background:transparent; border: 1px dashed var(--border3); color:var(--text2); border-radius:6px; cursor:pointer; font-weight: 500; font-size:11px;">+ Nova Página</button>
+         <button onclick="App.addPage()" style="margin: 4px 12px; padding: 8px; background:transparent; border: 1px dashed var(--border3); color:var(--text2); border-radius:6px; cursor:pointer; font-weight: 500; font-size:11px;">${t('sidebar.newPage')}</button>
       </div>` : ''}
 
       <div style="margin: 12px 8px 6px 8px;">
         <div onclick="App.toggleSidebarSection('leftLayout')" style="display:flex;align-items:center;padding:4px;cursor:pointer;user-select:none;">
-          <span style="font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 1px; flex:1;">LAYOUT</span>
+          <span style="font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 1px; flex:1;">${t('sidebar.layout')}</span>
           ${isVideoProject 
             ? `<span style="font-size:9px;color:var(--accent);margin-right:4px;font-weight:600;">${VIDEO_FORMATS[videoFormat]?.icon || Icons.video} ${VIDEO_FORMATS[videoFormat]?.name || videoFormat}</span>`
-            : `<span style="font-size:9px;color:var(--accent);margin-right:4px;font-weight:600;">${targetCount} ${targetCount === 1 ? 'painel' : 'painéis'}</span>`
+            : `<span style="font-size:9px;color:var(--accent);margin-right:4px;font-weight:600;">${targetCount} ${targetCount === 1 ? t('sidebar.panel') : t('sidebar.panels')}</span>`
           }
           <span style="font-size:10px;color:var(--text3);">${layoutCollapsed ? '+' : '-'}</span>
         </div>
@@ -719,38 +724,38 @@ function renderLeftPanel() {
         ` : ''}
       </div>
 
-      <div style="font-size: 10px; font-weight: 700; color: var(--text3); margin: 12px 12px 6px 12px; letter-spacing: 1px;">ELEMENTOS HQ</div>
+      <div style="font-size: 10px; font-weight: 700; color: var(--text3); margin: 12px 12px 6px 12px; letter-spacing: 1px;">${t('sidebar.comicElements')}</div>
       ${(() => {
         const _isMateria = page?.type === 'materia' || page?.isMateria === true;
         const _dis = (type) => _isMateria && ['thought','shout','sfx'].includes(type) ? 'disabled-in-context' : '';
-        const _title = (type, orig) => _isMateria && ['thought','shout','sfx'].includes(type) ? 'Não disponível em páginas de Matéria' : orig;
+        const _title = (type, orig) => _isMateria && ['thought','shout','sfx'].includes(type) ? t('balloons.notAvailableMateria') : orig;
         const _btnStyle = `display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 4px; border:1px solid var(--border); border-radius:6px; background:var(--surface2); color:var(--text2); cursor:pointer; font-size:10px; transition:all 0.12s;`;
         const _hover = `onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'"`;
         return `<div class="balloon-toolbox" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; padding: 0 8px;">
-        <button data-balloon-type="narration" class="${_dis('narration')}" onclick="App.startBalloonPlacement('narration')" title="${_title('narration','Narração / Caption Box')}" style="${_btnStyle}" ${_hover}>
-          ${Icons.narrationBox} <span>Narração</span>
+        <button data-balloon-type="narration" class="${_dis('narration')}" onclick="App.startBalloonPlacement('narration')" title="${_title('narration',t('balloons.narrationTooltip'))}" style="${_btnStyle}" ${_hover}>
+          ${Icons.narrationBox} <span>${t('balloons.narration')}</span>
         </button>
-        <button data-balloon-type="speech" class="${_dis('speech')}" onclick="App.startBalloonPlacement('speech')" title="${_title('speech','Balão de Fala')}" style="${_btnStyle}" ${_hover}>
-          ${Icons.balloon} <span>Fala</span>
+        <button data-balloon-type="speech" class="${_dis('speech')}" onclick="App.startBalloonPlacement('speech')" title="${_title('speech',t('balloons.speechTooltip'))}" style="${_btnStyle}" ${_hover}>
+          ${Icons.balloon} <span>${t('balloons.speech')}</span>
         </button>
-        <button data-balloon-type="thought" class="${_dis('thought')}" onclick="App.startBalloonPlacement('thought')" title="${_title('thought','Balão de Pensamento')}" style="${_btnStyle}" ${_hover}>
-          ${Icons.thought} <span>Pensar</span>
+        <button data-balloon-type="thought" class="${_dis('thought')}" onclick="App.startBalloonPlacement('thought')" title="${_title('thought',t('balloons.thoughtTooltip'))}" style="${_btnStyle}" ${_hover}>
+          ${Icons.thought} <span>${t('balloons.thought')}</span>
         </button>
-        <button data-balloon-type="shout" class="${_dis('shout')}" onclick="App.startBalloonPlacement('shout')" title="${_title('shout','Balão de Grito')}" style="${_btnStyle}" ${_hover}>
-          ${Icons.shout} <span>Grito</span>
+        <button data-balloon-type="shout" class="${_dis('shout')}" onclick="App.startBalloonPlacement('shout')" title="${_title('shout',t('balloons.shoutTooltip'))}" style="${_btnStyle}" ${_hover}>
+          ${Icons.shout} <span>${t('balloons.shout')}</span>
         </button>
-        <button data-balloon-type="whisper" class="${_dis('whisper')}" onclick="App.startBalloonPlacement('whisper')" title="${_title('whisper','Balão de Sussurro')}" style="${_btnStyle}" ${_hover}>
-          ${Icons.balloon} <span>Sussurro</span>
+        <button data-balloon-type="whisper" class="${_dis('whisper')}" onclick="App.startBalloonPlacement('whisper')" title="${_title('whisper',t('balloons.whisperTooltip'))}" style="${_btnStyle}" ${_hover}>
+          ${Icons.balloon} <span>${t('balloons.whisper')}</span>
         </button>
-        <button data-balloon-type="sfx" class="${_dis('sfx')}" onclick="App.addSfxToPage()" title="${_title('sfx','Onomatopeia / Efeito Sonoro')}" style="${_btnStyle}" ${_hover}>
-          ${Icons.text} <span>SFX</span>
+        <button data-balloon-type="sfx" class="${_dis('sfx')}" onclick="App.addSfxToPage()" title="${_title('sfx',t('balloons.sfxTooltip'))}" style="${_btnStyle}" ${_hover}>
+          ${Icons.text} <span>${t('balloons.sfx')}</span>
         </button>
       </div>`;
       })()}
       
       <div style="margin: 12px 8px 6px 8px;">
         <button onclick="App.openExcalidrawModal()" style="width:100%;padding:8px;border-radius:6px;border:1px dashed var(--accent);background:rgba(20,184,166,0.05);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;" onmouseenter="this.style.background='rgba(20,184,166,0.15)'" onmouseleave="this.style.background='rgba(20,184,166,0.05)'">
-          Criar Arte (Excalidraw)
+          ${t('sidebar.createArt')}
         </button>
       </div>
     </div>
@@ -761,11 +766,11 @@ function renderZoomControls() {
   const z = App._viewport ? App._viewport.scale : Store.get('zoom');
   const panMode = App._viewport ? App._viewport.mode === 'pan' : Store.get('panMode');
   return `<div class="zoom-controls">
-    <button class="zoom-btn" onclick="App.zoomOut()" title="Zoom -">${Icons.zoomOut}</button>
-    <button class="zoom-btn zoom-pct" onclick="App.zoomReset()" title="Zoom 100%">${Math.round(z * 100)}%</button>
-    <button class="zoom-btn" onclick="App.zoomIn()" title="Zoom +">${Icons.zoomIn}</button>
-    <button class="zoom-btn" onclick="App.zoomFit()" title="Ajustar ao ecrã">${Icons.zoomFit}</button>
-    <button class="zoom-btn pan-btn ${panMode ? 'active' : ''}" onclick="App.togglePanMode()" title="Modo pan — Arrastar para navegar${panMode ? ' [Ativo]' : ''} · Espaço = pan temporário">
+    <button class="zoom-btn" onclick="App.zoomOut()" title="${t('zoom.out')}">${Icons.zoomOut}</button>
+    <button class="zoom-btn zoom-pct" onclick="App.zoomReset()" title="${t('zoom.reset')}">${Math.round(z * 100)}%</button>
+    <button class="zoom-btn" onclick="App.zoomIn()" title="${t('zoom.in')}">${Icons.zoomIn}</button>
+    <button class="zoom-btn" onclick="App.zoomFit()" title="${t('zoom.fit')}">${Icons.zoomFit}</button>
+    <button class="zoom-btn pan-btn ${panMode ? 'active' : ''}" onclick="App.togglePanMode()" title="${panMode ? t('zoom.panModeActive') : t('zoom.panMode')}">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
     </button>
   </div>`;
@@ -2659,55 +2664,84 @@ function renderRightPanel() {
           <span style="font-size:10px;color:var(--accent);">${slideshowCollapsed ? '+' : '-'}</span>
         </div>
         ${!slideshowCollapsed ? `
-          <!-- Duration Bar -->
-          <div style="margin:8px 0;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-              <span style="font-size:9px;color:var(--text3);">Duração total: ${totalDuration}s</span>
-              <span style="font-size:9px;color:${usedTime <= totalDuration ? 'var(--accent)' : '#f59e0b'};font-weight:600;">${usedTime}s / ${totalDuration}s ${usedTime < totalDuration ? '(faltam ' + remainingTime.toFixed(1) + 's)' : usedTime > totalDuration ? '(excede ' + (usedTime - totalDuration).toFixed(1) + 's!)' : '✓'}</span>
-            </div>
-            <div style="height:6px;background:var(--surface);border-radius:3px;overflow:hidden;">
-              <div style="height:100%;background:${usedTime <= totalDuration ? 'var(--accent)' : '#f59e0b'};width:${Math.min(100, (usedTime / totalDuration) * 100)}%;transition:width 0.2s;"></div>
-            </div>
+          <!-- Progress Info -->
+          <div class="slideshow-progress-info">
+            <span class="slideshow-progress-label">Página: ${totalDuration}s · Slides: ${slides.length}</span>
+            <span class="slideshow-progress-value ${usedTime > totalDuration ? 'error' : usedTime < totalDuration ? 'warning' : ''}">
+              ${usedTime.toFixed(1)}s ${usedTime < totalDuration ? '(-' + remainingTime.toFixed(1) + 's)' : usedTime > totalDuration ? '(+' + (usedTime - totalDuration).toFixed(1) + 's)' : '✓'}
+            </span>
           </div>
           
+          <!-- Timeline Bar -->
+          ${slides.length > 0 ? `
+            <div class="slideshow-timeline-bar">
+              ${slides.map((s, idx) => {
+                const pct = ((s.duration || 4) / totalDuration) * 100;
+                return `<div class="slideshow-timeline-segment" style="width:${pct}%;" title="Slide ${idx + 1}: ${s.duration}s"></div>`;
+              }).join('')}
+            </div>
+          ` : ''}
+          
           <!-- Slides List -->
-          <div style="max-height:300px;overflow-y:auto;margin-bottom:8px;">
+          <div class="slideshow-slides-container" role="list" aria-label="Lista de slides, ${slides.length} itens" 
+               style="max-height:300px;overflow-y:auto;margin-bottom:8px;"
+               onkeydown="App.handleSlideKeyboard(event)">
             ${slides.map((slide, i) => {
               const escapedImg = (slide.image || '').replace(/'/g, "\\'");
               return `
                 <div class="slideshow-slide-item" draggable="true" 
                      ondragstart="App.handleSlideDragStart(event, ${i})" 
                      ondragover="App.handleSlideDragOver(event)" 
+                     ondragleave="App.handleSlideDragLeave(event)"
                      ondrop="App.handleSlideDrop(event, ${i})"
-                     style="background:var(--surface2);border-radius:4px;padding:6px;margin-bottom:4px;border:1px solid var(--border);cursor:move;">
-                  <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
-                    <img src="${slide.image}" style="width:40px;height:40px;object-fit:cover;border-radius:3px;border:1px solid var(--border);">
-                    <div style="flex:1;">
-                      <div style="font-size:9px;color:var(--text3);font-weight:600;margin-bottom:2px;">Slide ${i + 1}</div>
+                     ondragend="App.handleSlideDragEnd(event)"
+                     tabindex="0"
+                     role="listitem"
+                     aria-label="Slide ${i + 1}, duração ${slide.duration || 4} segundos"
+                     data-slide-index="${i}">
+                  <!-- Drag Handle -->
+                  <div class="slideshow-drag-handle" title="Arrastar para reordenar">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                      <circle cx="3" cy="3" r="1.5"/>
+                      <circle cx="9" cy="3" r="1.5"/>
+                      <circle cx="3" cy="6" r="1.5"/>
+                      <circle cx="9" cy="6" r="1.5"/>
+                      <circle cx="3" cy="9" r="1.5"/>
+                      <circle cx="9" cy="9" r="1.5"/>
+                    </svg>
+                  </div>
+                  
+                  <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;">
+                    <!-- Thumbnail with badges -->
+                    <div style="position:relative;flex-shrink:0;">
+                      <img src="${slide.image}" class="slideshow-slide-thumb">
+                      <div class="slideshow-number-badge">#${i + 1}</div>
+                      <div class="slideshow-duration-badge">${(slide.duration || 4).toFixed(1)}s</div>
+                    </div>
+                    
+                    <!-- Controls -->
+                    <div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0;">
                       <div style="display:flex;gap:4px;align-items:center;">
-                        <span style="font-size:8px;color:var(--text3);">Duração:</span>
+                        <span style="font-size:9px;color:var(--text3);white-space:nowrap;">Tempo:</span>
                         <input type="number" value="${slide.duration || 4}" min="0.5" step="0.5" 
                                onchange="App.updateSlideDuration(${i}, parseFloat(this.value))" 
-                               style="width:50px;padding:2px 4px;border-radius:3px;border:1px solid var(--border);background:var(--surface);color:#fff;font-size:9px;">
-                        <span style="font-size:8px;color:var(--text3);">s</span>
+                               class="slideshow-control-input">
+                        <span style="font-size:9px;color:var(--text3);">s</span>
                       </div>
+                      <select onchange="App.updateSlideKenBurns(${i}, this.value)" class="slideshow-control-select">
+                        ${Object.entries(KEN_BURNS_PRESETS).map(([id, preset]) => 
+                          `<option value="${id}" ${(slide.kenBurns || 'zoom-in') === id ? 'selected' : ''}>${preset.name}</option>`
+                        ).join('')}
+                      </select>
+                      <select onchange="App.updateSlideTransition(${i}, this.value)" class="slideshow-control-select">
+                        <option value="cut" ${(slide.transition || 'cut') === 'cut' ? 'selected' : ''}>Corte</option>
+                        <option value="crossfade" ${slide.transition === 'crossfade' ? 'selected' : ''}>Crossfade</option>
+                        <option value="fade-black" ${slide.transition === 'fade-black' ? 'selected' : ''}>Fade Black</option>
+                      </select>
                     </div>
-                    <button onclick="App.removeSlide(${i})" title="Remover slide" 
-                            style="width:20px;height:20px;border-radius:3px;border:1px solid #c00;background:transparent;color:#f66;font-size:10px;cursor:pointer;padding:0;">✕</button>
-                  </div>
-                  <div style="display:flex;gap:4px;">
-                    <select onchange="App.updateSlideKenBurns(${i}, this.value)" 
-                            style="flex:1;padding:3px 4px;border-radius:3px;border:1px solid var(--border);background:var(--surface);color:#fff;font-size:9px;">
-                      ${Object.entries(KEN_BURNS_PRESETS).map(([id, preset]) => 
-                        `<option value="${id}" ${(slide.kenBurns || 'zoom-in') === id ? 'selected' : ''}>${preset.name}</option>`
-                      ).join('')}
-                    </select>
-                    <select onchange="App.updateSlideTransition(${i}, this.value)" 
-                            style="flex:1;padding:3px 4px;border-radius:3px;border:1px solid var(--border);background:var(--surface);color:#fff;font-size:9px;">
-                      <option value="cut" ${(slide.transition || 'cut') === 'cut' ? 'selected' : ''}>Corte</option>
-                      <option value="crossfade" ${slide.transition === 'crossfade' ? 'selected' : ''}>Crossfade</option>
-                      <option value="fade-black" ${slide.transition === 'fade-black' ? 'selected' : ''}>Fade Black</option>
-                    </select>
+                    
+                    <!-- Delete button -->
+                    <button onclick="App.removeSlide(${i})" title="Remover slide" class="slideshow-delete-btn">✕</button>
                   </div>
                 </div>
               `;

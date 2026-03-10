@@ -7270,3 +7270,299 @@ textarea.narrative-input {
 /* ═══ AUDIT FIX: z-index hierarchy — balloons above stickers ═══ */
 .balloon-css { z-index: 22; }
 .balloon-css.selected { z-index: 25; }
+
+/* ═══════════════════════════════════════════════════════════════
+   SLIDESHOW MODE - Professional Carousel UI/UX
+   ═══════════════════════════════════════════════════════════════ */
+
+.slideshow-slide-item {
+  position: relative;
+  background: var(--surface2);
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 6px;
+  border: 2px solid var(--border);
+  cursor: grab;
+  transition: all 0.2s var(--ease);
+}
+
+.slideshow-slide-item:hover {
+  border-color: var(--accent);
+  background: rgba(20, 184, 166, 0.05);
+  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.15);
+}
+
+.slideshow-slide-item:active {
+  cursor: grabbing;
+}
+
+.slideshow-slide-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.95) rotate(1deg);
+  z-index: 1000;
+  cursor: grabbing;
+}
+
+.slideshow-slide-item.drop-target {
+  border-color: var(--accent);
+  background: rgba(20, 184, 166, 0.1);
+}
+
+.slideshow-drag-handle {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(107, 114, 128, 0.6);
+  cursor: grab;
+  z-index: 10;
+  transition: color 0.15s;
+}
+
+.slideshow-drag-handle:hover {
+  color: rgba(107, 114, 128, 1);
+}
+
+.slideshow-drag-handle:active {
+  cursor: grabbing;
+}
+
+.slideshow-drop-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.4);
+  z-index: 999;
+  pointer-events: none;
+  animation: slideshow-drop-pulse 1s infinite;
+}
+
+@keyframes slideshow-drop-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.slideshow-slide-thumb {
+  width: 80px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.slideshow-slide-item:hover .slideshow-slide-thumb {
+  border-color: var(--accent);
+  box-shadow: 0 0 6px rgba(20, 184, 166, 0.2);
+}
+
+.slideshow-duration-badge {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.slideshow-number-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(107, 114, 128, 0.9);
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.slideshow-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.slideshow-control-input {
+  width: 60px;
+  padding: 4px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 10px;
+  transition: border-color 0.15s;
+}
+
+.slideshow-control-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.1);
+}
+
+.slideshow-control-select {
+  flex: 1;
+  padding: 4px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.slideshow-control-select:hover {
+  border-color: var(--accent);
+}
+
+.slideshow-control-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.1);
+}
+
+.slideshow-delete-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  background: transparent;
+  color: rgba(239, 68, 68, 0.8);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slideshow-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgb(239, 68, 68);
+  color: rgb(239, 68, 68);
+}
+
+.slideshow-timeline-bar {
+  display: flex;
+  height: 8px;
+  background: var(--surface);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.slideshow-timeline-segment {
+  height: 100%;
+  background: var(--accent);
+  border-right: 1px solid var(--bg);
+  transition: all 0.3s var(--ease);
+  position: relative;
+}
+
+.slideshow-timeline-segment:last-child {
+  border-right: none;
+}
+
+.slideshow-timeline-segment:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+}
+
+.slideshow-progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 9px;
+}
+
+.slideshow-progress-label {
+  color: var(--text3);
+}
+
+.slideshow-progress-value {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.slideshow-progress-value.warning {
+  color: #f59e0b;
+}
+
+.slideshow-progress-value.error {
+  color: #ef4444;
+}
+
+/* Focus states for keyboard navigation */
+.slideshow-slide-item:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-color: var(--accent);
+  background: rgba(20, 184, 166, 0.08);
+}
+
+.slideshow-slide-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Touch optimizations for mobile */
+@media (pointer: coarse) {
+  .slideshow-drag-handle {
+    width: 32px;
+    height: 32px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+  }
+  
+  .slideshow-delete-btn {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+  
+  .slideshow-slide-item {
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  
+  .slideshow-slide-thumb {
+    width: 100px;
+    height: 75px;
+  }
+  
+  .slideshow-control-input,
+  .slideshow-control-select {
+    min-height: 44px;
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .slideshow-slide-item,
+  .slideshow-slide-item.dragging,
+  .slideshow-timeline-segment,
+  .slideshow-drop-indicator {
+    transition: none;
+    animation: none;
+  }
+}

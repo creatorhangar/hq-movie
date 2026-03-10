@@ -3129,7 +3129,7 @@ const LayoutEngine = {
   getVideoLayouts(videoFormat) {
     if (typeof VideoLayouts === 'undefined') return [];
     return Object.entries(VideoLayouts)
-      .filter(([_, t]) => t.format === videoFormat)
+      .filter(([_, t]) => t.format === videoFormat || t.format === 'all')
       .map(([id, t]) => ({ id, ...t }));
   },
   get(id, images = [], project = null) {

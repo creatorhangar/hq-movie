@@ -1,0 +1,389 @@
+{
+  "meta": {
+    "language": "Português (Brasil)",
+    "code": "pt-BR",
+    "version": "1.0.0",
+    "lastUpdated": "2026-03-10"
+  },
+  
+  "common": {
+    "add": "Adicionar",
+    "remove": "Remover",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "close": "Fechar",
+    "apply": "Aplicar",
+    "confirm": "Confirmar",
+    "yes": "Sim",
+    "no": "Não",
+    "ok": "OK",
+    "back": "Voltar",
+    "next": "Próximo",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "warning": "Aviso",
+    "info": "Info"
+  },
+  
+  "dashboard": {
+    "title": "HQ Movie",
+    "subtitle": "Motion comics com áudio — 100% offline.",
+    "newProject": "Novo Projeto",
+    "createDemo": "Criar Demo",
+    "import": "Importar .hq",
+    "createFromScript": "Criar de Script",
+    "createFromAudio": "Criar de Áudio",
+    "templatesTitle": "Começar com um Template",
+    "recentProjects": "Projetos Recentes",
+    "noProjects": "Nenhum projeto ainda",
+    "pages": "páginas",
+    "page": "página",
+    "pag": "pag"
+  },
+  
+  "formats": {
+    "chooseTitle": "Escolha o Formato",
+    "chooseDescription": "Selecione o formato de vídeo para seu projeto",
+    "vertical": "Vertical (9:16)",
+    "verticalDescription": "Stories, Reels, TikTok",
+    "widescreen": "Widescreen (16:9)",
+    "widescreenDescription": "YouTube, TV",
+    "square": "Quadrado (1:1)",
+    "squareDescription": "Instagram Feed",
+    "portrait": "Retrato (4:3)",
+    "portraitDescription": "Apresentações, Monitor clássico",
+    "back": "← Voltar"
+  },
+  
+  "templates": {
+    "motionComic": "Motion Comic",
+    "motionComicDescription": "4 págs • Grid 2x2",
+    "podcast": "Podcast Visual",
+    "podcastDescription": "8 págs • Fullscreen",
+    "tutorial": "Tutorial",
+    "tutorialDescription": "6 págs • Texto Grande",
+    "story": "Story Insta",
+    "storyDescription": "5 págs • Vertical",
+    "meme": "Meme Animado",
+    "memeDescription": "3 págs • Fullscreen"
+  },
+  
+  "toolbar": {
+    "home": "Início",
+    "saved": "Salvo",
+    "undo": "Desfazer (Ctrl+Z)",
+    "redo": "Refazer (Ctrl+Y)",
+    "text": "Texto",
+    "textBelow": "Texto narrativo abaixo (30%)",
+    "guides": "Guias de margem",
+    "fullscreenPreview": "Preview tela cheia",
+    "shortcuts": "Atalhos (Ctrl+/)",
+    "tools": "Ferramentas",
+    "properties": "Propriedades",
+    "export": "Exportar"
+  },
+  
+  "sidebar": {
+    "pages": "PÁGINAS",
+    "newPage": "+ Nova Página",
+    "cover": "Capa",
+    "backCover": "Contracapa",
+    "addCover": "+ Adicionar Capa",
+    "addBackCover": "+ Contracapa",
+    "removeCover": "Remover capa",
+    "removeBackCover": "Remover contracapa",
+    "layout": "LAYOUT",
+    "panel": "painel",
+    "panels": "painéis",
+    "comicElements": "ELEMENTOS HQ",
+    "createArt": "Criar Arte (Excalidraw)",
+    "createCustomLayout": "Criar Meu Layout",
+    "materia": "MATÉRIA (ESPECIAL)",
+    "materiaDescription": "Páginas com texto longo + imagem. Ideal para zines, capítulos introdutórios e narração densa.",
+    "empty": "Vazia",
+    "complete": "Completa",
+    "inProgress": "Em progresso",
+    "deletePage": "Excluir página",
+    "noTitle": "(sem título)"
+  },
+  
+  "balloons": {
+    "narration": "Narração",
+    "speech": "Fala",
+    "thought": "Pensamento",
+    "shout": "Grito",
+    "whisper": "Sussurro",
+    "sfx": "Efeito",
+    "narrationTooltip": "Narração / Caption Box",
+    "speechTooltip": "Balão de Fala",
+    "thoughtTooltip": "Balão de Pensamento",
+    "shoutTooltip": "Balão de Grito",
+    "whisperTooltip": "Balão de Sussurro",
+    "sfxTooltip": "Onomatopeia / Efeito Sonoro",
+    "notAvailableMateria": "Não disponível em páginas de Matéria",
+    "editBalloon": "Editar Balão #{{number}}"
+  },
+  
+  "export": {
+    "title": "Exportar",
+    "backToEditor": "← Voltar ao Editor",
+    "project": "Projeto",
+    "pages": "páginas",
+    "pagesPreview": "Preview das Páginas",
+    "format": "Formato",
+    "totalDuration": "Duração Total",
+    "animations": "Animações",
+    "animatedPages": "páginas animadas",
+    "kenBurns": "Ken Burns",
+    "exportMode": "Modo de Export",
+    "exportModeHint": "Exporte em formato diferente sem refazer o projeto",
+    "chooseFormat": "Escolher Formato de Export",
+    "exportVideo": "Exportar Vídeo",
+    "videoDescription": "Motion comic com Ken Burns e transições — MP4 ou WebM",
+    "quality": "Qualidade",
+    "qualityFast": "Rápido",
+    "qualityNormal": "Normal",
+    "qualityHigh": "Alta",
+    "fps": "FPS",
+    "language": "Idioma",
+    "portuguese": "PT-BR",
+    "english": "EN",
+    "both": "Ambos",
+    "pngIndividual": "PNG Individual",
+    "pngDescription": "Salvar cada página como imagem PNG de alta qualidade",
+    "exportAllPages": "Exportar Todas as Páginas",
+    "socialMedia": "Redes Sociais",
+    "socialMediaDescription": "Exportar para Story (9:16) ou Feed (4:5)",
+    "story": "Story 9:16",
+    "feed": "Feed 4:5",
+    "assetsZip": "Export Assets (ZIP)",
+    "assetsDescription": "Imagens numeradas + áudios + metadata para Premiere, DaVinci, After Effects",
+    "analyzingProject": "Analisando projeto...",
+    "imagesOption": "Imagens (page_001.jpg, page_002.jpg...)",
+    "narrationOption": "Áudios de narração",
+    "musicOption": "Música de fundo",
+    "projectFileOption": "Arquivo de projeto (.hq)",
+    "readmeOption": "README + metadata JSON",
+    "presetLight": "Light",
+    "presetComplete": "Completo",
+    "presetEdit": "Edição",
+    "exportAssets": "Exportar Assets (ZIP)",
+    "preparing": "Preparando...",
+    "noProject": "Nenhum projeto",
+    "exporting": "Exportando..."
+  },
+  
+  "zoom": {
+    "out": "Zoom -",
+    "reset": "Zoom 100%",
+    "in": "Zoom +",
+    "fit": "Ajustar ao ecrã",
+    "panMode": "Modo pan — Arrastar para navegar",
+    "panModeActive": "Modo pan — Arrastar para navegar [Ativo] · Espaço = pan temporário"
+  },
+  
+  "timeline": {
+    "pages": "Pages",
+    "assets": "Assets"
+  },
+  
+  "layoutEditor": {
+    "title": "EDITOR DE LAYOUT",
+    "clickToSelect": "clique para selecionar",
+    "panels": "PAINEIS",
+    "addPanel": "+ Adicionar Painel",
+    "deletePanel": "Deletar",
+    "panelProperties": "PAINEL {{number}} — PROPRIEDADES",
+    "x": "X",
+    "y": "Y",
+    "w": "W (largura)",
+    "h": "H (altura)",
+    "quickGrid": "GRADE RAPIDA",
+    "save": "Salvar",
+    "cancel": "Cancelar"
+  },
+  
+  "layouts": {
+    "v1Splash": "Splash Vertical",
+    "v2Dual": "Diálogo Dual",
+    "v3Triple": "Sequência Tripla",
+    "v4Grid": "Grid 2x2",
+    "w1Cinematic": "Cinematic Full",
+    "w2Split": "Split Screen",
+    "w3Hero": "Hero + Context",
+    "w4Grid": "Grid 3x2",
+    "s1Full": "Full Square",
+    "s2Grid": "Grid 2x2",
+    "s3Lshape": "L-Shape",
+    "s4Hsplit": "Horizontal Split",
+    "p1Full": "Full Portrait",
+    "p2Split": "Split Vertical",
+    "p3Trio": "Trio Stack",
+    "p4Grid": "Grid 2x2",
+    "slideshow": "Slideshow",
+    "slideshowDescription": "Múltiplas imagens em sequência temporal",
+    "layoutsFor": "Layouts para {{format}}",
+    "variations": "variações",
+    "setDefault": "Definir como padrão",
+    "removeDefault": "Remover padrão",
+    "myLayouts": "MEUS LAYOUTS ({{count}})",
+    "howManyPanels": "Quantos painéis nesta página?"
+  },
+  
+  "toast": {
+    "projectCreated": "Projeto \"{{name}}\" criado!",
+    "demoCreated": "Demo criado com 8 páginas!",
+    "preparingExport": "Preparando exportação do projeto...",
+    "projectSaved": "Projeto salvo como arquivo .hq!",
+    "exportError": "Erro ao exportar projeto.",
+    "readingFile": "Lendo arquivo do projeto...",
+    "projectImported": "Projeto importado com sucesso!",
+    "importError": "Erro ao importar. O arquivo pode estar corrompido.",
+    "deleted": "Apagado",
+    "coverExists": "Capa já existe — navegando para ela",
+    "coverCreated": "Capa criada! Escolha um template ou comece a personalizar.",
+    "coverRemoved": "Capa removida",
+    "backCoverExists": "Contracapa já existe",
+    "backCoverCreated": "Contracapa criada! Escolha um template ou personalize.",
+    "backCoverRemoved": "Contracapa removida",
+    "backCoverTemplateApplied": "Template contracapa \"{{name}}\" aplicado",
+    "templateApplied": "Template \"{{name}}\" aplicado",
+    "imageAdded": "Imagem adicionada",
+    "textElementAdded": "Elemento de texto adicionado",
+    "presetApplied": "Preset \"{{name}}\" aplicado",
+    "coverExported": "Capa exportada como PNG!",
+    "exportErrorDetail": "Erro ao exportar: {{message}}",
+    "pageDuplicated": "Página {{number}} duplicada",
+    "lastPage": "Ultima pagina",
+    "pageCleared": "Pagina limpa",
+    "fileInputNotFound": "Erro: input de arquivo não encontrado",
+    "languageChanged": "Idioma alterado para {{language}}"
+  },
+  
+  "confirm": {
+    "deleteProject": "Apagar projeto?",
+    "removeCover": "Remover a capa do projeto? Os metadados serão perdidos.",
+    "removeBackCover": "Remover a contracapa do projeto?",
+    "clearPage": "Limpar todos os elementos desta pagina?",
+    "removeSlide": "Remover slide {{number}}?",
+    "autoSplit": "Criar segmentos automáticos com {{count}} páginas cada?",
+    "applyNarrativeSettings": "Aplicar configurações da narrativa (estilo e altura de {{height}}px) a todas as {{pages}} páginas?",
+    "mobileExportWarning": "Aviso: Export em mobile pode ser lento (2-5 min) e consumir bateria.\n\nRecomendamos usar desktop para melhor performance.\n\nContinuar mesmo assim?",
+    "exportWithErrors": "Aviso: Problemas encontrados:\n\n{{errors}}\n\nExportar mesmo assim?"
+  },
+  
+  "exporter": {
+    "loadingFonts": "Carregando fontes...",
+    "preparingCanvas": "Preparando canvas...",
+    "preparing4K": "Preparando canvas 4K (pode ser lento)...",
+    "configuringAV": "Configurando áudio e vídeo...",
+    "loadingAudio": "Carregando áudio...",
+    "bgMusicLoadError": "Falha ao carregar música de fundo"
+  },
+  
+  "onboarding": {
+    "welcome": "Bem-vindo ao HQ Movie!",
+    "createFirstProject": "Comece criando seu primeiro projeto aqui.",
+    "chooseFormat": "Escolha o Formato",
+    "verticalPerfect": "Vertical é perfeito para Shorts, Reels e TikTok.",
+    "step1Title": "1. O Palco",
+    "step1Description": "Aqui é onde a mágica acontece. Arraste imagens para cá ou cole (Ctrl+V) para criar páginas.",
+    "step2Title": "2. Ferramentas",
+    "step2Description": "Use balões de fala, layouts e stickers deste painel para dar vida à história.",
+    "step3Title": "3. Timeline de Vídeo",
+    "step3Description": "Ajuste a duração de cada página e visualize o fluxo do vídeo.",
+    "step4Title": "4. Exportar",
+    "step4Description": "Quando terminar, clique aqui para gerar seu vídeo WebM ou exportar imagens.",
+    "skipTour": "Pular Tour",
+    "next": "Próximo →",
+    "gotIt": "Entendi",
+    "tourComplete": "Tour concluído! Se precisar de ajuda, clique no \"?\" na barra superior."
+  },
+  
+  "tooltip": {
+    "fontSize": "Tamanho da fonte",
+    "exactSize": "Tamanho exato",
+    "bold": "Negrito (Ctrl+B)",
+    "italic": "Itálico (Ctrl+I)",
+    "underline": "Sublinhado (Ctrl+U)",
+    "alignLeft": "Alinhar esquerda",
+    "alignCenter": "Centralizar",
+    "alignRight": "Alinhar direita",
+    "justify": "Justificar",
+    "close": "Fechar (Esc)",
+    "background": "Fundo",
+    "text": "Texto",
+    "lightPreset": "Só imagens numeradas",
+    "completePreset": "Tudo organizado",
+    "editPreset": "Otimizado para NLE",
+    "home": "Início",
+    "properties": "Propriedades"
+  },
+  
+  "placeholder": {
+    "balloonText": "Digite o texto do balão...",
+    "projectName": "Meu Projeto",
+    "noName": "Sem nome"
+  },
+  
+  "seo": {
+    "title": "HQ Movie - Criador de Motion Comics",
+    "description": "Crie vídeos animados profissionais a partir de suas imagens. Efeitos Ken Burns, narração, transições. Sem assinatura. 100% offline.",
+    "ogTitle": "HQ Movie - Transforme Imagens em Motion Comics",
+    "ogDescription": "Ferramenta profissional de criação de vídeos para contadores de histórias, educadores e criadores de conteúdo."
+  },
+  
+  "floatingToolbar": {
+    "font": "Font",
+    "size": "Size",
+    "serif": "Serif",
+    "sans": "Sans",
+    "comic": "Comic",
+    "mono": "Mono",
+    "display": "Display",
+    "marker": "Marker"
+  },
+  
+  "modal": {
+    "transition": "Transição",
+    "cutNone": "Corte Seco (Nenhuma)",
+    "fadeDefault": "Fade Padrão (0.5s)",
+    "fadeSlow": "Fade Lento (1.0s)",
+    "fadeFast": "Fade Rápido (0.2s)",
+    "cancel": "Cancelar",
+    "apply": "Aplicar"
+  },
+  
+  "recording": {
+    "title": "Gravar Narração",
+    "status": "Status",
+    "ready": "Pronto para gravar",
+    "recording": "Gravando...",
+    "recorded": "Gravado",
+    "record": "🔴 Gravar",
+    "stop": "⏹️ Parar",
+    "play": "▶️ Reproduzir",
+    "save": "💾 Salvar",
+    "cancel": "Cancelar"
+  },
+  
+  "excalidraw": {
+    "title": "Desenho à Mão Livre",
+    "guides": "Guias:",
+    "cancel": "Cancelar",
+    "save": "Salvar na Página"
+  },
+  
+  "projectCard": {
+    "delete": "Apagar"
+  },
+  
+  "contextMenu": {
+    "duplicate": "Duplicar",
+    "clear": "Limpar",
+    "delete": "Excluir"
+  }
+}

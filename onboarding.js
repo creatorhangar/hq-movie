@@ -16,7 +16,6 @@ const Onboarding = {
         if (!localStorage.getItem('hq_onboarding_v1')) {
             this._active = true;
             this._step = 0;
-            console.log('🔰 Onboarding initialized');
         }
     },
 
@@ -34,7 +33,7 @@ const Onboarding = {
         // Dashboard: Point to New Project
         if (view === 'dashboard') {
             const btn = document.querySelector('.btn-primary');
-            if (btn) this.showTooltipElement(btn, 'Bem-vindo ao HQ Movie!', 'Comece criando seu primeiro projeto aqui.', 'bottom', () => {
+            if (btn) this.showTooltipElement(btn, t('onboarding.welcome'), t('onboarding.createFirstProject'), 'bottom', () => {
                 this.clear(); // User will click the button naturally
             });
         }
@@ -43,7 +42,7 @@ const Onboarding = {
         if (view === 'format-selector') {
             this.clear();
             const card = document.querySelector('.format-card'); // First one
-            if (card) this.showTooltipElement(card, 'Escolha o Formato', 'Vertical é perfeito para Shorts, Reels e TikTok.', 'bottom', () => {
+            if (card) this.showTooltipElement(card, t('onboarding.chooseFormat'), t('onboarding.verticalPerfect'), 'bottom', () => {
                 this.clear();
             });
         }
@@ -60,26 +59,26 @@ const Onboarding = {
         const steps = [
             {
                 sel: '#canvas-area',
-                title: '1. O Palco',
-                text: 'Aqui é onde a mágica acontece. Arraste imagens para cá ou cole (Ctrl+V) para criar páginas.',
+                title: t('onboarding.step1Title'),
+                text: t('onboarding.step1Description'),
                 pos: 'center'
             },
             {
                 sel: '.left-panel',
-                title: '2. Ferramentas',
-                text: 'Use balões de fala, layouts e stickers deste painel para dar vida à história.',
+                title: t('onboarding.step2Title'),
+                text: t('onboarding.step2Description'),
                 pos: 'right'
             },
             {
                 sel: '#timeline-bar',
-                title: '3. Timeline de Vídeo',
-                text: 'Ajuste a duração de cada página e visualize o fluxo do vídeo.',
+                title: t('onboarding.step3Title'),
+                text: t('onboarding.step3Description'),
                 pos: 'top'
             },
             {
                 sel: '.toolbar-right .btn-primary',
-                title: '4. Exportar',
-                text: 'Quando terminar, clique aqui para gerar seu vídeo WebM ou exportar imagens.',
+                title: t('onboarding.step4Title'),
+                text: t('onboarding.step4Description'),
                 pos: 'bottom-left'
             }
         ];
@@ -124,8 +123,8 @@ const Onboarding = {
             <h3>${title}</h3>
             <p>${text}</p>
             <div class="ob-actions">
-                ${isTour ? '<button class="ob-skip" onclick="Onboarding.complete()">Pular Tour</button>' : ''}
-                <button class="ob-next" id="ob-next-btn">${isTour ? 'Próximo →' : 'Entendi'}</button>
+                ${isTour ? `<button class="ob-skip" onclick="Onboarding.complete()">${t('onboarding.skipTour')}</button>` : ''}
+                <button class="ob-next" id="ob-next-btn">${isTour ? t('onboarding.next') : t('onboarding.gotIt')}</button>
             </div>
         `;
         
@@ -185,7 +184,7 @@ const Onboarding = {
         this._active = false;
         this.clear();
         localStorage.setItem('hq_onboarding_v1', 'true');
-        Toast.show('Tour concluído! Se precisar de ajuda, clique no "?" na barra superior.', 'success');
+        Toast.show(t('onboarding.tourComplete'), 'success');
     }
 };
 

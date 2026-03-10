@@ -6,39 +6,39 @@
 const VIDEO_FORMATS = {
   vertical: { 
     id: 'vertical',
-    name: 'Vertical (9:16)', 
-    description: 'Stories, Reels, TikTok',
+    get name() { return typeof t !== 'undefined' ? t('formats.vertical') : 'Vertical (9:16)'; },
+    get description() { return typeof t !== 'undefined' ? t('formats.verticalDescription') : 'Stories, Reels, TikTok'; },
     width: 1080, 
     height: 1920,
     ratio: 9/16,
-    icon: 'smartphone' // Will be replaced with Icons.smartphone when available
+    icon: 'smartphone'
   },
   widescreen: { 
     id: 'widescreen',
-    name: 'Widescreen (16:9)', 
-    description: 'YouTube, TV',
+    get name() { return typeof t !== 'undefined' ? t('formats.widescreen') : 'Widescreen (16:9)'; },
+    get description() { return typeof t !== 'undefined' ? t('formats.widescreenDescription') : 'YouTube, TV'; },
     width: 1920, 
     height: 1080,
     ratio: 16/9,
-    icon: 'video' // Will be replaced with Icons.video when available
+    icon: 'video'
   },
   square: { 
     id: 'square',
-    name: 'Quadrado (1:1)', 
-    description: 'Instagram Feed',
+    get name() { return typeof t !== 'undefined' ? t('formats.square') : 'Square (1:1)'; },
+    get description() { return typeof t !== 'undefined' ? t('formats.squareDescription') : 'Instagram Feed'; },
     width: 1080, 
     height: 1080,
     ratio: 1,
-    icon: 'square' // Will be replaced with Icons.square when available
+    icon: 'square'
   },
   portrait: { 
     id: 'portrait',
-    name: 'Retrato (4:3)', 
-    description: 'Apresentações, Monitor clássico',
+    get name() { return typeof t !== 'undefined' ? t('formats.portrait') : 'Portrait (4:3)'; },
+    get description() { return typeof t !== 'undefined' ? t('formats.portraitDescription') : 'Presentations, Classic Monitor'; },
     width: 1440, 
     height: 1080,
     ratio: 4/3,
-    icon: 'video' // Will be replaced with Icons.video when available
+    icon: 'video'
   }
 };
 
@@ -62,7 +62,7 @@ const VH = 1920;
 const VideoLayoutsVertical = {
   // V1: Splash Vertical (1 panel full)
   'v1-splash': { 
-    name: 'Splash Vertical', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.v1Splash') : 'Vertical Splash'; },
     count: 1, 
     format: 'vertical',
     panels: [{ x: 0, y: 0, w: VW, h: VH, order: 1 }] 
@@ -70,7 +70,7 @@ const VideoLayoutsVertical = {
   
   // V2: Diálogo Dual (2 panels stacked)
   'v2-dual': { 
-    name: 'Diálogo Dual', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.v2Dual') : 'Dual Dialogue'; },
     count: 2, 
     format: 'vertical',
     panels: [
@@ -81,7 +81,7 @@ const VideoLayoutsVertical = {
   
   // V3: Sequência Tripla (3 panels stacked)
   'v3-triple': { 
-    name: 'Sequência Tripla', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.v3Triple') : 'Triple Sequence'; },
     count: 3, 
     format: 'vertical',
     panels: [
@@ -93,7 +93,7 @@ const VideoLayoutsVertical = {
   
   // V4: Grid 2x2 (4 panels)
   'v4-grid': { 
-    name: 'Grid 2x2', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.v4Grid') : 'Grid 2x2'; },
     count: 4, 
     format: 'vertical',
     panels: [
@@ -114,7 +114,7 @@ const WH = 1080;
 const VideoLayoutsWidescreen = {
   // W1: Cinematic Full (1 panel)
   'w1-cinematic': { 
-    name: 'Cinematic Full', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.w1Cinematic') : 'Cinematic Full'; },
     count: 1, 
     format: 'widescreen',
     panels: [{ x: 0, y: 0, w: WW, h: WH, order: 1 }] 
@@ -122,7 +122,7 @@ const VideoLayoutsWidescreen = {
   
   // W2: Split Screen (2 panels side by side)
   'w2-split': { 
-    name: 'Split Screen', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.w2Split') : 'Split Screen'; },
     count: 2, 
     format: 'widescreen',
     panels: [
@@ -133,7 +133,7 @@ const VideoLayoutsWidescreen = {
   
   // W3: Hero + Context (1 large left + 2 stacked right)
   'w3-hero': { 
-    name: 'Hero + Context', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.w3Hero') : 'Hero + Context'; },
     count: 3, 
     format: 'widescreen',
     panels: [
@@ -145,7 +145,7 @@ const VideoLayoutsWidescreen = {
   
   // W4: Grid 3x2 (6 panels)
   'w4-grid': { 
-    name: 'Grid 3x2', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.w4Grid') : 'Grid 3x2'; },
     count: 6, 
     format: 'widescreen',
     panels: [
@@ -168,7 +168,7 @@ const SH = 1080;
 const VideoLayoutsSquare = {
   // S1: Full Square (1 panel)
   's1-full': { 
-    name: 'Full Square', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.s1Full') : 'Full Square'; },
     count: 1, 
     format: 'square',
     panels: [{ x: 0, y: 0, w: SW, h: SH, order: 1 }] 
@@ -176,7 +176,7 @@ const VideoLayoutsSquare = {
   
   // S2: Grid 2x2 (4 panels)
   's2-grid': { 
-    name: 'Grid 2x2', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.s2Grid') : 'Grid 2x2'; },
     count: 4, 
     format: 'square',
     panels: [
@@ -189,7 +189,7 @@ const VideoLayoutsSquare = {
   
   // S3: L-Shape (3 panels)
   's3-lshape': { 
-    name: 'L-Shape', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.s3Lshape') : 'L-Shape'; },
     count: 3, 
     format: 'square',
     panels: [
@@ -201,7 +201,7 @@ const VideoLayoutsSquare = {
   
   // S4: Horizontal Split (2 panels stacked)
   's4-hsplit': { 
-    name: 'Horizontal Split', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.s4Hsplit') : 'Horizontal Split'; },
     count: 2, 
     format: 'square',
     panels: [
@@ -220,7 +220,7 @@ const PH = 1080;
 const VideoLayoutsPortrait = {
   // P1: Full Portrait (1 panel)
   'p1-full': { 
-    name: 'Full Portrait', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.p1Full') : 'Full Portrait'; },
     count: 1, 
     format: 'portrait',
     panels: [{ x: 0, y: 0, w: PW, h: PH, order: 1 }] 
@@ -228,7 +228,7 @@ const VideoLayoutsPortrait = {
   
   // P2: Split Vertical (2 panels side by side)
   'p2-split': { 
-    name: 'Split Vertical', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.p2Split') : 'Vertical Split'; },
     count: 2, 
     format: 'portrait',
     panels: [
@@ -239,7 +239,7 @@ const VideoLayoutsPortrait = {
   
   // P3: Trio Stack (3 panels stacked)
   'p3-trio': { 
-    name: 'Trio Stack', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.p3Trio') : 'Trio Stack'; },
     count: 3, 
     format: 'portrait',
     panels: [
@@ -251,7 +251,7 @@ const VideoLayoutsPortrait = {
   
   // P4: Grid 2x2 (4 panels)
   'p4-grid': { 
-    name: 'Grid 2x2', 
+    get name() { return typeof t !== 'undefined' ? t('layouts.p4Grid') : 'Grid 2x2'; },
     count: 4, 
     format: 'portrait',
     panels: [
@@ -294,8 +294,8 @@ function getDefaultVideoLayout(formatId) {
 // ═══════════════════════════════════════════════════════════════
 const VideoLayoutsSlideshow = {
   'slideshow': {
-    name: 'Slideshow',
-    description: 'Múltiplas imagens em sequência temporal',
+    get name() { return typeof t !== 'undefined' ? t('layouts.slideshow') : 'Slideshow'; },
+    get description() { return typeof t !== 'undefined' ? t('layouts.slideshowDescription') : 'Multiple images in temporal sequence'; },
     count: 0, // Dynamic - determined by slides array
     format: 'all', // Works with any video format
     panels: [], // Not used - slides are temporal, not spatial

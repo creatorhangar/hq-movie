@@ -164,7 +164,7 @@ const App = {
         await db.projects.put(p);
         await Store.loadProjects();
         Store.set({ view: 'editor', currentProject: p, activePageIndex: 0, selectedElement: null, selectedSlot: -1, undoStack: [], redoStack: [] });
-        Toast.show(`Projeto "${t.name}" criado!`, 'success');
+        Toast.show(t('toast.projectCreated', { name: t.name }), 'success');
     },
 
     async createDemoProject() {
@@ -341,7 +341,7 @@ const App = {
         await db.projects.put(p);
         await Store.loadProjects();
         Store.set({ view: 'editor', currentProject: p, activePageIndex: 0, selectedElement: null, selectedSlot: -1 });
-        Toast.show('Demo criado com 8 páginas!', 'success');
+        Toast.show(t('toast.demoCreated'), 'success');
     },
     async openProject(id) {
         const p = await db.projects.get(id);
@@ -528,7 +528,7 @@ const App = {
         if (!p) return;
         
         try {
-            Toast.show('Preparando exportação do projeto...', 'info');
+            Toast.show(t('toast.preparingExport'), 'info');
             
             const zip = new JSZip();
             
@@ -549,10 +549,10 @@ const App = {
             a.download = `hq-${cleanName}.hq`;
             a.click();
             
-            Toast.show('Projeto salvo como arquivo .hq!', 'success');
+            Toast.show(t('toast.projectSaved'), 'success');
         } catch (e) {
             console.error(e);
-            Toast.show('Erro ao exportar projeto.', 'error');
+            Toast.show(t('toast.exportError'), 'error');
         }
     },
     
@@ -561,7 +561,7 @@ const App = {
         if (!file) return;
         
         try {
-            Toast.show('Lendo arquivo do projeto...', 'info');
+            Toast.show(t('toast.readingFile'), 'info');
             
             const zip = new JSZip();
             const contents = await zip.loadAsync(file);
@@ -582,28 +582,28 @@ const App = {
             await db.projects.put(projectData);
             await Store.loadProjects();
             
-            Toast.show('Projeto importado com sucesso!', 'success');
+            Toast.show(t('toast.projectImported'), 'success');
         } catch (e) {
             console.error(e);
-            Toast.show('Erro ao importar. O arquivo pode estar corrompido.', 'error');
+            Toast.show(t('toast.importError'), 'error');
         }
         
         // Reset file input so same file can be selected again
         event.target.value = '';
     },
 
-    async deleteProjectConfirm(id) { if (!confirm('Apagar projeto?')) return; await Store.deleteProject(id); Toast.show('Apagado', 'info'); },
-    renameProject(name) { const p = Store.get('currentProject'); if (!p) return; p.metadata.name = name.trim() || 'Sem nome'; Store.set({ currentProject: p }); Store.save(); },
+    async deleteProjectConfirm(id) { if (!confirm(t('confirm.deleteProject'))) return; await Store.deleteProject(id); Toast.show(t('toast.deleted'), 'info'); },
+    renameProject(name) { const p = Store.get('currentProject'); if (!p) return; p.metadata.name = name.trim() || t('placeholder.noName'); Store.set({ currentProject: p }); Store.save(); },
 
     // ── Cover Page ──
     addCover() {
         const p = Store.get('currentProject'); if (!p) return;
-        if (p.cover) { this.setActiveCover(); Toast.show('Capa já existe — navegando para ela', 'info'); return; }
+        if (p.cover) { this.setActiveCover(); Toast.show(t('toast.coverExists'), 'info'); return; }
         Store.pushUndo();
         p.cover = createCover(p.metadata.name);
         Store.set({ currentProject: p, coverActive: true, selectedElement: null, selectedSlot: -1 });
         Store.save();
-        Toast.show('Capa criada! Escolha um template ou comece a personalizar.', 'success', 4000);
+        Toast.show(t('toast.coverCreated'), 'success', 4000);
     },
     setActiveCover() {
         const p = Store.get('currentProject'); if (!p || !p.cover) return;
@@ -618,25 +618,25 @@ const App = {
     },
     removeCover() {
         const p = Store.get('currentProject'); if (!p || !p.cover) return;
-        if (!confirm('Remover a capa do projeto? Os metadados serão perdidos.')) return;
+        if (!confirm(t('confirm.removeCover'))) return;
         Store.pushUndo();
         p.cover = null;
         Store.set({ currentProject: p, coverActive: false, activePageIndex: 0, selectedElement: null, selectedSlot: -1 });
         Store.save();
-        Toast.show('Capa removida', 'info');
+        Toast.show(t('toast.coverRemoved'), 'info');
     },
 
     // ── Back Cover (Contracapa) ──
     addBackCover() {
         const p = Store.get('currentProject'); if (!p) return;
-        if (p.backCover) { this.setActiveBackCover(); Toast.show('Contracapa já existe', 'info'); return; }
+        if (p.backCover) { this.setActiveBackCover(); Toast.show(t('toast.backCoverExists'), 'info'); return; }
         Store.pushUndo();
         p.backCover = createBackCover();
         // Pre-fill synopsis from cover if available
         if (p.cover && p.cover.synopsis) p.backCover.synopsis = p.cover.synopsis;
         Store.set({ currentProject: p, backCoverActive: true, coverActive: false, selectedElement: null, selectedSlot: -1 });
         Store.save();
-        Toast.show('Contracapa criada! Escolha um template ou personalize.', 'success', 4000);
+        Toast.show(t('toast.backCoverCreated'), 'success', 4000);
     },
     setActiveBackCover() {
         const p = Store.get('currentProject'); if (!p || !p.backCover) return;
@@ -649,12 +649,12 @@ const App = {
     },
     removeBackCover() {
         const p = Store.get('currentProject'); if (!p || !p.backCover) return;
-        if (!confirm('Remover a contracapa do projeto?')) return;
+        if (!confirm(t('confirm.removeBackCover'))) return;
         Store.pushUndo();
         p.backCover = null;
         Store.set({ currentProject: p, backCoverActive: false, activePageIndex: 0, selectedElement: null, selectedSlot: -1 });
         Store.save();
-        Toast.show('Contracapa removida', 'info');
+        Toast.show(t('toast.backCoverRemoved'), 'info');
     },
     applyBackCoverTemplate(templateId) {
         const p = Store.get('currentProject'); if (!p || !p.backCover) return;
@@ -670,7 +670,7 @@ const App = {
             if (synEl) synEl.text = p.cover.synopsis;
         }
         Store.set({ currentProject: p }); Store.save();
-        Toast.show(`Template contracapa "${tmpl.name}" aplicado`, 'success');
+        Toast.show(t('toast.backCoverTemplateApplied', { name: tmpl.name }), 'success');
         renderCanvas(); renderRightPanel();
     },
 
@@ -701,7 +701,7 @@ const App = {
         if (authorEl && p.cover.author) authorEl.text = p.cover.author;
         Store.set({ currentProject: p });
         Store.save();
-        Toast.show(`Template "${tmpl.name}" aplicado`, 'success');
+        Toast.show(t('toast.templateApplied', { name: tmpl.name }), 'success');
         renderCanvas(); renderRightPanel();
     },
     _coverMetaSaveTimeout: null,
@@ -774,7 +774,7 @@ const App = {
         coverObj.elements.push(el);
         Store.set({ currentProject: p, selectedElement: { type: 'cover-image', id: el.id } }); Store.save();
         renderCanvas(); renderRightPanel();
-        Toast.show('Imagem adicionada');
+        Toast.show(t('toast.imageAdded'));
     },
     addCoverTextElement(role = 'custom') {
         const p = Store.get('currentProject');
@@ -825,7 +825,7 @@ const App = {
         coverObj.elements.push(el);
         Store.set({ currentProject: p, selectedElement: { type: 'cover-text', id: el.id } }); Store.save();
         renderCanvas(); renderRightPanel();
-        Toast.show('Elemento de texto adicionado');
+        Toast.show(t('toast.textElementAdded'));
     },
     _coverSaveTimeout: null,
     updateCoverElement(elId, prop, value) {
@@ -1047,9 +1047,9 @@ const App = {
                 a.download = `${prefix}-${((p.cover && p.cover.title) || p.metadata.name).replace(/\s+/g, '-')}.png`;
                 a.click();
                 URL.revokeObjectURL(a.href);
-                Toast.show('Capa exportada como PNG!', 'success');
+                Toast.show(t('toast.coverExported'), 'success');
             }, 'image/png');
-        } catch (err) { Toast.show('Erro ao exportar: ' + err.message, 'error'); }
+        } catch (err) { Toast.show(t('toast.exportErrorDetail', { message: err.message }), 'error'); }
         vp.x = savedVP.x; vp.y = savedVP.y; vp.scale = savedVP.scale;
         this._applyViewportTransform();
         Store.set({ showGuides: true });
@@ -1120,7 +1120,7 @@ const App = {
         
         Store.set({ currentProject: p, activePageIndex: index + 1, selectedSlot: -1, selectedElement: null });
         Store.save();
-        Toast.show(`Página ${index + 1} duplicada`, 'success');
+        Toast.show(t('toast.pageDuplicated', { number: index + 1 }), 'success');
     },
     setActivePage(i) {
         const p = Store.get('currentProject');
@@ -1131,7 +1131,7 @@ const App = {
     },
     deletePage(i) {
         const p = Store.get('currentProject');
-        if (!p || p.pages.length <= 1) { Toast.show('Ultima pagina', 'error'); return; }
+        if (!p || p.pages.length <= 1) { Toast.show(t('toast.lastPage'), 'error'); return; }
         Store.pushUndo();
         p.pages.splice(i, 1);
         Store.set({ currentProject: p, activePageIndex: Math.min(Store.get('activePageIndex'), p.pages.length - 1), selectedElement: null, selectedSlot: -1 });
@@ -1150,7 +1150,7 @@ const App = {
     clearPage(i) {
         const p = Store.get('currentProject');
         if (!p || !p.pages[i]) return;
-        if (!confirm('Limpar todos os elementos desta pagina?')) return;
+        if (!confirm(t('confirm.clearPage'))) return;
         Store.pushUndo();
         p.pages[i].images = [];
         p.pages[i].texts = [];
@@ -1158,7 +1158,7 @@ const App = {
         p.pages[i].layoutId = null;
         Store.set({ currentProject: p });
         Store.save();
-        Toast.show('Pagina limpa');
+        Toast.show(t('toast.pageCleared'));
     },
     pageDrop(e, toI) {
         e.preventDefault(); const d = e.dataTransfer.getData('text/plain'); if (!d.startsWith('page:')) return;
@@ -1173,7 +1173,7 @@ const App = {
         const input = document.getElementById('file-input-persistent');
         if (!input) {
             console.error('file-input-persistent não encontrado');
-            Toast.show('Erro: input de arquivo não encontrado', 'error');
+            Toast.show(t('toast.fileInputNotFound'), 'error');
             return;
         }
         
@@ -1185,7 +1185,6 @@ const App = {
             input.value = '';
         }
         
-        console.log('Disparando clique no input de arquivo...');
         try {
             input.click();
         } catch (e) {
@@ -1203,7 +1202,6 @@ const App = {
         input.multiple = true;
         input.onchange = (e) => this.handleFileUpload(e);
         input.click();
-        console.log('Usando método alternativo de upload');
     },
     handleFileUpload(e) {
         Array.from(e.target.files || []).forEach(f => {
@@ -3554,7 +3552,6 @@ const App = {
     },
 
     addBalloonToPage(type = 'speech') {
-        console.log('🎈 addBalloonToPage chamado', { type, currentPage: Store.get('activePageIndex'), hasTexts: !!Store.getActivePage()?.texts });
         const p = Store.get('currentProject'), page = Store.getActivePage(); if (!p || !page) return;
         
         // Matéria context guard
@@ -4311,7 +4308,6 @@ const App = {
             for (const format of formats) {
                 if (MediaRecorder.isTypeSupported(format)) {
                     mimeType = format;
-                    console.log('Audio format detected:', format);
                     break;
                 }
             }
@@ -4717,6 +4713,17 @@ const App = {
         
         if (index < 0 || index >= page.slides.length) return;
         
+        // Prevent deleting last slide
+        if (page.slides.length <= 1) {
+            Toast.show('Mínimo de 1 slide necessário', 'warning');
+            return;
+        }
+        
+        // Confirm if more than 2 slides
+        if (page.slides.length > 2) {
+            if (!confirm(t('confirm.removeSlide', { number: index + 1 }))) return;
+        }
+        
         page.slides.splice(index, 1);
         
         Store.save();
@@ -4784,28 +4791,182 @@ const App = {
     },
 
     // Drag & Drop handlers
+    _slideDragIndex: null,
+    
     handleSlideDragStart(event, index) {
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData('text/plain', index.toString());
-        event.target.style.opacity = '0.5';
+        event.target.classList.add('dragging');
+        this._slideDragIndex = index;
     },
 
     handleSlideDragOver(event) {
         event.preventDefault();
         event.dataTransfer.dropEffect = 'move';
+        
+        const target = event.currentTarget;
+        if (!target || !target.classList.contains('slideshow-slide-item')) return;
+        
+        // Calculate if drop should be before or after this card
+        const rect = target.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        const dropBefore = event.clientY < midY;
+        
+        // Remove existing indicators
+        document.querySelectorAll('.slideshow-drop-indicator').forEach(el => el.remove());
+        document.querySelectorAll('.slideshow-slide-item').forEach(item => {
+            item.classList.remove('drop-target');
+        });
+        
+        // Create drop indicator line
+        const indicator = document.createElement('div');
+        indicator.className = 'slideshow-drop-indicator';
+        
+        if (dropBefore) {
+            target.parentNode.insertBefore(indicator, target);
+            target.dataset.dropPosition = 'before';
+        } else {
+            target.parentNode.insertBefore(indicator, target.nextSibling);
+            target.dataset.dropPosition = 'after';
+        }
+        
+        target.classList.add('drop-target');
+    },
+
+    handleSlideDragLeave(event) {
+        // Only remove if leaving the slides container entirely
+        const relatedTarget = event.relatedTarget;
+        if (relatedTarget && relatedTarget.closest('.slideshow-slide-item')) return;
+        
+        event.currentTarget.classList.remove('drop-target');
+        delete event.currentTarget.dataset.dropPosition;
     },
 
     handleSlideDrop(event, toIndex) {
         event.preventDefault();
         const fromIndex = parseInt(event.dataTransfer.getData('text/plain'));
         
+        // Check if dropping before or after
+        const target = event.currentTarget;
+        const dropBefore = target.dataset.dropPosition === 'before';
+        
+        // Cleanup
+        this._cleanupSlideDrag();
+        
         if (fromIndex === toIndex) return;
         
-        this.reorderSlides(fromIndex, toIndex);
+        // Adjust toIndex based on drop position
+        let finalIndex = toIndex;
+        if (!dropBefore && fromIndex < toIndex) {
+            // Dropping after, and coming from before - no adjustment needed
+        } else if (dropBefore && fromIndex > toIndex) {
+            // Dropping before, and coming from after - no adjustment needed
+        } else if (!dropBefore) {
+            finalIndex = toIndex + 1;
+        }
         
-        // Reset opacity
-        const items = document.querySelectorAll('.slideshow-slide-item');
-        items.forEach(item => item.style.opacity = '1');
+        // Clamp to valid range
+        const page = Store.getActivePage();
+        if (page && page.slides) {
+            finalIndex = Math.min(finalIndex, page.slides.length - 1);
+        }
+        
+        this.reorderSlides(fromIndex, finalIndex);
+    },
+
+    handleSlideDragEnd(event) {
+        this._cleanupSlideDrag();
+    },
+    
+    _cleanupSlideDrag() {
+        // Remove all drag states
+        document.querySelectorAll('.slideshow-slide-item').forEach(item => {
+            item.classList.remove('dragging', 'drop-target');
+            delete item.dataset.dropPosition;
+        });
+        // Remove drop indicators
+        document.querySelectorAll('.slideshow-drop-indicator').forEach(el => el.remove());
+        this._slideDragIndex = null;
+    },
+
+    // Keyboard navigation for slides (WCAG 2.2 compliant)
+    handleSlideKeyboard(event) {
+        const target = event.target.closest('.slideshow-slide-item');
+        if (!target) return;
+        
+        const index = parseInt(target.dataset.slideIndex);
+        if (isNaN(index)) return;
+        
+        const page = Store.getActivePage();
+        if (!page || !page.slides) return;
+        
+        const slides = document.querySelectorAll('.slideshow-slide-item');
+        const lastIndex = page.slides.length - 1;
+        
+        switch (event.key) {
+            case 'ArrowUp':
+            case 'ArrowLeft':
+                event.preventDefault();
+                if (event.ctrlKey || event.metaKey) {
+                    // Ctrl+Arrow: reorder slide up
+                    if (index > 0) {
+                        this.reorderSlides(index, index - 1);
+                        setTimeout(() => slides[index - 1]?.focus(), 50);
+                    }
+                } else {
+                    // Navigate to previous slide
+                    if (index > 0) slides[index - 1]?.focus();
+                }
+                break;
+                
+            case 'ArrowDown':
+            case 'ArrowRight':
+                event.preventDefault();
+                if (event.ctrlKey || event.metaKey) {
+                    // Ctrl+Arrow: reorder slide down
+                    if (index < lastIndex) {
+                        this.reorderSlides(index, index + 1);
+                        setTimeout(() => slides[index + 1]?.focus(), 50);
+                    }
+                } else {
+                    // Navigate to next slide
+                    if (index < lastIndex) slides[index + 1]?.focus();
+                }
+                break;
+                
+            case 'Delete':
+            case 'Backspace':
+                event.preventDefault();
+                this.removeSlide(index);
+                // Focus previous or next slide after deletion
+                setTimeout(() => {
+                    const newSlides = document.querySelectorAll('.slideshow-slide-item');
+                    const focusIndex = Math.min(index, newSlides.length - 1);
+                    newSlides[focusIndex]?.focus();
+                }, 50);
+                break;
+                
+            case 'Enter':
+            case ' ':
+                event.preventDefault();
+                // Focus the duration input for editing
+                const durationInput = target.querySelector('.slideshow-control-input');
+                if (durationInput) {
+                    durationInput.focus();
+                    durationInput.select();
+                }
+                break;
+                
+            case 'Home':
+                event.preventDefault();
+                slides[0]?.focus();
+                break;
+                
+            case 'End':
+                event.preventDefault();
+                slides[lastIndex]?.focus();
+                break;
+        }
     },
 
     // Reorder slides
@@ -6663,7 +6824,7 @@ const App = {
     autoSplitNarrativeSegments(pagesPerSegment = 3) {
         const p = Store.get('currentProject');
         if (!p) return;
-        if (!confirm(`Criar segmentos automáticos com ${pagesPerSegment} páginas cada?`)) return;
+        if (!confirm(t('confirm.autoSplit', { count: pagesPerSegment }))) return;
         
         p.narrativeSegments = NarrativeSegments.autoSplit(p, pagesPerSegment);
         NarrativeSegments.updatePageRefs(p);
@@ -6899,7 +7060,7 @@ const App = {
         const show = !!page.showTextBelow;
         this._ensureNarrativeSettings(p);
         
-        if (!confirm(`Aplicar configurações da narrativa (estilo e altura de ${h}px) a todas as ${p.pages.length} páginas?`)) return;
+        if (!confirm(t('confirm.applyNarrativeSettings', { height: h, pages: p.pages.length }))) return;
         
         Store.pushUndo();
         p.pages.forEach(pg => { 
@@ -8400,11 +8561,11 @@ const App = {
         const validation = this.validateProjectBeforeExport();
         if (!validation.valid) {
             // Show errors (simpler than a custom modal for now, just an alert/confirm)
-            const msg = "Warning: Issues found:\n\n" + validation.errors.join("\n") + "\n\nExport anyway?";
+            const msg = t('confirm.exportWithErrors', { errors: validation.errors.join("\n") });
             if (!confirm(msg)) return;
         }
 
-        if (btn) { btn.disabled = true; btn.textContent = 'Exportando...'; btn.style.opacity = '0.7'; }
+        if (btn) { btn.disabled = true; btn.textContent = t('export.exporting'); btn.style.opacity = '0.7'; }
         if (area) area.style.display = 'block';
 
         const proj = Store.get('currentProject');
@@ -8441,7 +8602,6 @@ const App = {
         }
         
         await Store.save();
-        console.log(`[EXPORT] Saved state before exporting language: ${lang}`);
         
         const proj = Store.get('currentProject');
         const langSuffix = lang === 'pt-BR' ? '_pt-br' : '_en';
@@ -8535,7 +8695,6 @@ const App = {
         }
         
         await Store.save();
-        console.log('[EXPORT] Saved state before export');
         
         // Fetch fresh project from Store after save
         const proj = Store.get('currentProject');

@@ -1,131 +1,235 @@
-// ═══════════════════════════════════════════════════════════════
-// i18n.js - Sistema de Internacionalização para HQ Movie
-// ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
+   HQ MOVIE — i18n System v2.0
+   Complete internationalization with JSON translation files
+   Default: English (EN) | Secondary: Portuguese (PT-BR)
+   ═══════════════════════════════════════════════════════════════ */
 
-const I18n = {
-  // Idiomas suportados
-  languages: {
-    'pt-BR': { name: 'Português', flag: '🇧🇷', code: 'PT' },
-    'en': { name: 'English', flag: '🇺🇸', code: 'EN' },
-    'es': { name: 'Español', flag: '🇪🇸', code: 'ES' },
-    'fr': { name: 'Français', flag: '🇫🇷', code: 'FR' }
+const i18n = {
+  currentLocale: 'en', // Default EN (SEO primary)
+  fallbackLocale: 'en',
+  translations: {},
+  isReady: false,
+  
+  async init() {
+    
+    // Detect browser language
+    const browserLang = navigator.language || navigator.userLanguage;
+    const detectedLocale = browserLang.startsWith('pt') ? 'pt-BR' : 'en';
+    
+    // Load from localStorage if exists
+    const savedLocale = localStorage.getItem('hqm_locale');
+    this.currentLocale = savedLocale || detectedLocale;
+    
+    // Load translations
+    await this.loadLocale(this.currentLocale);
+    if (this.currentLocale !== this.fallbackLocale) {
+      await this.loadLocale(this.fallbackLocale);
+    }
+    
+    // Apply to HTML
+    document.documentElement.lang = this.currentLocale;
+    
+    // Mark ready BEFORE updating meta (so t() works)
+    this.isReady = true;
+    
+    // Update SEO meta tags
+    this.updateMetaTags();
   },
-
-  // Traduções da interface
-  translations: {
-    // Toolbar
-    'toolbar.home': { 'pt-BR': 'Início', 'en': 'Home', 'es': 'Inicio', 'fr': 'Accueil' },
-    'toolbar.undo': { 'pt-BR': 'Desfazer', 'en': 'Undo', 'es': 'Deshacer', 'fr': 'Annuler' },
-    'toolbar.redo': { 'pt-BR': 'Refazer', 'en': 'Redo', 'es': 'Rehacer', 'fr': 'Refaire' },
-    'toolbar.text': { 'pt-BR': 'Texto', 'en': 'Text', 'es': 'Texto', 'fr': 'Texte' },
-    'toolbar.guides': { 'pt-BR': 'Guias', 'en': 'Guides', 'es': 'Guías', 'fr': 'Guides' },
-    'toolbar.export': { 'pt-BR': 'Exportar', 'en': 'Export', 'es': 'Exportar', 'fr': 'Exporter' },
-    'toolbar.preview': { 'pt-BR': 'Preview tela cheia', 'en': 'Fullscreen preview', 'es': 'Vista previa pantalla completa', 'fr': 'Aperçu plein écran' },
-    'toolbar.shortcuts': { 'pt-BR': 'Atalhos', 'en': 'Shortcuts', 'es': 'Atajos', 'fr': 'Raccourcis' },
-    'toolbar.tools': { 'pt-BR': 'Ferramentas', 'en': 'Tools', 'es': 'Herramientas', 'fr': 'Outils' },
-    'toolbar.properties': { 'pt-BR': 'Propriedades', 'en': 'Properties', 'es': 'Propiedades', 'fr': 'Propriétés' },
-    'toolbar.saved': { 'pt-BR': '✓ Salvo', 'en': '✓ Saved', 'es': '✓ Guardado', 'fr': '✓ Enregistré' },
-    
-    // Dashboard
-    'dashboard.recent': { 'pt-BR': 'Projetos Recentes', 'en': 'Recent Projects', 'es': 'Proyectos Recientes', 'fr': 'Projets Récents' },
-    'dashboard.delete': { 'pt-BR': 'Apagar', 'en': 'Delete', 'es': 'Eliminar', 'fr': 'Supprimer' },
-    'dashboard.pages': { 'pt-BR': 'pag', 'en': 'pgs', 'es': 'pág', 'fr': 'pgs' },
-    
-    // Toast messages
-    'toast.saved': { 'pt-BR': 'Projeto salvo', 'en': 'Project saved', 'es': 'Proyecto guardado', 'fr': 'Projet enregistré' },
-    'toast.lang_active': { 
-      'pt-BR': '🇧🇷 Português ativo', 
-      'en': '🇺🇸 English active', 
-      'es': '🇪🇸 Español activo', 
-      'fr': '🇫🇷 Français actif' 
-    },
-    
-    // Balloon types
-    'balloon.speech': { 'pt-BR': 'Fala', 'en': 'Speech', 'es': 'Habla', 'fr': 'Parole' },
-    'balloon.thought': { 'pt-BR': 'Pensamento', 'en': 'Thought', 'es': 'Pensamiento', 'fr': 'Pensée' },
-    'balloon.whisper': { 'pt-BR': 'Sussurro', 'en': 'Whisper', 'es': 'Susurro', 'fr': 'Chuchotement' },
-    'balloon.shout': { 'pt-BR': 'Grito', 'en': 'Shout', 'es': 'Grito', 'fr': 'Cri' },
-    'balloon.sfx': { 'pt-BR': 'Efeito', 'en': 'SFX', 'es': 'Efecto', 'fr': 'Effet' },
-    
-    // Common actions
-    'action.add': { 'pt-BR': 'Adicionar', 'en': 'Add', 'es': 'Añadir', 'fr': 'Ajouter' },
-    'action.remove': { 'pt-BR': 'Remover', 'en': 'Remove', 'es': 'Eliminar', 'fr': 'Supprimer' },
-    'action.edit': { 'pt-BR': 'Editar', 'en': 'Edit', 'es': 'Editar', 'fr': 'Modifier' },
-    'action.duplicate': { 'pt-BR': 'Duplicar', 'en': 'Duplicate', 'es': 'Duplicar', 'fr': 'Dupliquer' },
-    'action.cancel': { 'pt-BR': 'Cancelar', 'en': 'Cancel', 'es': 'Cancelar', 'fr': 'Annuler' },
-    'action.confirm': { 'pt-BR': 'Confirmar', 'en': 'Confirm', 'es': 'Confirmar', 'fr': 'Confirmer' },
-    
-    // Timeline
-    'timeline.pages': { 'pt-BR': 'Pages', 'en': 'Pages', 'es': 'Páginas', 'fr': 'Pages' },
-    'timeline.assets': { 'pt-BR': 'Assets', 'en': 'Assets', 'es': 'Recursos', 'fr': 'Ressources' }
+  
+  async loadLocale(locale) {
+    try {
+      const response = await fetch(`/locales/${locale}.json`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      this.translations[locale] = await response.json();
+      // Loaded successfully
+    } catch (error) {
+      console.warn(`[i18n] Failed to load ${locale}:`, error.message);
+    }
   },
-
-  // Idioma ativo (UI do app, não do conteúdo)
-  uiLanguage: 'pt-BR',
-
-  // Obter tradução para chave
-  t(key, lang = null) {
-    const targetLang = lang || this.uiLanguage;
-    const translation = this.translations[key];
-    
-    if (!translation) {
-      console.warn(`[i18n] Missing translation key: ${key}`);
+  
+  t(key, params = {}) {
+    if (!this.isReady) {
       return key;
     }
     
-    return translation[targetLang] || translation['pt-BR'] || key;
-  },
-
-  // Obter tradução com interpolação de variáveis
-  // Exemplo: I18n.t('message.hello', null, { name: 'João' })
-  // Com tradução: "Olá, {name}!" → "Olá, João!"
-  tf(key, lang = null, vars = {}) {
-    let text = this.t(key, lang);
-    Object.keys(vars).forEach(k => {
-      text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), vars[k]);
-    });
-    return text;
-  },
-
-  // Definir idioma da UI
-  setUILanguage(lang) {
-    if (!this.languages[lang]) {
-      console.warn(`[i18n] Unsupported language: ${lang}`);
-      return;
+    const keys = key.split('.');
+    let value = this.translations[this.currentLocale];
+    
+    // Navigate through object
+    for (const k of keys) {
+      value = value?.[k];
     }
-    this.uiLanguage = lang;
-    localStorage.setItem('hq-movie-ui-lang', lang);
+    
+    // Fallback to English
+    if (!value && this.currentLocale !== this.fallbackLocale) {
+      value = this.getFallback(key);
+    }
+    
+    // Return key if not found (dev mode indicator)
+    if (!value) {
+      console.warn(`[i18n] Missing key: ${key}`);
+      return `[${key}]`;
+    }
+    
+    // Interpolation {{variable}}
+    if (typeof value === 'string') {
+      return value.replace(/{{(\w+)}}/g, (match, param) => {
+        return params[param] !== undefined ? params[param] : match;
+      });
+    }
+    
+    return value;
   },
-
-  // Carregar idioma da UI do localStorage
-  loadUILanguage() {
-    const saved = localStorage.getItem('hq-movie-ui-lang');
-    if (saved && this.languages[saved]) {
-      this.uiLanguage = saved;
+  
+  getFallback(key) {
+    const keys = key.split('.');
+    let value = this.translations[this.fallbackLocale];
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value;
+  },
+  
+  async changeLocale(locale) {
+    
+    if (!this.translations[locale]) {
+      await this.loadLocale(locale);
+    }
+    
+    this.currentLocale = locale;
+    localStorage.setItem('hqm_locale', locale);
+    document.documentElement.lang = locale;
+    
+    // Update meta tags
+    this.updateMetaTags();
+    
+    // Update modal texts
+    this.updateModalTexts();
+    
+    // Re-render UI
+    if (window.App && window.App.render) {
+      window.App.render();
+    }
+    
+    // Show toast
+    if (window.Toast) {
+      const langName = locale === 'en' ? 'English' : 'Português';
+      Toast.show(this.t('toast.languageChanged', { language: langName }), 'success');
+    }
+    
+    // Locale changed successfully
+  },
+  
+  updateMetaTags() {
+    // Update title
+    const title = this.t('seo.title');
+    document.title = title;
+    
+    // Update description
+    const description = this.t('seo.description');
+    const descMeta = document.querySelector('meta[name="description"]');
+    if (descMeta) descMeta.setAttribute('content', description);
+    
+    // Update OG tags (if they exist)
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute('content', this.t('seo.ogTitle'));
+    
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc) ogDesc.setAttribute('content', this.t('seo.ogDescription'));
+    
+    const ogLocale = document.querySelector('meta[property="og:locale"]');
+    if (ogLocale) {
+      const locale = this.currentLocale === 'pt-BR' ? 'pt_BR' : 'en_US';
+      ogLocale.setAttribute('content', locale);
     }
   },
-
-  // Obter lista de idiomas disponíveis
-  getAvailableLanguages() {
-    return Object.keys(this.languages).map(code => ({
-      code,
-      ...this.languages[code]
-    }));
+  
+  // Helper for pluralization
+  plural(key, count, params = {}) {
+    const singularKey = `${key}_one`;
+    const pluralKey = `${key}_other`;
+    const selectedKey = count === 1 ? singularKey : pluralKey;
+    return this.t(selectedKey, { ...params, count });
   },
-
-  // Adicionar novas traduções dinamicamente
-  addTranslations(newTranslations) {
-    Object.assign(this.translations, newTranslations);
+  
+  // Get current locale
+  getLocale() {
+    return this.currentLocale;
   },
-
-  // Adicionar novo idioma
-  addLanguage(code, name, flag, shortCode) {
-    this.languages[code] = { name, flag, code: shortCode };
+  
+  // Check if locale is loaded
+  isLocaleLoaded(locale) {
+    return !!this.translations[locale];
+  },
+  
+  // Update modal texts dynamically (called after locale change)
+  updateModalTexts() {
+    // Transition Modal
+    const transitionTitle = document.getElementById('transition-modal-title');
+    if (transitionTitle) transitionTitle.textContent = this.t('modal.transition');
+    
+    const cutLabel = document.getElementById('transition-cut-label');
+    if (cutLabel) cutLabel.textContent = this.t('modal.cutNone');
+    
+    const fadeDefaultLabel = document.getElementById('transition-fade-default-label');
+    if (fadeDefaultLabel) fadeDefaultLabel.textContent = this.t('modal.fadeDefault');
+    
+    const fadeSlowLabel = document.getElementById('transition-fade-slow-label');
+    if (fadeSlowLabel) fadeSlowLabel.textContent = this.t('modal.fadeSlow');
+    
+    const fadeFastLabel = document.getElementById('transition-fade-fast-label');
+    if (fadeFastLabel) fadeFastLabel.textContent = this.t('modal.fadeFast');
+    
+    const transitionCancelBtn = document.getElementById('transition-cancel-btn');
+    if (transitionCancelBtn) transitionCancelBtn.textContent = this.t('modal.cancel');
+    
+    const transitionApplyBtn = document.getElementById('transition-apply-btn');
+    if (transitionApplyBtn) transitionApplyBtn.textContent = this.t('modal.apply');
+    
+    // Recording Modal
+    const recModalTitle = document.getElementById('rec-modal-title');
+    if (recModalTitle) recModalTitle.textContent = this.t('recording.title');
+    
+    const recStatusLabel = document.getElementById('rec-status-label');
+    if (recStatusLabel) recStatusLabel.textContent = this.t('recording.status');
+    
+    const recBtnRecordLabel = document.getElementById('rec-btn-record-label');
+    if (recBtnRecordLabel) recBtnRecordLabel.textContent = this.t('recording.record').replace('🔴 ', '');
+    
+    const recBtnStopLabel = document.getElementById('rec-btn-stop-label');
+    if (recBtnStopLabel) recBtnStopLabel.textContent = this.t('recording.stop').replace('⏹️ ', '');
+    
+    const recBtnPlayLabel = document.getElementById('rec-btn-play-label');
+    if (recBtnPlayLabel) recBtnPlayLabel.textContent = this.t('recording.play').replace('▶️ ', '');
+    
+    const recBtnSaveLabel = document.getElementById('rec-btn-save-label');
+    if (recBtnSaveLabel) recBtnSaveLabel.textContent = this.t('recording.save').replace('💾 ', '');
+    
+    const recCancelBtn = document.getElementById('rec-cancel-btn');
+    if (recCancelBtn) recCancelBtn.textContent = this.t('recording.cancel');
+    
+    // Excalidraw Modal
+    const excalidrawTitle = document.getElementById('excalidraw-modal-title');
+    if (excalidrawTitle) excalidrawTitle.textContent = this.t('excalidraw.title');
+    
+    const excalidrawGuidesLabel = document.getElementById('excalidraw-guides-label');
+    if (excalidrawGuidesLabel) excalidrawGuidesLabel.textContent = this.t('excalidraw.guides');
+    
+    const excalidrawCancelBtn = document.getElementById('excalidraw-cancel-btn');
+    if (excalidrawCancelBtn) excalidrawCancelBtn.textContent = this.t('excalidraw.cancel');
+    
+    const excalidrawSaveBtn = document.getElementById('excalidraw-save-btn');
+    if (excalidrawSaveBtn) excalidrawSaveBtn.textContent = this.t('excalidraw.save');
   }
 };
 
-// Carregar idioma da UI ao iniciar
-I18n.loadUILanguage();
+// Helper global function
+window.t = (key, params) => i18n.t(key, params);
+window.i18n = i18n;
 
-// Exportar globalmente
-window.I18n = I18n;
+// Initialize on DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => i18n.init());
+} else {
+  i18n.init();
+}

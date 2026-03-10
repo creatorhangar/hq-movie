@@ -1,7 +1,7 @@
 {
   "name": "HQ Movie",
   "short_name": "HQMovie",
-  "description": "Crie motion comics com áudio e exporte vídeos para redes sociais — totalmente offline.",
+  "description": "Create motion comics with audio and export videos for social media — completely offline.",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#0a0e17",

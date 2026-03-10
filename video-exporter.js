@@ -71,7 +71,7 @@ class VideoExporter {
 
     async export() {
         try {
-            if (this.onStatus) this.onStatus('Carregando fontes...');
+            if (this.onStatus) this.onStatus(t('exporter.loadingFonts'));
             
             // Preload all fonts before rendering to avoid blank text
             try {
@@ -101,7 +101,7 @@ class VideoExporter {
                 console.warn('[VideoExport] Font preload warning:', e);
             }
             
-            if (this.onStatus) this.onStatus('Preparando canvas...');
+            if (this.onStatus) this.onStatus(t('exporter.preparingCanvas'));
             
             // Criar canvas offscreen com suporte a 4K e HiDPI
             const dims = getProjectDims(this.project);
@@ -116,7 +116,7 @@ class VideoExporter {
                 const scale4k = 2160 / baseHeight; // 4K = 3840x2160
                 baseWidth = Math.round(baseWidth * scale4k);
                 baseHeight = 2160;
-                if (this.onStatus) this.onStatus('Preparando canvas 4K (pode ser lento)...');
+                if (this.onStatus) this.onStatus(t('exporter.preparing4K'));
             }
             
             // Aplicar HiDPI scaling para qualidade máxima
@@ -148,7 +148,7 @@ class VideoExporter {
             this._logicalWidth = baseWidth;
             this._logicalHeight = baseHeight;
 
-            if (this.onStatus) this.onStatus('Configurando áudio e vídeo...');
+            if (this.onStatus) this.onStatus(t('exporter.configuringAV'));
             
             // 1. Capturar stream visual
             const videoStream = this.canvas.captureStream(0); // 0 = manual frame requests
@@ -166,7 +166,7 @@ class VideoExporter {
             const dest = this.audioCtx.createMediaStreamDestination();
             
             // Carregar todos os assets de áudio primeiro para evitar drift de sincronia
-            if (this.onStatus) this.onStatus('Carregando áudio...');
+            if (this.onStatus) this.onStatus(t('exporter.loadingAudio'));
             
             const audioTasks = [];
             let bgMusicBuffer = null;
@@ -182,7 +182,7 @@ class VideoExporter {
                     try {
                         bgMusicBuffer = await this._loadAudio(bgData.file);
                     } catch (e) {
-                        console.warn('Falha ao carregar música de fundo', e);
+                        console.warn(t('exporter.bgMusicLoadError'), e);
                     }
                 });
             }
@@ -881,7 +881,7 @@ class VideoExporter {
             ? MultiLang.get(page.narrative, this.language)
             : (typeof page.narrative === 'string' ? page.narrative : page.narrative?.['pt-BR'] || '');
             
-        console.log(`[EXPORT] drawPageNarrative -> text: "${text}"`, page.narrative);
+        // Debug: text rendering
         
         if (!text) return;
         

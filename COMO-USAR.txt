@@ -40,6 +40,7 @@ Para exportação de vídeo com máxima qualidade, use um servidor local:
 
 ✓ Crie motion comics com áudio e narração
 ✓ 34 layouts de página prontos
+✓ Modo Slideshow - múltiplas imagens por página
 ✓ Balões de fala, pensamento, grito e sussurro
 ✓ Desenho à mão livre integrado com Excalidraw
 ✓ Ken Burns (zoom/pan em imagens)
@@ -47,6 +48,39 @@ Para exportação de vídeo com máxima qualidade, use um servidor local:
 ✓ Exportação PDF, PNG/JPG e HTML
 ✓ Multilíngue (Português e Inglês)
 ✓ Funciona 100% offline
+
+
+═══ MODO SLIDESHOW (NOVO!) ═══
+
+O modo Slideshow permite usar múltiplas imagens em uma única página,
+com transições automáticas e Ken Burns individual por slide.
+
+QUANDO USAR:
+• Podcasts visuais (logo → host → guest → CTA)
+• True crime narratives (vítima → cena → evidência → mapa)
+• Tutoriais passo-a-passo (diagrama 1 → 2 → 3)
+• Apresentações com narração contínua
+
+COMO USAR:
+1. Crie um projeto de vídeo (16:9, 9:16, 1:1 ou 4:3)
+2. Adicione uma nova página
+3. Selecione o layout "Slideshow" 🎬
+4. Clique em "+ Adicionar Slide" para cada imagem
+5. Configure duração, Ken Burns e transição de cada slide
+6. Arraste os slides para reordenar
+7. Use "⚡ Dividir Igual" para distribuir o tempo automaticamente
+
+RECURSOS:
+• Até 20 slides por página
+• Duração individual por slide (0.5s - infinito)
+• Ken Burns independente (zoom, pan, float, etc.)
+• Transições: Corte, Crossfade, Fade Black
+• Timeline visual mostrando proporção de tempo
+• Drag & drop para reordenar
+• Áudio e texto narrativo contínuos sobre todos slides
+
+DICA: O tempo total dos slides deve somar a duração da página.
+Use "⚡ Dividir Igual" para ajustar automaticamente.
 
 
 ═══ DICAS ═══
@@ -105,6 +139,7 @@ For video export with maximum quality, use a local server:
 
 ✓ Create motion comics with audio and narration
 ✓ 34 ready-to-use page layouts
+✓ Slideshow Mode - multiple images per page
 ✓ Speech, thought, shout, and whisper balloons
 ✓ Hand-drawn art integrated with Excalidraw
 ✓ Ken Burns effect (zoom/pan on images)
@@ -112,6 +147,39 @@ For video export with maximum quality, use a local server:
 ✓ PDF, PNG/JPG, and HTML export
 ✓ Multilingual (Portuguese and English)
 ✓ Works 100% offline
+
+
+═══ SLIDESHOW MODE (NEW!) ═══
+
+Slideshow mode allows multiple images in a single page,
+with automatic transitions and individual Ken Burns per slide.
+
+WHEN TO USE:
+• Visual podcasts (logo → host → guest → CTA)
+• True crime narratives (victim → scene → evidence → map)
+• Step-by-step tutorials (diagram 1 → 2 → 3)
+• Presentations with continuous narration
+
+HOW TO USE:
+1. Create a video project (16:9, 9:16, 1:1, or 4:3)
+2. Add a new page
+3. Select "Slideshow" 🎬 layout
+4. Click "+ Add Slide" for each image
+5. Configure duration, Ken Burns, and transition for each slide
+6. Drag slides to reorder
+7. Use "⚡ Distribute Evenly" to auto-divide time
+
+FEATURES:
+• Up to 20 slides per page
+• Individual duration per slide (0.5s - infinite)
+• Independent Ken Burns (zoom, pan, float, etc.)
+• Transitions: Cut, Crossfade, Fade to Black
+• Visual timeline showing time proportion
+• Drag & drop to reorder
+• Continuous audio and narrative text over all slides
+
+TIP: Total slide time should match page duration.
+Use "⚡ Distribute Evenly" to auto-adjust.
 
 
 ═══ TIPS ═══
