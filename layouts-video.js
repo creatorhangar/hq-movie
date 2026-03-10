@@ -289,8 +289,22 @@ function getDefaultVideoLayout(formatId) {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// SLIDESHOW LAYOUT (Universal - works with all formats)
+// ═══════════════════════════════════════════════════════════════
+const VideoLayoutsSlideshow = {
+  'slideshow': {
+    name: 'Slideshow',
+    description: 'Múltiplas imagens em sequência temporal',
+    count: 0, // Dynamic - determined by slides array
+    format: 'all', // Works with any video format
+    panels: [], // Not used - slides are temporal, not spatial
+    icon: '🎬'
+  }
+};
+
 // Export to window for global access
 window.VIDEO_FORMATS = VIDEO_FORMATS;
-window.VideoLayouts = VideoLayouts;
+window.VideoLayouts = { ...VideoLayouts, ...VideoLayoutsSlideshow };
 window.getVideoLayoutsByFormat = getVideoLayoutsByFormat;
 window.getDefaultVideoLayout = getDefaultVideoLayout;

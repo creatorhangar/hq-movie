@@ -14,6 +14,7 @@ class VideoExporter {
         this.quality = options.quality || 'high';
         this.language = options.language || project.activeLanguage || 'pt-BR';
         this.format = options.format || 'auto'; // 'mp4', 'webm', or 'auto'
+        this.resolution = options.resolution || '1080p'; // '1080p' or '4k'
         this.onProgress = options.onProgress || null;
         this.onStatus = options.onStatus || null;
         this._resolvedMimeType = null; // set during export
@@ -75,28 +76,77 @@ class VideoExporter {
             // Preload all fonts before rendering to avoid blank text
             try {
                 await document.fonts.ready;
-                // Also preload specific fonts used in balloons
-                const fontFamilies = ['Comic Neue', 'Patrick Hand', 'Georgia', 'Arial'];
-                await Promise.all(fontFamilies.map(font => 
-                    document.fonts.load(`16px "${font}"`).catch(() => {})
-                ));
+                
+                // Preload ALL fonts from APP_FONTS for consistency
+                if (typeof APP_FONTS !== 'undefined') {
+                    const fontFamilies = Object.values(APP_FONTS).map(f => {
+                        // Extract first font name from family string (e.g., "'Lora', Georgia, serif" -> "Lora")
+                        const match = f.family.match(/['"]([^'"]+)['"]/);
+                        return match ? match[1] : null;
+                    }).filter(Boolean);
+                    
+                    await Promise.all(fontFamilies.map(font => 
+                        document.fonts.load(`16px "${font}"`).catch(() => {
+                            console.warn(`[VideoExport] Could not load font: ${font}`);
+                        })
+                    ));
+                } else {
+                    // Fallback if APP_FONTS not available
+                    const fallbackFonts = ['Lora', 'Inter', 'Bangers', 'Comic Neue', 'Patrick Hand', 'Georgia', 'Arial'];
+                    await Promise.all(fallbackFonts.map(font => 
+                        document.fonts.load(`16px "${font}"`).catch(() => {})
+                    ));
+                }
             } catch (e) {
                 console.warn('[VideoExport] Font preload warning:', e);
             }
             
             if (this.onStatus) this.onStatus('Preparando canvas...');
             
-            // Criar canvas offscreen
+            // Criar canvas offscreen com suporte a 4K e HiDPI
             const dims = getProjectDims(this.project);
+            
+            // Determinar resolução base
+            let baseWidth = dims.canvasW;
+            let baseHeight = dims.canvasH;
+            
+            // Aplicar escala 4K se solicitado
+            if (this.resolution === '4k') {
+                // Escalar proporcionalmente para 4K (mantendo aspect ratio)
+                const scale4k = 2160 / baseHeight; // 4K = 3840x2160
+                baseWidth = Math.round(baseWidth * scale4k);
+                baseHeight = 2160;
+                if (this.onStatus) this.onStatus('Preparando canvas 4K (pode ser lento)...');
+            }
+            
+            // Aplicar HiDPI scaling para qualidade máxima
+            const dpr = window.devicePixelRatio || 1;
+            
             this.canvas = document.createElement('canvas');
-            this.canvas.width = dims.canvasW;
-            this.canvas.height = dims.canvasH;
+            this.canvas.width = baseWidth * dpr;
+            this.canvas.height = baseHeight * dpr;
+            this.canvas.style.width = baseWidth + 'px';
+            this.canvas.style.height = baseHeight + 'px';
             this.canvas.style.position = 'fixed';
             this.canvas.style.left = '-9999px';
             this.canvas.style.visibility = 'hidden';
             document.body.appendChild(this.canvas);
             
-            this.ctx = this.canvas.getContext('2d');
+            this.ctx = this.canvas.getContext('2d', {
+                alpha: false, // Performance boost
+                desynchronized: true // Better performance
+            });
+            
+            // Escalar contexto para HiDPI
+            this.ctx.scale(dpr, dpr);
+            
+            // Configurar qualidade máxima de renderização
+            this.ctx.imageSmoothingEnabled = true;
+            this.ctx.imageSmoothingQuality = 'high';
+            
+            // Armazenar dimensões lógicas (sem DPR) para cálculos
+            this._logicalWidth = baseWidth;
+            this._logicalHeight = baseHeight;
 
             if (this.onStatus) this.onStatus('Configurando áudio e vídeo...');
             
@@ -280,12 +330,18 @@ class VideoExporter {
             ]);
             
             // Configurar MediaRecorder
-            const bitrates = { low: 2500000, medium: 5000000, high: 8000000 };
+            // Bitrates ajustados para resolução (4K precisa de ~3x mais bitrate)
+            const bitrates = {
+                '1080p': { low: 2500000, medium: 5000000, high: 8000000 },
+                '4k': { low: 8000000, medium: 15000000, high: 25000000 }
+            };
+            
+            const resBitrates = bitrates[this.resolution] || bitrates['1080p'];
             
             // Detect best codec based on user format preference
             const detected = VideoExporter.detectCodec(this.format);
             let options = {
-                videoBitsPerSecond: bitrates[this.quality] || 5000000,
+                videoBitsPerSecond: resBitrates[this.quality] || resBitrates.high,
                 audioBitsPerSecond: 128000
             };
             
@@ -452,6 +508,11 @@ class VideoExporter {
     }
 
     async renderPage(page, durationSeconds, pageIndex = 0) {
+        // Check if this is a slideshow page
+        if (page.layoutId === 'slideshow' && page.slides && page.slides.length > 0) {
+            return await this.renderSlideshowPage(page, durationSeconds, pageIndex);
+        }
+        
         const totalFrames = Math.floor(durationSeconds * this.fps);
         const kenBurns = page.kenBurns || 'none';
         const narrativeMode = this.project.narrativeMode || 'per-page';
@@ -479,7 +540,7 @@ class VideoExporter {
 
             // Limpar canvas
             this.ctx.fillStyle = '#ffffff';
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillRect(0, 0, this._logicalWidth, this._logicalHeight);
 
             // Aplicar Ken Burns
             this.ctx.save();
@@ -487,7 +548,7 @@ class VideoExporter {
 
             // Renderizar imagem (se houver) — cover fit (sem esticar)
             if (preloadedImg) {
-                this._drawImageCover(preloadedImg, this.canvas.width, this.canvas.height);
+                this._drawImageCover(preloadedImg, this._logicalWidth, this._logicalHeight);
             }
 
             this.ctx.restore();
@@ -557,21 +618,21 @@ class VideoExporter {
                 // Clear with black first to ensure no artifacts
                 this.ctx.globalAlpha = 1.0;
                 this.ctx.fillStyle = '#000000';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillRect(0, 0, this._logicalWidth, this._logicalHeight);
 
                 this.ctx.globalAlpha = 1.0 - progress;
-                this._drawImageCover(currentImg, this.canvas.width, this.canvas.height);
+                this._drawImageCover(currentImg, this._logicalWidth, this._logicalHeight);
             } else {
                 // If no current image, just clear black
                 this.ctx.globalAlpha = 1.0;
                 this.ctx.fillStyle = '#000000';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillRect(0, 0, this._logicalWidth, this._logicalHeight);
             }
 
             // Draw next page (fading in)
             if (nextImg) {
                 this.ctx.globalAlpha = progress;
-                this._drawImageCover(nextImg, this.canvas.width, this.canvas.height);
+                this._drawImageCover(nextImg, this._logicalWidth, this._logicalHeight);
             }
 
             this.ctx.globalAlpha = 1.0;
@@ -582,6 +643,155 @@ class VideoExporter {
             }
 
             await this.waitFrame();
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       SLIDESHOW MODE - Render multiple slides with transitions
+       ═══════════════════════════════════════════════════════════════ */
+
+    async renderSlideshowPage(page, durationSeconds, pageIndex = 0) {
+        const slides = page.slides || [];
+        if (slides.length === 0) return;
+
+        const narrativeMode = this.project.narrativeMode || 'per-page';
+        const narrativePosition = this.project.narrativePosition || 'bottom';
+
+        // OPTIMIZATION: Preload ALL slide images first
+        if (this.onStatus) this.onStatus(`Carregando ${slides.length} slides...`);
+        const preloadedSlides = await Promise.all(
+            slides.map(async (slide, i) => {
+                const img = await new Promise((resolve) => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.onerror = (e) => {
+                        console.error(`[VideoExport] Slide ${i + 1} load FAILED:`, e);
+                        resolve(null);
+                    };
+                    image.src = slide.image;
+                });
+                return { ...slide, imgElement: img };
+            })
+        );
+
+        // Render each slide
+        let renderedFrames = 0;
+        const totalDuration = slides.reduce((sum, s) => sum + (s.duration || 0), 0);
+        const totalFrames = Math.floor(totalDuration * this.fps);
+
+        for (let slideIdx = 0; slideIdx < preloadedSlides.length; slideIdx++) {
+            const slide = preloadedSlides[slideIdx];
+            const nextSlide = slideIdx < preloadedSlides.length - 1 ? preloadedSlides[slideIdx + 1] : null;
+            const slideDuration = slide.duration || 4;
+            const slideFrames = Math.floor(slideDuration * this.fps);
+            const kenBurns = slide.kenBurns || 'none';
+            const transition = slide.transition || 'cut';
+            const transitionDuration = slide.transitionDuration || 0.5;
+            const transitionFrames = Math.floor(transitionDuration * this.fps);
+
+            // Calculate when transition starts (last N frames of slide)
+            const transitionStartFrame = slideFrames - transitionFrames;
+
+            for (let frame = 0; frame < slideFrames; frame++) {
+                const slideProgress = frame / slideFrames;
+
+                // Clear canvas
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.fillRect(0, 0, this._logicalWidth, this._logicalHeight);
+
+                // Check if we're in transition zone
+                const inTransition = nextSlide && transition !== 'cut' && frame >= transitionStartFrame;
+
+                if (inTransition) {
+                    // Render transition between current and next slide
+                    const transitionProgress = (frame - transitionStartFrame) / transitionFrames;
+                    await this.renderSlideTransition(slide, nextSlide, transitionProgress, transition, kenBurns, slideProgress);
+                } else {
+                    // Render current slide normally
+                    this.ctx.save();
+                    this.applyKenBurns(kenBurns, slideProgress);
+                    if (slide.imgElement) {
+                        this._drawImageCover(slide.imgElement, this._logicalWidth, this._logicalHeight);
+                    }
+                    this.ctx.restore();
+                }
+
+                // Render balloons (if any)
+                this.drawBalloons(page.texts || [], this.language);
+
+                // Render narrative
+                if (narrativeMode === 'continuous-track' || narrativeMode === 'hybrid') {
+                    this.drawNarrativeTrack(pageIndex, narrativePosition, slideProgress);
+                } else if (page.showTextBelow && page.narrative) {
+                    this.drawPageNarrative(page, narrativePosition);
+                }
+
+                // Force frame capture
+                if (this.videoTrack && typeof this.videoTrack.requestFrame === 'function') {
+                    this.videoTrack.requestFrame();
+                }
+
+                // Update progress
+                renderedFrames++;
+                if (this.onProgress && totalFrames > 0) {
+                    this.onProgress(renderedFrames / totalFrames);
+                }
+
+                await this.waitFrame();
+            }
+        }
+    }
+
+    async renderSlideTransition(currentSlide, nextSlide, progress, transitionType, kenBurns, slideProgress) {
+        if (transitionType === 'crossfade') {
+            // Crossfade: blend current and next slide
+            this.ctx.save();
+            
+            // Draw current slide with fading opacity
+            this.ctx.globalAlpha = 1 - progress;
+            this.applyKenBurns(kenBurns, slideProgress);
+            if (currentSlide.imgElement) {
+                this._drawImageCover(currentSlide.imgElement, this._logicalWidth, this._logicalHeight);
+            }
+            this.ctx.restore();
+
+            // Draw next slide with increasing opacity
+            this.ctx.save();
+            this.ctx.globalAlpha = progress;
+            const nextKenBurns = nextSlide.kenBurns || 'none';
+            this.applyKenBurns(nextKenBurns, 0); // Start of next slide animation
+            if (nextSlide.imgElement) {
+                this._drawImageCover(nextSlide.imgElement, this._logicalWidth, this._logicalHeight);
+            }
+            this.ctx.restore();
+
+            this.ctx.globalAlpha = 1; // Reset
+        } else if (transitionType === 'fade-black') {
+            // Fade to black, then fade in next slide
+            const halfProgress = progress * 2;
+            
+            if (halfProgress < 1) {
+                // Fade current slide to black
+                this.ctx.save();
+                this.ctx.globalAlpha = 1 - halfProgress;
+                this.applyKenBurns(kenBurns, slideProgress);
+                if (currentSlide.imgElement) {
+                    this._drawImageCover(currentSlide.imgElement, this._logicalWidth, this._logicalHeight);
+                }
+                this.ctx.restore();
+            } else {
+                // Fade in next slide from black
+                this.ctx.save();
+                this.ctx.globalAlpha = halfProgress - 1;
+                const nextKenBurns = nextSlide.kenBurns || 'none';
+                this.applyKenBurns(nextKenBurns, 0);
+                if (nextSlide.imgElement) {
+                    this._drawImageCover(nextSlide.imgElement, this._logicalWidth, this._logicalHeight);
+                }
+                this.ctx.restore();
+            }
+
+            this.ctx.globalAlpha = 1; // Reset
         }
     }
     
@@ -623,14 +833,14 @@ class VideoExporter {
         const padding = preset.padding;
         const trackHeight = preset.trackHeight;
         const strokeWidth = preset.strokeWidth;
-        const y = position === 'top' ? 0 : this.canvas.height - trackHeight;
+        const y = position === 'top' ? 0 : this._logicalHeight - trackHeight;
         
         // Use segment style or fallback
         const nStyle = segment.style || {};
         
         // Background — use actual style colors
         this.ctx.fillStyle = this._narrativeBgRgba(nStyle);
-        this.ctx.fillRect(0, y, this.canvas.width, trackHeight);
+        this.ctx.fillRect(0, y, this._logicalWidth, trackHeight);
         
         // Text with stroke for contrast
         const fontFamily = this.getFontFamily(nStyle.font || 'comic');
@@ -639,12 +849,12 @@ class VideoExporter {
         this.ctx.textBaseline = 'middle';
         
         const textColor = nStyle.color || nStyle.textColor || '#ffffff';
-        const lines = this.wrapText(text, this.canvas.width - padding * 2).slice(0, preset.maxLines);
+        const lines = this.wrapText(text, this._logicalWidth - padding * 2).slice(0, preset.maxLines);
         const lineHeight = fontSize * 1.3;
         const textY = y + trackHeight / 2 - ((lines.length - 1) * lineHeight) / 2;
         
         lines.forEach((line, i) => {
-            const tx = this.canvas.width / 2;
+            const tx = this._logicalWidth / 2;
             const ty = textY + i * lineHeight;
             // Stroke (outline) for readability
             this.ctx.strokeStyle = '#000000';
@@ -670,6 +880,8 @@ class VideoExporter {
         const text = typeof MultiLang !== 'undefined'
             ? MultiLang.get(page.narrative, this.language)
             : (typeof page.narrative === 'string' ? page.narrative : page.narrative?.['pt-BR'] || '');
+            
+        console.log(`[EXPORT] drawPageNarrative -> text: "${text}"`, page.narrative);
         
         if (!text) return;
         
@@ -682,7 +894,7 @@ class VideoExporter {
         
         // Scale user font size to video resolution (editor uses ~800px height, video uses 1080-1920px)
         const editorHeight = 800;
-        const videoHeight = this.canvas.height;
+        const videoHeight = this._logicalHeight;
         const scaleFactor = videoHeight / editorHeight;
         const userFontSize = style.size || 48;
         const fontSize = Math.round(userFontSize * scaleFactor * 0.9); // 0.9 for better fit
@@ -691,12 +903,12 @@ class VideoExporter {
         const lineHeight = fontSize * (style.leading || 1.3);
         const maxLines = preset.maxLines || 3;
         const trackHeight = Math.round(lineHeight * maxLines + padding * 1.5);
-        const y = position === 'top' ? 0 : this.canvas.height - trackHeight;
+        const y = position === 'top' ? 0 : this._logicalHeight - trackHeight;
         
         // Background — use actual style colors with opacity
         const bgOpacity = style.bgOpacity != null ? style.bgOpacity : 0.55;
         this.ctx.fillStyle = this._narrativeBgRgba({ ...style, bgOpacity });
-        this.ctx.fillRect(0, y, this.canvas.width, trackHeight);
+        this.ctx.fillRect(0, y, this._logicalWidth, trackHeight);
         
         // Text with stroke for contrast
         const fontFamily = this.getFontFamily(style.font || 'serif');
@@ -706,14 +918,14 @@ class VideoExporter {
         this.ctx.textBaseline = 'middle';
         
         const textColor = style.color || style.textColor || '#ffffff';
-        const lines = this.wrapText(text, this.canvas.width - padding * 2).slice(0, maxLines);
+        const lines = this.wrapText(text, this._logicalWidth - padding * 2).slice(0, maxLines);
         const textY = y + trackHeight / 2 - ((lines.length * lineHeight) / 2) + (lineHeight / 2);
         
         lines.forEach((line, i) => {
             // Position based on alignment
-            let tx = this.canvas.width / 2;
+            let tx = this._logicalWidth / 2;
             if (style.align === 'left') tx = padding;
-            else if (style.align === 'right') tx = this.canvas.width - padding;
+            else if (style.align === 'right') tx = this._logicalWidth - padding;
             
             const ty = textY + i * lineHeight;
             // Stroke (outline) for readability
@@ -742,11 +954,11 @@ class VideoExporter {
         const fontFamily = this.getFontFamily(style.font || 'serif');
         const strokeWidth = preset.strokeWidth;
         const padding = preset.padding;
-        const maxWidth = this.canvas.width - padding * 2;
+        const maxWidth = this._logicalWidth - padding * 2;
 
         // Scale user font size to video resolution
         const editorHeight = 800;
-        const videoHeight = this.canvas.height;
+        const videoHeight = this._logicalHeight;
         const scaleFactor = videoHeight / editorHeight;
         const userFontSize = style.size || 48;
         
@@ -773,11 +985,11 @@ class VideoExporter {
         const totalContentH = topBlockH + dualSpacing + botBlockH + padding * 2;
         const trackHeight = Math.max(preset.trackHeight, totalContentH);
 
-        const y = position === 'top' ? 0 : this.canvas.height - trackHeight;
+        const y = position === 'top' ? 0 : this._logicalHeight - trackHeight;
 
         // Background
         this.ctx.fillStyle = this._narrativeBgRgba(style);
-        this.ctx.fillRect(0, y, this.canvas.width, trackHeight);
+        this.ctx.fillRect(0, y, this._logicalWidth, trackHeight);
 
         // Accent bar
         this.ctx.fillStyle = '#00d4ff';
@@ -786,7 +998,7 @@ class VideoExporter {
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         const textColor = style.color || style.textColor || '#ffffff';
-        const cx = this.canvas.width / 2;
+        const cx = this._logicalWidth / 2;
 
         // Vertical centering of both blocks within track
         const combinedH = topBlockH + dualSpacing + botBlockH;
@@ -818,12 +1030,13 @@ class VideoExporter {
             this.ctx.fillText(line, cx, ty);
         });
 
+        // CRITICAL: Reset globalAlpha to prevent affecting subsequent renders
         this.ctx.globalAlpha = 1.0;
     }
 
     applyKenBurns(mode, progress) {
-        const w = this.canvas.width;
-        const h = this.canvas.height;
+        const w = this._logicalWidth;
+        const h = this._logicalHeight;
         // Use KenBurns presets from app.js if available (matches 'zoom-in', 'pan-left' etc)
         if (typeof KenBurns !== 'undefined' && mode !== 'none' && mode !== 'static') {
             const preset = KenBurns.getPreset(mode);
@@ -902,7 +1115,7 @@ class VideoExporter {
         return new Promise((resolve) => {
             const img = new Image();
             img.onload = () => {
-                this._drawImageCover(img, this.canvas.width, this.canvas.height);
+                this._drawImageCover(img, this._logicalWidth, this._logicalHeight);
                 resolve();
             };
             img.onerror = () => resolve();
@@ -1169,13 +1382,26 @@ class VideoExporter {
     }
 
     getFontFamily(font) {
-        const fonts = {
-            comic: 'Comic Neue, cursive',
-            marker: 'Patrick Hand, cursive',
-            serif: 'Georgia, serif',
-            sans: 'Arial, sans-serif'
+        // Use APP_FONTS from app.js for consistency with editor
+        if (typeof FontUtils !== 'undefined') {
+            return FontUtils.family(font);
+        }
+        
+        // Fallback map matching APP_FONTS structure (if FontUtils not loaded)
+        const fallbacks = {
+            serif: "'Lora', Georgia, serif",
+            sans: "'Inter', 'Segoe UI', sans-serif",
+            comic: "'Bangers', 'Comic Sans MS', cursive",
+            mono: "'JetBrains Mono', monospace",
+            display: "'Bebas Neue', 'Impact', sans-serif",
+            marker: "'Permanent Marker', cursive",
+            bangers: "'Bangers', cursive",
+            boogaloo: "'Boogaloo', sans-serif",
+            lilita: "'Lilita One', cursive",
+            fredoka: "'Fredoka One', cursive",
+            righteous: "'Righteous', cursive"
         };
-        return fonts[font] || 'Arial, sans-serif';
+        return fallbacks[font] || "'Lora', Georgia, serif";
     }
 
     wrapText(text, maxWidth) {

@@ -41,6 +41,7 @@ Para exportação de vídeo com máxima qualidade, use um servidor local:
 ✓ Crie motion comics com áudio e narração
 ✓ 34 layouts de página prontos
 ✓ Balões de fala, pensamento, grito e sussurro
+✓ Desenho à mão livre integrado com Excalidraw
 ✓ Ken Burns (zoom/pan em imagens)
 ✓ Exportação de vídeo (MP4/WebM)
 ✓ Exportação PDF, PNG/JPG e HTML
@@ -105,6 +106,7 @@ For video export with maximum quality, use a local server:
 ✓ Create motion comics with audio and narration
 ✓ 34 ready-to-use page layouts
 ✓ Speech, thought, shout, and whisper balloons
+✓ Hand-drawn art integrated with Excalidraw
 ✓ Ken Burns effect (zoom/pan on images)
 ✓ Video export (MP4/WebM)
 ✓ PDF, PNG/JPG, and HTML export

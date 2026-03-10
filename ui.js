@@ -305,7 +305,7 @@ function renderProjectsList() {
     const d = new Date(p.metadata.updatedAt);
     return `<div class="project-card" onclick="App.openProject('${p.id}')">
       <div class="card-preview">${Icons.page}</div>
-      <h4 class="truncate">${p.metadata.name}</h4>
+      <h4 class="truncate">${S(p.metadata.name)}</h4>
       <div class="card-meta"><span>${p.pages?.length || 0} pag</span><span>${d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span></div>
       <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();App.deleteProjectConfirm('${p.id}')" style="margin-top:4px;width:100%">${Icons.trash} Apagar</button>
     </div>`;
@@ -324,7 +324,7 @@ function renderEditor() {
       <button class="btn btn-icon" onclick="App.goHome()" title="Inicio" aria-label="Inicio">${Icons.home}</button>
       <div class="toolbar-divider"></div>
       <span class="logo-icon">${Icons.logo}</span>
-      <input type="text" class="project-name-input" value="${p.metadata.name}" onchange="App.renameProject(this.value)" spellcheck="false">
+      <input type="text" class="project-name-input" value="${S_ATTR(p.metadata.name)}" onchange="App.renameProject(this.value)" spellcheck="false">
       <span id="save-indicator" class="save-indicator" style="font-size:10px;color:var(--success);margin-left:8px;opacity:0.8;">✓ Salvo</span>
     </div>
     <div class="toolbar-center">
@@ -378,6 +378,11 @@ function renderEditor() {
   <div class="modal-backdrop" id="modal-backdrop" onclick="App.closeModal()">
     <div class="modal" id="modal-content" onclick="event.stopPropagation()"></div>
   </div>
+  <!-- Mobile Sidebar Toggle (FAB) -->
+  <button class="mobile-sidebar-fab" onclick="App.toggleMobileSidebar()" title="Propriedades" aria-label="Abrir painel de propriedades">
+    ☰
+  </button>
+  <div class="mobile-backdrop" onclick="App.toggleMobileSidebar()"></div>
   <!-- file-input is in index.html as file-input-persistent -->`;
 }
 
@@ -689,7 +694,8 @@ function renderLeftPanel() {
           <span style="display:inline-flex;">${Icons.feather}</span> Criar Meu Layout
         </button>
 
-        <!-- Matéria Special Layouts -->
+        <!-- Matéria Special Layouts (hide if current page is matéria) -->
+        ${!page?.isMateria && !page?.layoutId?.includes('materia') ? `
         <div style="margin-top:10px;">
           <div onclick="App.toggleSidebarSection('leftMateria')" style="display:flex;align-items:center;padding:4px;cursor:pointer;user-select:none;">
             <span style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1px;flex:1;">${Icons.narrationBox} MATÉRIA (ESPECIAL)</span>
@@ -709,6 +715,7 @@ function renderLeftPanel() {
             </div>
           ` : ''}
         </div>
+        ` : ''}
       </div>
 
       <div style="font-size: 10px; font-weight: 700; color: var(--text3); margin: 12px 12px 6px 12px; letter-spacing: 1px;">ELEMENTOS HQ</div>
@@ -739,6 +746,12 @@ function renderLeftPanel() {
         </button>
       </div>`;
       })()}
+      
+      <div style="margin: 12px 8px 6px 8px;">
+        <button onclick="App.openExcalidrawModal()" style="width:100%;padding:8px;border-radius:6px;border:1px dashed var(--accent);background:rgba(20,184,166,0.05);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;" onmouseenter="this.style.background='rgba(20,184,166,0.15)'" onmouseleave="this.style.background='rgba(20,184,166,0.05)'">
+          ✏️ Criar Arte (Excalidraw)
+        </button>
+      </div>
     </div>
   `;
 }
@@ -944,8 +957,8 @@ function renderCoverCanvas() {
           <span style="font-size:11px;color:rgba(20,184,166,0.4);margin-top:4px;">or drag & drop here</span>
         </div>
         <div style="margin-top:30px;text-align:center;">
-          <div style="font-family:'Archivo Black','Impact',sans-serif;font-size:28px;font-weight:700;color:rgba(0,0,0,0.15);letter-spacing:2px;line-height:1.1;text-transform:uppercase;">${coverTitle}</div>
-          <div style="font-family:'Inter',sans-serif;font-size:11px;color:rgba(0,0,0,0.1);letter-spacing:1px;margin-top:6px;">${coverAuthor} · Vol. ${coverVol} · ${coverYear}</div>
+          <div style="font-family:'Archivo Black','Impact',sans-serif;font-size:28px;font-weight:700;color:rgba(0,0,0,0.15);letter-spacing:2px;line-height:1.1;text-transform:uppercase;">${S(coverTitle)}</div>
+          <div style="font-family:'Inter',sans-serif;font-size:11px;color:rgba(0,0,0,0.1);letter-spacing:1px;margin-top:6px;">${S(coverAuthor)} · Vol. ${coverVol} · ${coverYear}</div>
         </div>
       </div>`;
   } else if (!cover.backgroundImage) {
@@ -1007,7 +1020,7 @@ function renderCoverCanvas() {
         data-el-id="${el.id}"
         onblur="App._saveCoverElementText('${el.id}',this.innerText)"
         onkeydown="event.stopImmediatePropagation();"
-      >${el.text || ''}</div>
+      >${S(el.text || '')}</div>
       ${isSelected ? `<div style="position:absolute;inset:-3px;border:2px dashed var(--accent);border-radius:4px;pointer-events:none;z-index:26;"></div>
         <button onclick="event.stopPropagation();App.deleteCoverElement('${el.id}')" style="position:absolute;top:-10px;right:-10px;width:20px;height:20px;border-radius:50%;background:#e00;color:#fff;border:2px solid #fff;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:27;">✕</button>` : ''}
     </div>`;
@@ -1147,7 +1160,7 @@ function renderBackCoverCanvas() {
         contenteditable="false" data-el-id="${el.id}"
         onblur="App._saveCoverElementText('${el.id}',this.innerText)"
         onkeydown="event.stopImmediatePropagation();"
-      >${el.text || ''}</div>
+      >${S(el.text || '')}</div>
       ${isSelected ? `<div style="position:absolute;inset:-3px;border:2px dashed var(--accent);border-radius:4px;pointer-events:none;z-index:26;"></div>
         <button onclick="event.stopPropagation();App.deleteCoverElement('${el.id}')" style="position:absolute;top:-10px;right:-10px;width:20px;height:20px;border-radius:50%;background:#e00;color:#fff;border:2px solid #fff;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:27;">✕</button>` : ''}
     </div>`;
@@ -1364,6 +1377,46 @@ function renderCanvas() {
   const panelZoneH = pageH - textBelowH;
 
   let panelsHTML = '';
+  
+  // ── SLIDESHOW MODE RENDERING ──
+  if (page.layoutId === 'slideshow') {
+    const slides = page.slides || [];
+    
+    if (slides.length === 0) {
+      // Empty slideshow - show prompt
+      panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;">
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(20,184,166,0.02);border:2px dashed var(--accent);border-radius:8px;margin:20px;">
+          <div style="color:var(--accent);margin-bottom:12px;font-size:48px;">🎬</div>
+          <div style="color:var(--accent);font-weight:600;font-size:16px;margin-bottom:6px;">Modo Slideshow</div>
+          <div style="color:var(--text3);font-size:13px;text-align:center;line-height:1.5;max-width:300px;">Adicione slides usando o painel ao lado para criar uma sequência de imagens com transições e Ken Burns</div>
+        </div>
+        ${renderBalloons(page)}${renderStickers(page)}
+      </div>`;
+    } else {
+      // Show first slide as preview (TODO: add playback controls)
+      const firstSlide = slides[0];
+      const slideImg = firstSlide.image;
+      
+      panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;position:relative;">
+        <div class="slideshow-preview" style="position:absolute;inset:0;overflow:hidden;background:#000;">
+          <img src="${slideImg}" style="position:absolute;top:50%;left:50%;width:100%;height:100%;object-fit:cover;transform:translate(-50%,-50%);" draggable="false">
+          <div style="position:absolute;bottom:12px;left:12px;background:rgba(0,0,0,0.8);color:#fff;padding:6px 12px;border-radius:4px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px;">
+            <span>🎬 Slide 1/${slides.length}</span>
+            <span style="color:var(--accent);">|</span>
+            <span>${firstSlide.duration}s</span>
+            <span style="color:var(--text3);">|</span>
+            <span style="font-size:9px;color:var(--text3);">${firstSlide.kenBurns || 'static'}</span>
+          </div>
+          ${slides.length > 1 ? `
+            <div style="position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,0.8);color:var(--text3);padding:6px 10px;border-radius:4px;font-size:9px;">
+              Preview: primeiro slide
+            </div>
+          ` : ''}
+        </div>
+        ${renderBalloons(page)}${renderStickers(page)}
+      </div>`;
+    }
+  } else {
   
   // Determine if we should show empty state or render panels
   const hasLayout = page.layoutId && page.layoutId !== '';
@@ -1658,6 +1711,7 @@ function renderCanvas() {
     panelsHTML += gutterHTML + renderBalloons(page) + renderStickers(page) + `</div>`;
     } // end if (tmpl valid)
   }
+  } // end else (non-slideshow layouts)
 
   // Narrative "Texto Embaixo" — rendered on canvas when active
   const narrativeStyle = page.narrativeStyle || { align: 'justify', font: 'serif', size: 15 };
@@ -1698,7 +1752,7 @@ function renderCanvas() {
             onkeydown="event.stopImmediatePropagation();"
             onmousedown="event.stopPropagation();"
             style="width:100%;height:100%;padding:14px 20px 4px 20px;box-sizing:border-box;font-size:${_dualFontSize}px;overflow-y:auto;${_nBaseStyle}"
-          >${_topText || ''}</div>
+          >${S(_topText || '')}</div>
         </div>
         <div style="height:0;border-top:1px solid rgba(0,212,255,0.2);margin:0 16px;flex-shrink:0;"></div>
         <div style="position:relative;flex:1;min-height:0;">
@@ -1709,7 +1763,7 @@ function renderCanvas() {
             onkeydown="event.stopImmediatePropagation();"
             onmousedown="event.stopPropagation();"
             style="width:100%;height:100%;padding:14px 20px 4px 20px;box-sizing:border-box;font-size:${_dualFontSize}px;overflow-y:auto;opacity:0.8;${_nBaseStyle}"
-          >${_botText || ''}</div>
+          >${S(_botText || '')}</div>
         </div>
       </div>` : `
       <div contenteditable="true" class="text-below-content" placeholder="${activeLang === 'pt-BR' ? 'Escreva a narrativa aqui...' : 'Write narration here...'}"
@@ -1718,7 +1772,7 @@ function renderCanvas() {
         onkeydown="event.stopImmediatePropagation();"
         onmousedown="event.stopPropagation();"
         style="width:100%;height:100%;padding:16px 24px 16px 20px;box-sizing:border-box;font-family:${narrativeFont};font-size:${narrativeStyle.size}px;text-align:${narrativeStyle.align};overflow-y:auto;${narrativeStyle.bold ? 'font-weight:bold;' : 'font-weight:normal;'}${narrativeStyle.italic ? 'font-style:italic;' : ''}color:${narrativeStyle.color || narrativeStyle.textColor || '#ffffff'};${narrativeStyle.leading ? 'line-height:'+narrativeStyle.leading+';' : ''}text-shadow:0 1px 2px rgba(0,0,0,0.5);letter-spacing:0.01em;"
-      >${narrativeText || ''}</div>`}
+      >${S(narrativeText || '')}</div>`}
     </div>` : '';
   const canvasTools = '';
   
@@ -1932,7 +1986,7 @@ function renderCoverRightPanel() {
         <textarea
           oninput="App.updateCoverElement('${el_id}','text',this.value)"
           style="width:100%;min-height:56px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);padding:6px;font-size:11px;resize:vertical;outline:none;margin-bottom:6px;"
-        >${selectedCoverEl.text || ''}</textarea>
+        >${S(selectedCoverEl.text || '')}</textarea>
 
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
           <span style="font-size:9px;color:var(--text3);width:40px;">Cor</span>
@@ -2170,7 +2224,7 @@ function renderBackCoverRightPanel() {
         </div>
         <textarea oninput="App.updateCoverElement('${el_id}','text',this.value)"
           style="width:100%;min-height:${selectedBcEl.role==='synopsis'?'100':'56'}px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);padding:6px;font-size:11px;resize:vertical;outline:none;margin-bottom:6px;"
-        >${selectedBcEl.text || ''}</textarea>
+        >${S(selectedBcEl.text || '')}</textarea>
 
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
           <span style="font-size:9px;color:var(--text3);width:40px;">Cor</span>
@@ -2586,6 +2640,96 @@ function renderRightPanel() {
       ` : ''}
     </div>`;
 
+  // ── SLIDESHOW MODE ──
+  const isSlideshow = page.layoutId === 'slideshow';
+  if (isSlideshow) {
+    const slides = page.slides || [];
+    const totalDuration = page.duration || 4;
+    const usedTime = slides.reduce((sum, s) => sum + (s.duration || 0), 0);
+    const remainingTime = totalDuration - usedTime;
+    const slideshowCollapsed = collapsed.slideshow;
+    
+    html += `
+      <div style="margin-bottom:6px;border:2px solid var(--accent);border-radius:6px;padding:6px;background:rgba(20,184,166,0.05);">
+        <div onclick="App.toggleSidebarSection('slideshow')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
+          <span style="font-size:11px;font-weight:700;color:var(--accent);flex:1;">🎬 SLIDESHOW (${slides.length} slides)</span>
+          <span style="font-size:10px;color:var(--accent);">${slideshowCollapsed ? '+' : '-'}</span>
+        </div>
+        ${!slideshowCollapsed ? `
+          <!-- Duration Bar -->
+          <div style="margin:8px 0;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:9px;color:var(--text3);">Duração total: ${totalDuration}s</span>
+              <span style="font-size:9px;color:${usedTime <= totalDuration ? 'var(--accent)' : '#f59e0b'};font-weight:600;">${usedTime}s / ${totalDuration}s ${usedTime < totalDuration ? '(faltam ' + remainingTime.toFixed(1) + 's)' : usedTime > totalDuration ? '(excede ' + (usedTime - totalDuration).toFixed(1) + 's!)' : '✓'}</span>
+            </div>
+            <div style="height:6px;background:var(--surface);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;background:${usedTime <= totalDuration ? 'var(--accent)' : '#f59e0b'};width:${Math.min(100, (usedTime / totalDuration) * 100)}%;transition:width 0.2s;"></div>
+            </div>
+          </div>
+          
+          <!-- Slides List -->
+          <div style="max-height:300px;overflow-y:auto;margin-bottom:8px;">
+            ${slides.map((slide, i) => {
+              const escapedImg = (slide.image || '').replace(/'/g, "\\'");
+              return `
+                <div class="slideshow-slide-item" draggable="true" 
+                     ondragstart="App.handleSlideDragStart(event, ${i})" 
+                     ondragover="App.handleSlideDragOver(event)" 
+                     ondrop="App.handleSlideDrop(event, ${i})"
+                     style="background:var(--surface2);border-radius:4px;padding:6px;margin-bottom:4px;border:1px solid var(--border);cursor:move;">
+                  <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+                    <img src="${slide.image}" style="width:40px;height:40px;object-fit:cover;border-radius:3px;border:1px solid var(--border);">
+                    <div style="flex:1;">
+                      <div style="font-size:9px;color:var(--text3);font-weight:600;margin-bottom:2px;">Slide ${i + 1}</div>
+                      <div style="display:flex;gap:4px;align-items:center;">
+                        <span style="font-size:8px;color:var(--text3);">Duração:</span>
+                        <input type="number" value="${slide.duration || 4}" min="0.5" step="0.5" 
+                               onchange="App.updateSlideDuration(${i}, parseFloat(this.value))" 
+                               style="width:50px;padding:2px 4px;border-radius:3px;border:1px solid var(--border);background:var(--surface);color:#fff;font-size:9px;">
+                        <span style="font-size:8px;color:var(--text3);">s</span>
+                      </div>
+                    </div>
+                    <button onclick="App.removeSlide(${i})" title="Remover slide" 
+                            style="width:20px;height:20px;border-radius:3px;border:1px solid #c00;background:transparent;color:#f66;font-size:10px;cursor:pointer;padding:0;">✕</button>
+                  </div>
+                  <div style="display:flex;gap:4px;">
+                    <select onchange="App.updateSlideKenBurns(${i}, this.value)" 
+                            style="flex:1;padding:3px 4px;border-radius:3px;border:1px solid var(--border);background:var(--surface);color:#fff;font-size:9px;">
+                      ${Object.entries(KEN_BURNS_PRESETS).map(([id, preset]) => 
+                        `<option value="${id}" ${(slide.kenBurns || 'zoom-in') === id ? 'selected' : ''}>${preset.name}</option>`
+                      ).join('')}
+                    </select>
+                    <select onchange="App.updateSlideTransition(${i}, this.value)" 
+                            style="flex:1;padding:3px 4px;border-radius:3px;border:1px solid var(--border);background:var(--surface);color:#fff;font-size:9px;">
+                      <option value="cut" ${(slide.transition || 'cut') === 'cut' ? 'selected' : ''}>Corte</option>
+                      <option value="crossfade" ${slide.transition === 'crossfade' ? 'selected' : ''}>Crossfade</option>
+                      <option value="fade-black" ${slide.transition === 'fade-black' ? 'selected' : ''}>Fade Black</option>
+                    </select>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+          
+          <!-- Actions -->
+          <div style="display:flex;gap:4px;margin-bottom:4px;">
+            <button onclick="App.addSlideFromLibrary()" 
+                    style="flex:1;padding:6px;border-radius:4px;border:1px dashed var(--accent);background:rgba(20,184,166,0.06);color:var(--accent);font-size:10px;cursor:pointer;font-weight:600;">+ Adicionar Slide</button>
+            <button onclick="App.divideSlidesEqually()" title="Dividir tempo igualmente entre slides" 
+                    style="padding:6px 8px;border-radius:4px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-size:10px;cursor:pointer;font-weight:600;">⚡ Dividir Igual</button>
+          </div>
+          
+          ${slides.length === 0 ? `
+            <div style="padding:12px;text-align:center;background:var(--surface2);border-radius:4px;border:1px dashed var(--border);">
+              <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Nenhum slide adicionado</div>
+              <div style="font-size:9px;color:var(--text3);line-height:1.4;">Clique em "+ Adicionar Slide" para começar</div>
+            </div>
+          ` : ''}
+        ` : ''}
+      </div>
+    `;
+  }
+
   // ── PAGE SETTINGS ──
   const pageCollapsed = collapsed.pageSettings;
   const pageBgColor = page.bgColor || '#ffffff';
@@ -2924,11 +3068,14 @@ function renderRightPanel() {
               ${page.narration && page.narration['pt-BR'] && page.narration['pt-BR'].file ? `
                 <div style="display:flex;align-items:center;gap:4px;">
                   <button onclick="App.playNarrationLang('pt-BR')" title="Play PT-BR" style="width:24px;height:24px;border-radius:50%;border:1px solid #22c55e;background:transparent;color:#22c55e;cursor:pointer;font-size:10px;">▶</button>
-                  <div style="flex:1;font-size:9px;color:var(--text2);">${page.narration['pt-BR'].duration ? page.narration['pt-BR'].duration.toFixed(1) + 's' : 'Carregado'}</div>
-                  <button onclick="App.removeNarrationLang('pt-BR')" title="Remover" style="width:18px;height:18px;border-radius:3px;border:1px solid #c00;background:transparent;color:#c00;font-size:8px;cursor:pointer;">✕</button>
+                  <div style="flex:1;font-size:9px;color:var(--text2);">${page.narration['pt-BR'].duration ? page.narration['pt-BR'].duration.toFixed(1) + 's' : 'Loaded'}</div>
+                  <button onclick="App.removeNarrationLang('pt-BR')" title="Remove" style="width:18px;height:18px;border-radius:3px;border:1px solid #c00;background:transparent;color:#c00;font-size:8px;cursor:pointer;">✕</button>
                 </div>
               ` : `
-                <button onclick="App.uploadNarrationLang('pt-BR')" style="width:100%;padding:6px;border-radius:3px;background:transparent;border:1px dashed #22c55e;color:#22c55e;cursor:pointer;font-size:9px;">+ Upload PT-BR</button>
+                <div style="display:flex;gap:4px;">
+                  <button onclick="App.uploadNarrationLang('pt-BR')" style="flex:1;padding:6px;border-radius:3px;background:transparent;border:1px dashed #22c55e;color:#22c55e;cursor:pointer;font-size:9px;">📁 Upload</button>
+                  ${typeof MediaRecorder !== 'undefined' ? '<button onclick="App.openRecordingModal(\\\'pt-BR\\\')" style="flex:1;padding:6px;border-radius:3px;background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#22c55e;cursor:pointer;font-size:9px;">🎙️ Record</button>' : ''}
+                </div>
               `}
             </div>
             
@@ -2938,11 +3085,14 @@ function renderRightPanel() {
               ${page.narration && page.narration['en'] && page.narration['en'].file ? `
                 <div style="display:flex;align-items:center;gap:4px;">
                   <button onclick="App.playNarrationLang('en')" title="Play EN" style="width:24px;height:24px;border-radius:50%;border:1px solid #3b82f6;background:transparent;color:#3b82f6;cursor:pointer;font-size:10px;">▶</button>
-                  <div style="flex:1;font-size:9px;color:var(--text2);">${page.narration['en'].duration ? page.narration['en'].duration.toFixed(1) + 's' : 'Carregado'}</div>
-                  <button onclick="App.removeNarrationLang('en')" title="Remover" style="width:18px;height:18px;border-radius:3px;border:1px solid #c00;background:transparent;color:#c00;font-size:8px;cursor:pointer;">✕</button>
+                  <div style="flex:1;font-size:9px;color:var(--text2);">${page.narration['en'].duration ? page.narration['en'].duration.toFixed(1) + 's' : 'Loaded'}</div>
+                  <button onclick="App.removeNarrationLang('en')" title="Remove" style="width:18px;height:18px;border-radius:3px;border:1px solid #c00;background:transparent;color:#c00;font-size:8px;cursor:pointer;">✕</button>
                 </div>
               ` : `
-                <button onclick="App.uploadNarrationLang('en')" style="width:100%;padding:6px;border-radius:3px;background:transparent;border:1px dashed #3b82f6;color:#3b82f6;cursor:pointer;font-size:9px;">+ Upload EN</button>
+                <div style="display:flex;gap:4px;">
+                  <button onclick="App.uploadNarrationLang('en')" style="flex:1;padding:6px;border-radius:3px;background:transparent;border:1px dashed #3b82f6;color:#3b82f6;cursor:pointer;font-size:9px;">📁 Upload</button>
+                  ${typeof MediaRecorder !== 'undefined' ? '<button onclick="App.openRecordingModal(\\\'en\\\')" style="flex:1;padding:6px;border-radius:3px;background:rgba(59,130,246,0.15);border:1px solid #3b82f6;color:#3b82f6;cursor:pointer;font-size:9px;">🎙️ Record</button>' : ''}
+                </div>
               `}
             </div>
           </div>
@@ -3010,7 +3160,7 @@ function renderRightPanel() {
   html += `
     <div style="margin-bottom:4px;">
       <div onclick="App.toggleSidebarSection('transition')" style="display:flex;align-items:center;gap:6px;padding:4px 0;cursor:pointer;user-select:none;">
-        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;display:flex;align-items:center;gap:6px;">${Icons.shuffle} TRANSIÇÃO</span>
+        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;display:flex;align-items:center;gap:6px;">⇄ TRANSIÇÃO</span>
         <span style="font-size:10px;color:var(--text3);">${transitionCollapsed ? '+' : '-'}</span>
       </div>
       ${!transitionCollapsed ? `
@@ -3590,7 +3740,7 @@ function renderBalloons(page) {
         oninput="${isShout ? 'App._updateShoutSvgLive('+i+')' : ''}"
         onpaste="setTimeout(()=>{App.saveBalloonTextCss(${i},this.innerText);if(this.closest('.shout'))App._updateShoutSvg(${i})},50)"
         style="${fontSizeInline}${textColorInline}${fmtInline}${sfxInline}"
-      >${text || ''}</div>
+      >${S(text || '')}</div>
       ${selectionUI}
     </div>`;
   }).join('');

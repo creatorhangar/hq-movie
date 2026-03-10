@@ -3,6 +3,19 @@
    34 Pixel-Perfect Layouts, 3-Column Grid, Safe Area, Z-Order
    ═══════════════════════════════════════════════════════════════ */
 
+// ── XSS Sanitization (DOMPurify wrapper) ──
+const S = (str) => {
+  if (str == null) return '';
+  const s = String(str);
+  if (typeof DOMPurify !== 'undefined') return DOMPurify.sanitize(s);
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+};
+const S_ATTR = (str) => {
+  if (str == null) return '';
+  const s = String(str);
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+};
+
 // ── A4 Canvas Config (from CRITICAL-ADDENDUM) ──
 const A4 = {
   W: 794, H: 1123,
@@ -554,18 +567,18 @@ const Store = {
   pushUndo() {
     const p = this._s.currentProject;
     if (!p) return;
-    const stack = [...this._s.undoStack, JSON.stringify(p)].slice(-50);
+    const stack = [...this._s.undoStack, structuredClone(p)].slice(-50);
     this.set({ undoStack: stack, redoStack: [] });
   },
   pushUndoSilent() {
     const p = this._s.currentProject;
     if (!p) return;
-    const stack = [...this._s.undoStack, JSON.stringify(p)].slice(-50);
+    const stack = [...this._s.undoStack, structuredClone(p)].slice(-50);
     this.setSilent({ undoStack: stack, redoStack: [] });
   },
-  undo() { const s = [...this._s.undoStack]; if (!s.length) return; const prev = JSON.parse(s.pop()); const redo = [...this._s.redoStack, JSON.stringify(this._s.currentProject)]; this.set({ currentProject: prev, undoStack: s, redoStack: redo }); this.save(); },
-  redo() { const s = [...this._s.redoStack]; if (!s.length) return; const next = JSON.parse(s.pop()); const undo = [...this._s.undoStack, JSON.stringify(this._s.currentProject)]; this.set({ currentProject: next, undoStack: undo, redoStack: s }); this.save(); },
-  async save() { const p = this._s.currentProject; if (!p) return; p.metadata.updatedAt = Date.now(); await db.projects.put(JSON.parse(JSON.stringify(p))); const ind = document.getElementById('save-indicator'); if (ind) { ind.innerHTML = `${Icons.save} Salvando...`; ind.style.color = 'var(--accent)'; setTimeout(() => { ind.innerHTML = '✓ Salvo'; ind.style.color = 'var(--success)'; }, 600); } },
+  undo() { const s = [...this._s.undoStack]; if (!s.length) return; const prev = s.pop(); const redo = [...this._s.redoStack, structuredClone(this._s.currentProject)]; this.set({ currentProject: prev, undoStack: s, redoStack: redo }); this.save(); },
+  redo() { const s = [...this._s.redoStack]; if (!s.length) return; const next = s.pop(); const undo = [...this._s.undoStack, structuredClone(this._s.currentProject)]; this.set({ currentProject: next, undoStack: undo, redoStack: s }); this.save(); },
+  async save() { const p = this._s.currentProject; if (!p) return; p.metadata.updatedAt = Date.now(); await db.projects.put(structuredClone(p)); const ind = document.getElementById('save-indicator'); if (ind) { ind.innerHTML = `${Icons.save} Salvando...`; ind.style.color = 'var(--accent)'; setTimeout(() => { ind.innerHTML = '✓ Salvo'; ind.style.color = 'var(--success)'; }, 600); } },
   async loadProjects() { 
     const all = await db.projects.toArray(); 
     // Auto-upgrade legacy typography
@@ -2587,7 +2600,11 @@ function createPage(order, videoFormat = null) {
       textColor: '#ffffff'
     }, 
     materiaZones: {}, 
-    duration: 4 
+    duration: 4,
+    // Slideshow mode: multiple images in temporal sequence
+    slides: [], // [{ id, image, duration, kenBurns, transition, transitionDuration, panX, panY, zoom }]
+    kenBurns: 'zoom-in', // Default Ken Burns for non-slideshow layouts
+    transition: 'fade' // Default transition
   };
 }
 

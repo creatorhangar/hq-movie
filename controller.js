@@ -405,6 +405,23 @@ const App = {
                 if (page.durationLocked === undefined) { page.durationLocked = false; migrated = true; }
                 if (!page.kenBurns) { page.kenBurns = 'zoom-in'; migrated = true; }
                 if (!page.transition) { page.transition = 'fade'; migrated = true; }
+                // Migration: Slideshow mode - convert images to slides if layoutId is slideshow
+                if (page.layoutId === 'slideshow' && !page.slides) {
+                    page.slides = (page.images || []).map((img, i) => ({
+                        id: genId(),
+                        image: img.src,
+                        duration: page.duration / Math.max(1, (page.images || []).length),
+                        kenBurns: page.kenBurns || 'zoom-in',
+                        transition: i === 0 ? 'cut' : 'crossfade',
+                        transitionDuration: 0.5,
+                        panX: img.panX || 0,
+                        panY: img.panY || 0,
+                        zoom: img.zoom || 1.0
+                    }));
+                    migrated = true;
+                }
+                // Migration: Initialize slides array for all pages
+                if (!page.slides) { page.slides = []; migrated = true; }
                 // Migration: normalize balloon fields (legacy-safe)
                 (page.texts || []).forEach(t => {
                     if (!t || typeof t !== 'object') return;
@@ -3536,6 +3553,7 @@ const App = {
     },
 
     addBalloonToPage(type = 'speech') {
+        console.log('🎈 addBalloonToPage chamado', { type, currentPage: Store.get('activePageIndex'), hasTexts: !!Store.getActivePage()?.texts });
         const p = Store.get('currentProject'), page = Store.getActivePage(); if (!p || !page) return;
         
         // Matéria context guard
@@ -4008,9 +4026,539 @@ const App = {
             delete page.narration[lang];
         }
         
-        Toast.show(`Narração ${lang === 'pt-BR' ? 'PT-BR' : 'EN'} removida`);
+        Toast.show(`Narration ${lang} removed`);
         Store.save();
         renderRightPanel();
+    },
+    
+    // ═══════════════════════════════════════════════════════════════
+    // Microphone Recording
+    // ═══════════════════════════════════════════════════════════════
+    
+    _recordingLang: null,
+    _audioStream: null,
+    _mediaRecorder: null,
+    _audioChunks: [],
+    _recordedAudioBlob: null,
+    _recordingStartTime: null,
+    _recordingTimer: null,
+    _recordingTimeout: null,
+    _audioContext: null,
+    _analyser: null,
+    _micLevelRAF: null,
+    _previewAudio: null,
+    
+    // ═══════════════════════════════════════════════════════════════
+    // Excalidraw Integration
+    // ═══════════════════════════════════════════════════════════════
+    _excalidrawAPI: null,
+    _excalidrawRoot: null,
+
+    openExcalidrawModal() {
+        const modal = document.getElementById('excalidraw-modal');
+        if (!modal) return;
+        
+        modal.style.display = 'flex';
+        
+        // Initialize Excalidraw if not already done
+        if (!this._excalidrawRoot && window.React && window.ReactDOM && window.ExcalidrawLib) {
+            const container = document.getElementById('excalidraw-container');
+            if (container) {
+                this._excalidrawRoot = ReactDOM.createRoot(container);
+                
+                const ExcalidrawWrapper = () => {
+                    return React.createElement(
+                        React.Fragment,
+                        null,
+                        React.createElement(ExcalidrawLib.Excalidraw, {
+                            excalidrawAPI: (api) => {
+                                this._excalidrawAPI = api;
+                            },
+                            initialData: {
+                                appState: {
+                                    viewBackgroundColor: "#ffffff",
+                                    currentItemFontFamily: 1 // Virgil
+                                }
+                            }
+                        })
+                    );
+                };
+                
+                this._excalidrawRoot.render(React.createElement(ExcalidrawWrapper));
+            }
+        } else if (this._excalidrawAPI) {
+            // Reset state if opening again
+            this._excalidrawAPI.resetScene();
+        }
+    },
+
+    closeExcalidrawModal() {
+        const modal = document.getElementById('excalidraw-modal');
+        if (modal) modal.style.display = 'none';
+    },
+
+    setExcalidrawPreset(ratio) {
+        if (!this._excalidrawAPI) return;
+        
+        let width, height;
+        if (ratio === '9:16') {
+            width = 1080; height = 1920;
+        } else if (ratio === '16:9') {
+            width = 1920; height = 1080;
+        } else if (ratio === '1:1') {
+            width = 1080; height = 1080;
+        } else {
+            return;
+        }
+
+        // Create a dashed rectangle as a guide
+        const guideRect = {
+            id: 'guide_' + Date.now(),
+            type: 'rectangle',
+            x: 0,
+            y: 0,
+            width: width,
+            height: height,
+            strokeColor: '#14b8a6',
+            backgroundColor: 'transparent',
+            fillStyle: 'hachure',
+            strokeWidth: 2,
+            strokeStyle: 'dashed',
+            roughness: 0,
+            opacity: 50,
+            groupIds: [],
+            strokeSharpness: 'sharp',
+            boundElements: [],
+            updated: Date.now(),
+            link: null,
+            locked: true // Lock the guide so it's not accidentally moved
+        };
+
+        const currentElements = this._excalidrawAPI.getSceneElements().filter(el => !el.id.startsWith('guide_'));
+        
+        this._excalidrawAPI.updateScene({
+            elements: [guideRect, ...currentElements],
+            appState: {
+                viewBackgroundColor: "#ffffff",
+            }
+        });
+        
+        // Scroll to center the guide
+        this._excalidrawAPI.scrollToContent(guideRect, { fitToViewport: true });
+    },
+
+    async saveExcalidrawArt() {
+        if (!this._excalidrawAPI) return;
+        
+        const elements = this._excalidrawAPI.getSceneElements();
+        if (!elements || elements.length === 0) {
+            this.closeExcalidrawModal();
+            return;
+        }
+
+        try {
+            const canvas = await ExcalidrawLib.exportToCanvas({
+                elements,
+                appState: {
+                    ...this._excalidrawAPI.getAppState(),
+                    exportBackground: false // transparent
+                },
+                files: this._excalidrawAPI.getFiles(),
+                exportPadding: 20
+            });
+
+            const dataURL = canvas.toDataURL('image/png');
+            
+            // Generate a unique ID for the image
+            const imgId = 'exc_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            
+            // Add to library
+            Library.add(dataURL, imgId, 'Excalidraw');
+            
+            // Select empty slot or active slot
+            const p = Store.get('currentProject');
+            const page = Store.getActivePage();
+            let targetSlot = Store.get('selectedSlot');
+            
+            // Se nenhum slot estiver selecionado ou se o projeto configurado para auto-paste
+            if (p.settings && p.settings.autoPastePage) {
+                this.addPage();
+                targetSlot = 0;
+            } else if (targetSlot < 0) {
+                // Find first empty slot
+                targetSlot = 0;
+                if (page && page.images) {
+                    const emptyIdx = page.images.findIndex(img => !img || !img.src);
+                    if (emptyIdx >= 0) targetSlot = emptyIdx;
+                }
+            }
+            
+            Store.set({ selectedSlot: targetSlot });
+            this.insertLibraryImage(dataURL);
+            
+            this.closeExcalidrawModal();
+            Toast.show('Arte salva na página!', 'success');
+            
+        } catch (err) {
+            console.error("Excalidraw export error:", err);
+            Toast.show('Erro ao salvar arte.', 'error');
+        }
+    },
+    
+    openRecordingModal(lang) {
+        // Validar HTTPS (MediaRecorder precisa de conexão segura)
+        if (location.protocol !== 'https:' && 
+            location.hostname !== 'localhost' && 
+            location.hostname !== '127.0.0.1') {
+            console.error('❌ MediaRecorder requer HTTPS em produção');
+            Toast.show('⚠️ Gravação de áudio só funciona em HTTPS ou localhost.', 'error');
+            return;
+        }
+        
+        // Verificar suporte do navegador
+        if (!navigator.mediaDevices || !window.MediaRecorder) {
+            Toast.show('⚠️ Seu navegador não suporta gravação de áudio. Use Chrome, Safari ou Edge.', 'error');
+            return;
+        }
+        
+        this._recordingLang = lang;
+        const pageIdx = Store.get('activePageIndex') + 1;
+        
+        // Update modal title
+        document.getElementById('rec-modal-title').textContent = `Record Narration - Page ${pageIdx} (${lang})`;
+        
+        // Reset UI state
+        this._updateRecordingUI('ready');
+        document.getElementById('rec-timer').textContent = '00:00';
+        document.getElementById('mic-level-bar').style.width = '0%';
+        
+        // Show modal
+        document.getElementById('recording-modal').classList.add('active');
+    },
+    
+    closeRecordingModal() {
+        // Stop recording if active
+        if (this._mediaRecorder && this._mediaRecorder.state === 'recording') {
+            this._mediaRecorder.stop();
+        }
+        
+        // Limpar timeout de 5 minutos ao fechar modal
+        if (this._recordingTimeout) {
+            clearTimeout(this._recordingTimeout);
+            this._recordingTimeout = null;
+        }
+        
+        // Stop audio stream
+        if (this._audioStream) {
+            this._audioStream.getTracks().forEach(track => track.stop());
+            this._audioStream = null;
+        }
+        
+        // Stop preview audio
+        if (this._previewAudio) {
+            this._previewAudio.pause();
+            this._previewAudio = null;
+        }
+        
+        // Clear timer
+        if (this._recordingTimer) {
+            clearInterval(this._recordingTimer);
+            this._recordingTimer = null;
+        }
+        
+        // Cancel mic level animation
+        if (this._micLevelRAF) {
+            cancelAnimationFrame(this._micLevelRAF);
+            this._micLevelRAF = null;
+        }
+        
+        // Close audio context
+        if (this._audioContext) {
+            this._audioContext.close();
+            this._audioContext = null;
+        }
+        
+        // Reset state
+        this._recordingLang = null;
+        this._recordedAudioBlob = null;
+        this._audioChunks = [];
+        
+        // Hide modal
+        document.getElementById('recording-modal').classList.remove('active');
+    },
+    
+    async startMicrophoneRecording() {
+        try {
+            // Request microphone permission
+            this._audioStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            });
+            
+            // Testar formatos em ordem de qualidade/compatibilidade
+            const formats = [
+                'audio/webm;codecs=opus',  // Melhor qualidade - iPhone iOS 14.5+, Chrome, Firefox
+                'audio/mp4',               // Fallback iPhone iOS 14.3-14.4
+                'audio/webm',              // Fallback Android antigo
+                'audio/wav'                // Último recurso (desktop)
+            ];
+            
+            let mimeType = 'audio/webm'; // Default seguro
+            for (const format of formats) {
+                if (MediaRecorder.isTypeSupported(format)) {
+                    mimeType = format;
+                    console.log('🎙️ Formato de áudio detectado:', format);
+                    break;
+                }
+            }
+            
+            // Create MediaRecorder
+            this._mediaRecorder = new MediaRecorder(this._audioStream, {
+                mimeType: mimeType,
+                audioBitsPerSecond: 128000
+            });
+            
+            // Collect audio chunks
+            this._audioChunks = [];
+            this._mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this._audioChunks.push(event.data);
+                }
+            };
+            
+            // On stop: create final Blob
+            this._mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(this._audioChunks, { type: mimeType });
+                this._recordedAudioBlob = audioBlob;
+                this._updateRecordingUI('stopped');
+                
+                // Stop mic level animation
+                if (this._micLevelRAF) {
+                    cancelAnimationFrame(this._micLevelRAF);
+                    this._micLevelRAF = null;
+                }
+            };
+            
+            // Start recording
+            this._mediaRecorder.start();
+            this._recordingStartTime = Date.now();
+            this._updateRecordingUI('recording');
+            
+            // Update timer every 100ms with remaining time indicator
+            const MAX_RECORDING_SECONDS = 300; // 5 minutos
+            this._recordingTimer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - this._recordingStartTime) / 1000);
+                const remaining = Math.max(0, MAX_RECORDING_SECONDS - elapsed);
+                
+                const elapsedMin = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const elapsedSec = (elapsed % 60).toString().padStart(2, '0');
+                const remainMin = Math.floor(remaining / 60);
+                const remainSec = (remaining % 60).toString().padStart(2, '0');
+                
+                const timer = document.getElementById('rec-timer');
+                timer.textContent = `${elapsedMin}:${elapsedSec} / ${remainMin}:${remainSec}`;
+                
+                // Mudar cor quando <30s restantes
+                if (remaining < 30 && remaining > 0) {
+                    timer.style.color = '#ff4444';
+                } else {
+                    timer.style.color = '';
+                }
+            }, 100);
+            
+            // Timeout de segurança: 5 minutos máximo (previne crash em mobile)
+            const MAX_RECORDING_TIME = MAX_RECORDING_SECONDS * 1000;
+            this._recordingTimeout = setTimeout(() => {
+                if (this._mediaRecorder?.state === 'recording') {
+                    console.warn('⏱️ Gravação atingiu 5 minutos - salvando automaticamente');
+                    
+                    // Parar gravação
+                    this.stopMicrophoneRecording();
+                    
+                    // Auto-salvar após 500ms (aguarda onstop processar)
+                    setTimeout(() => {
+                        if (this._recordedAudioBlob) {
+                            this.saveRecordedAudio();
+                            Toast.show('⏱️ Gravação máxima: 5 minutos. Áudio salvo automaticamente.', 'warning', 5000);
+                        }
+                    }, 500);
+                }
+            }, MAX_RECORDING_TIME);
+            
+            // Setup mic level visualization
+            this._setupMicLevelVisualization();
+            
+        } catch (error) {
+            if (error.name === 'NotAllowedError') {
+                Toast.show('Microphone permission denied. Enable it in browser settings.', 'error');
+            } else {
+                Toast.show('Error accessing microphone: ' + error.message, 'error');
+            }
+            console.error('Recording error:', error);
+        }
+    },
+    
+    _setupMicLevelVisualization() {
+        try {
+            this._audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this._analyser = this._audioContext.createAnalyser();
+            const microphone = this._audioContext.createMediaStreamSource(this._audioStream);
+            microphone.connect(this._analyser);
+            this._analyser.fftSize = 256;
+            
+            const dataArray = new Uint8Array(this._analyser.frequencyBinCount);
+            const levelBar = document.getElementById('mic-level-bar');
+            
+            const updateLevel = () => {
+                if (!this._mediaRecorder || this._mediaRecorder.state !== 'recording') return;
+                
+                this._analyser.getByteFrequencyData(dataArray);
+                const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+                const percentage = Math.min(100, (average / 128) * 100);
+                
+                levelBar.style.width = percentage + '%';
+                levelBar.classList.toggle('hot', percentage > 80);
+                
+                this._micLevelRAF = requestAnimationFrame(updateLevel);
+            };
+            
+            updateLevel();
+        } catch (e) {
+            console.warn('Could not setup mic level visualization:', e);
+        }
+    },
+    
+    stopMicrophoneRecording() {
+        if (this._mediaRecorder && this._mediaRecorder.state === 'recording') {
+            this._mediaRecorder.stop();
+            
+            // Stop stream
+            if (this._audioStream) {
+                this._audioStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Stop timer
+            if (this._recordingTimer) {
+                clearInterval(this._recordingTimer);
+                this._recordingTimer = null;
+            }
+            
+            // Limpar timeout se parar manualmente
+            if (this._recordingTimeout) {
+                clearTimeout(this._recordingTimeout);
+                this._recordingTimeout = null;
+            }
+        }
+    },
+    
+    playRecordedAudio() {
+        if (!this._recordedAudioBlob) return;
+        
+        // Stop if already playing
+        if (this._previewAudio) {
+            this._previewAudio.pause();
+            this._previewAudio = null;
+            this._updateRecordingUI('stopped');
+            return;
+        }
+        
+        const audioURL = URL.createObjectURL(this._recordedAudioBlob);
+        this._previewAudio = new Audio(audioURL);
+        this._previewAudio.play();
+        
+        this._previewAudio.onended = () => {
+            this._previewAudio = null;
+            this._updateRecordingUI('stopped');
+        };
+        
+        this._updateRecordingUI('playing');
+    },
+    
+    saveRecordedAudio() {
+        if (!this._recordedAudioBlob || !this._recordingLang) return;
+        
+        const lang = this._recordingLang;
+        
+        // Convert Blob to Data URL
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const dataURL = reader.result;
+            
+            const p = Store.get('currentProject');
+            const page = Store.getActivePage();
+            if (!p || !page) return;
+            
+            // Initialize narration object if needed
+            if (!page.narration) page.narration = {};
+            if (!page.narration[lang]) page.narration[lang] = {};
+            
+            page.narration[lang].file = dataURL;
+            
+            // Get audio duration
+            const audio = new Audio(dataURL);
+            audio.onloadedmetadata = () => {
+                page.narration[lang].duration = audio.duration;
+                page.narration[lang].volume = 0.8;
+                Store.save();
+                Toast.show(`Narration ${lang} recorded and saved! (${audio.duration.toFixed(1)}s)`, 'success');
+                renderRightPanel();
+            };
+            
+            this.closeRecordingModal();
+        };
+        
+        reader.readAsDataURL(this._recordedAudioBlob);
+    },
+    
+    _updateRecordingUI(state) {
+        const btnRecord = document.getElementById('rec-btn-record');
+        const btnStop = document.getElementById('rec-btn-stop');
+        const btnPlay = document.getElementById('rec-btn-play');
+        const btnSave = document.getElementById('rec-btn-save');
+        const statusText = document.getElementById('rec-status-text');
+        const timer = document.getElementById('rec-timer');
+        
+        switch (state) {
+            case 'ready':
+                btnRecord.disabled = false;
+                btnStop.disabled = true;
+                btnPlay.disabled = true;
+                btnSave.disabled = true;
+                statusText.textContent = 'Ready to record';
+                statusText.classList.remove('recording');
+                timer.classList.remove('recording');
+                break;
+            case 'recording':
+                btnRecord.disabled = true;
+                btnStop.disabled = false;
+                btnPlay.disabled = true;
+                btnSave.disabled = true;
+                statusText.textContent = '● Recording...';
+                statusText.classList.add('recording');
+                timer.classList.add('recording');
+                break;
+            case 'stopped':
+                btnRecord.disabled = false;
+                btnStop.disabled = true;
+                btnPlay.disabled = false;
+                btnSave.disabled = false;
+                statusText.textContent = 'Recording complete';
+                statusText.classList.remove('recording');
+                timer.classList.remove('recording');
+                btnPlay.innerHTML = '▶️ Play';
+                break;
+            case 'playing':
+                btnRecord.disabled = true;
+                btnStop.disabled = true;
+                btnPlay.disabled = false;
+                btnSave.disabled = true;
+                statusText.textContent = 'Playing preview...';
+                btnPlay.innerHTML = '⏹️ Stop';
+                break;
+        }
     },
     
     setPageDuration(duration) {
@@ -4098,43 +4646,285 @@ const App = {
         renderRightPanel();
     },
 
-    // Quick transition edit - Opens Modal
+    /* ═══════════════════════════════════════════════════════════════
+       SLIDESHOW MODE - Multiple Images per Page
+       ═══════════════════════════════════════════════════════════════ */
+
+    // Add slide from library (prompts user to select)
+    addSlideFromLibrary() {
+        const page = Store.getActivePage();
+        if (!page || page.layoutId !== 'slideshow') {
+            Toast.show('Selecione uma página com layout Slideshow', 'warning');
+            return;
+        }
+        
+        const proj = Store.get('currentProject');
+        const library = proj.library || [];
+        
+        if (library.length === 0) {
+            Toast.show('Biblioteca vazia. Adicione imagens primeiro.', 'warning');
+            return;
+        }
+        
+        // For now, add the first library image (TODO: show picker modal)
+        const firstImage = library[0];
+        this.addSlide(firstImage.src);
+    },
+
+    // Add slide with image
+    addSlide(imageSrc, duration = null) {
+        const page = Store.getActivePage();
+        if (!page || page.layoutId !== 'slideshow') return;
+        
+        if (!page.slides) page.slides = [];
+        
+        // Calculate auto duration
+        const usedTime = page.slides.reduce((sum, s) => sum + (s.duration || 0), 0);
+        const remainingTime = (page.duration || 4) - usedTime;
+        
+        const newSlide = {
+            id: genId(),
+            image: imageSrc,
+            duration: duration || Math.max(2, remainingTime),
+            kenBurns: 'zoom-in',
+            transition: page.slides.length === 0 ? 'cut' : 'crossfade',
+            transitionDuration: 0.5,
+            panX: 0,
+            panY: 0,
+            zoom: 1.0
+        };
+        
+        page.slides.push(newSlide);
+        
+        // Auto-adjust if exceeded
+        const total = page.slides.reduce((sum, s) => sum + s.duration, 0);
+        if (total > page.duration) {
+            const lastSlide = page.slides[page.slides.length - 1];
+            lastSlide.duration = Math.max(1, lastSlide.duration - (total - page.duration));
+        }
+        
+        Store.save();
+        renderRightPanel();
+        renderCanvas();
+        Toast.show('Slide adicionado', 'success');
+    },
+
+    // Remove slide by index
+    removeSlide(index) {
+        const page = Store.getActivePage();
+        if (!page || page.layoutId !== 'slideshow' || !page.slides) return;
+        
+        if (index < 0 || index >= page.slides.length) return;
+        
+        page.slides.splice(index, 1);
+        
+        Store.save();
+        renderRightPanel();
+        renderCanvas();
+        Toast.show('Slide removido', 'info');
+    },
+
+    // Update slide duration
+    updateSlideDuration(index, duration) {
+        const page = Store.getActivePage();
+        if (!page || page.layoutId !== 'slideshow' || !page.slides) return;
+        
+        if (index < 0 || index >= page.slides.length) return;
+        
+        page.slides[index].duration = Math.max(0.5, duration);
+        
+        Store.save();
+        renderRightPanel();
+    },
+
+    // Update slide Ken Burns effect
+    updateSlideKenBurns(index, preset) {
+        const page = Store.getActivePage();
+        if (!page || page.layoutId !== 'slideshow' || !page.slides) return;
+        
+        if (index < 0 || index >= page.slides.length) return;
+        
+        page.slides[index].kenBurns = preset;
+        
+        Store.save();
+        renderCanvas();
+    },
+
+    // Update slide transition
+    updateSlideTransition(index, transition) {
+        const page = Store.getActivePage();
+        if (!page || page.layoutId !== 'slideshow' || !page.slides) return;
+        
+        if (index < 0 || index >= page.slides.length) return;
+        
+        page.slides[index].transition = transition;
+        
+        Store.save();
+    },
+
+    // Divide slides equally
+    divideSlidesEqually() {
+        const page = Store.getActivePage();
+        if (!page || page.layoutId !== 'slideshow' || !page.slides) return;
+        
+        if (page.slides.length === 0) {
+            Toast.show('Adicione slides primeiro', 'warning');
+            return;
+        }
+        
+        const equalDuration = page.duration / page.slides.length;
+        page.slides.forEach(slide => {
+            slide.duration = Math.round(equalDuration * 10) / 10; // 1 decimal
+        });
+        
+        Store.save();
+        renderRightPanel();
+        Toast.show(`Slides divididos igualmente: ${equalDuration.toFixed(1)}s cada`, 'success');
+    },
+
+    // Drag & Drop handlers
+    handleSlideDragStart(event, index) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', index.toString());
+        event.target.style.opacity = '0.5';
+    },
+
+    handleSlideDragOver(event) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+    },
+
+    handleSlideDrop(event, toIndex) {
+        event.preventDefault();
+        const fromIndex = parseInt(event.dataTransfer.getData('text/plain'));
+        
+        if (fromIndex === toIndex) return;
+        
+        this.reorderSlides(fromIndex, toIndex);
+        
+        // Reset opacity
+        const items = document.querySelectorAll('.slideshow-slide-item');
+        items.forEach(item => item.style.opacity = '1');
+    },
+
+    // Reorder slides
+    reorderSlides(fromIndex, toIndex) {
+        const page = Store.getActivePage();
+        if (!page || page.layoutId !== 'slideshow' || !page.slides) return;
+        
+        if (fromIndex < 0 || fromIndex >= page.slides.length) return;
+        if (toIndex < 0 || toIndex >= page.slides.length) return;
+        
+        const [movedSlide] = page.slides.splice(fromIndex, 1);
+        page.slides.splice(toIndex, 0, movedSlide);
+        
+        Store.save();
+        renderRightPanel();
+        renderCanvas();
+    },
+
+    // Quick transition edit - Opens Tooltip (not modal)
     quickEditTransition(pageIdx, event) {
         const p = Store.get('currentProject');
         if (!p || !p.pages[pageIdx]) return;
         
-        this._transitionModalPageIdx = pageIdx;
+        // Close any existing tooltip
+        this.closeTransitionTooltip();
+        
         const page = p.pages[pageIdx];
         const currentTransition = page.transition || 'cut';
-        const currentDuration = page.transition === 'fade' ? (p.timeline?.transitionDuration || 0.5) : 0;
+        const currentDuration = page.transitionDuration || 0.5;
         
-        // Determine value for radio button
-        let value = 'cut';
-        if (currentTransition === 'fade') {
-            if (currentDuration <= 0.3) value = 'fade-0.2';
-            else if (currentDuration >= 0.8) value = 'fade-1.0';
-            else value = 'fade-0.5';
-        }
+        // Create tooltip
+        const tooltip = document.createElement('div');
+        tooltip.id = 'transition-tooltip';
+        tooltip.className = 'transition-tooltip';
+        tooltip.style.cssText = `
+            position: fixed;
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            padding: 8px;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            min-width: 140px;
+        `;
         
-        // Select radio
-        const modal = document.getElementById('transition-modal');
-        if (!modal) return;
+        // Determine which option is selected
+        const isNone = currentTransition === 'none' || currentTransition === 'cut';
+        const isFade03 = currentTransition === 'fade' && currentDuration <= 0.35;
+        const isFade05 = currentTransition === 'fade' && currentDuration > 0.35 && currentDuration <= 0.75;
+        const isFade10 = currentTransition === 'fade' && currentDuration > 0.75;
         
-        const radios = modal.querySelectorAll('input[name="transition"]');
-        radios.forEach(r => {
-            r.checked = (r.value === value);
-            // Update visual state of parent label
-            if (r.checked) r.parentElement.classList.add('selected');
-            else r.parentElement.classList.remove('selected');
-        });
+        tooltip.innerHTML = `
+            <div style="font-size:10px;color:#a0aec0;padding:4px 8px;border-bottom:1px solid #4a5568;margin-bottom:4px;">Transição</div>
+            <button onclick="App.setTransitionFromTooltip(${pageIdx}, 'none')" style="width:100%;padding:8px 12px;background:${isNone ? '#00d4ff' : 'transparent'};border:none;color:${isNone ? '#000' : '#fff'};text-align:left;cursor:pointer;border-radius:4px;font-size:13px;font-weight:${isNone ? 'bold' : 'normal'};transition:background 0.15s;" onmouseover="if(!this.style.fontWeight || this.style.fontWeight==='normal')this.style.background='#4a5568'" onmouseout="if(!this.style.fontWeight || this.style.fontWeight==='normal')this.style.background='transparent'">Nenhuma</button>
+            <button onclick="App.setTransitionFromTooltip(${pageIdx}, 'fade', 0.3)" style="width:100%;padding:8px 12px;background:${isFade03 ? '#00d4ff' : 'transparent'};border:none;color:${isFade03 ? '#000' : '#fff'};text-align:left;cursor:pointer;border-radius:4px;font-size:13px;font-weight:${isFade03 ? 'bold' : 'normal'};transition:background 0.15s;" onmouseover="if(!this.style.fontWeight || this.style.fontWeight==='normal')this.style.background='#4a5568'" onmouseout="if(!this.style.fontWeight || this.style.fontWeight==='normal')this.style.background='transparent'">Fade 0.3s</button>
+            <button onclick="App.setTransitionFromTooltip(${pageIdx}, 'fade', 0.5)" style="width:100%;padding:8px 12px;background:${isFade05 ? '#00d4ff' : 'transparent'};border:none;color:${isFade05 ? '#000' : '#fff'};text-align:left;cursor:pointer;border-radius:4px;font-size:13px;font-weight:${isFade05 ? 'bold' : 'normal'};transition:background 0.15s;" onmouseover="if(!this.style.fontWeight || this.style.fontWeight==='normal')this.style.background='#4a5568'" onmouseout="if(!this.style.fontWeight || this.style.fontWeight==='normal')this.style.background='transparent'">Fade 0.5s</button>
+            <button onclick="App.setTransitionFromTooltip(${pageIdx}, 'fade', 1.0)" style="width:100%;padding:8px 12px;background:${isFade10 ? '#00d4ff' : 'transparent'};border:none;color:${isFade10 ? '#000' : '#fff'};text-align:left;cursor:pointer;border-radius:4px;font-size:13px;font-weight:${isFade10 ? 'bold' : 'normal'};transition:background 0.15s;" onmouseover="if(!this.style.fontWeight || this.style.fontWeight==='normal')this.style.background='#4a5568'" onmouseout="if(!this.style.fontWeight || this.style.fontWeight==='normal')this.style.background='transparent'">Fade 1.0s</button>
+        `;
         
-        modal.style.display = 'flex';
+        document.body.appendChild(tooltip);
+        
+        // Position tooltip above the clicked element
+        const rect = event.target.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        
+        // Center horizontally on the target
+        let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+        // Position above the target with 8px gap
+        let top = rect.top - tooltipRect.height - 8;
+        
+        // Keep within viewport
+        if (left < 8) left = 8;
+        if (left + tooltipRect.width > window.innerWidth - 8) left = window.innerWidth - tooltipRect.width - 8;
+        if (top < 8) top = rect.bottom + 8; // If no room above, show below
+        
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+        
+        // Close on click outside
+        setTimeout(() => {
+            document.addEventListener('click', (e) => {
+                if (!tooltip.contains(e.target)) {
+                    this.closeTransitionTooltip();
+                }
+            }, { once: true });
+        }, 0);
     },
 
     closeTransitionModal() {
         const modal = document.getElementById('transition-modal');
         if (modal) modal.style.display = 'none';
         this._transitionModalPageIdx = null;
+    },
+
+    closeTransitionTooltip() {
+        const tooltip = document.getElementById('transition-tooltip');
+        if (tooltip) tooltip.remove();
+    },
+
+    setTransitionFromTooltip(pageIdx, type, duration) {
+        const p = Store.get('currentProject');
+        if (!p || !p.pages[pageIdx]) return;
+        
+        Store.pushUndo();
+        const page = p.pages[pageIdx];
+        
+        if (type === 'none') {
+            page.transition = 'cut';
+            delete page.transitionDuration;
+        } else if (type === 'fade') {
+            page.transition = 'fade';
+            page.transitionDuration = duration || 0.5;
+        }
+        
+        Store.save();
+        this.closeTransitionTooltip();
+        renderTimeline();
+        
+        const label = type === 'none' ? 'Nenhuma' : `Fade ${duration}s`;
+        Toast.show(`Transição: ${label}`, 'success', 2000);
     },
 
     updateTransitionModalSelection(labelEl) {
@@ -5221,7 +6011,7 @@ const App = {
                 <button class="ft-close" onclick="App.closeBalloonTooltip()" title="Fechar (Esc)">✕</button>
             </div>
             <div class="ft-text-area">
-                <textarea id="balloon-text-input" placeholder="Digite o texto do balão..." oninput="App._tooltipChangeText(${index},this.value)" onkeydown="if(event.key==='Escape'){App.closeBalloonTooltip();event.stopPropagation();}">${balloonText || ''}</textarea>
+                <textarea id="balloon-text-input" placeholder="Digite o texto do balão..." oninput="App._tooltipChangeText(${index},this.value)" onkeydown="if(event.key==='Escape'){App.closeBalloonTooltip();event.stopPropagation();}">${S(balloonText || '')}</textarea>
             </div>
             <div class="ft-row">
                 <span class="ft-label">Tipo</span>
@@ -6202,7 +6992,15 @@ const App = {
         Store.set({ currentProject: p }); Store.save();
         renderCanvas(); renderRightPanel();
     },
-    toggleTimeline() { Store.set({ timelineCollapsed: !Store.get('timelineCollapsed') }); document.getElementById('app').innerHTML = renderEditor(); renderCanvas(); renderRightPanel(); },
+    toggleTimeline() {
+        const tl = document.getElementById('timeline-bar');
+        if (tl) {
+            Store.setSilent({ timelineCollapsed: !Store.get('timelineCollapsed') });
+            tl.classList.toggle('collapsed', Store.get('timelineCollapsed'));
+        } else {
+            Store.set({ timelineCollapsed: !Store.get('timelineCollapsed') });
+        }
+    },
     toggleSidebarSection(section) {
         const collapsed = Store.get('sidebarCollapsed') || {};
         // Default stickers to collapsed (true), others to expanded (false)
@@ -6287,6 +7085,31 @@ const App = {
     // ── Panels ──
     toggleLeft() { Store.set({ leftPanelOpen: !Store.get('leftPanelOpen') }); },
     toggleRight() { Store.set({ rightPanelOpen: !Store.get('rightPanelOpen') }); },
+    
+    // ── Mobile Sidebar Toggle ──
+    isMobile() { return window.innerWidth <= 768; },
+    
+    toggleMobileSidebar() {
+        const sidebar = document.querySelector('.right-panel');
+        const backdrop = document.querySelector('.mobile-backdrop');
+        if (!sidebar || !backdrop) return;
+        
+        const isOpen = sidebar.classList.contains('mobile-open');
+        if (isOpen) {
+            sidebar.classList.remove('mobile-open');
+            backdrop.classList.remove('visible');
+        } else {
+            sidebar.classList.add('mobile-open');
+            backdrop.classList.add('visible');
+        }
+    },
+    
+    closeMobileSidebar() {
+        const sidebar = document.querySelector('.right-panel');
+        const backdrop = document.querySelector('.mobile-backdrop');
+        if (sidebar) sidebar.classList.remove('mobile-open');
+        if (backdrop) backdrop.classList.remove('visible');
+    },
     
     // ── Click outside to deselect ──
     handleCanvasAreaClick(e) {
@@ -7556,6 +8379,16 @@ const App = {
     },
 
     async _startVideoExport() {
+        // Mobile warning
+        if (this.isMobile()) {
+            const proceed = confirm(
+                '⚠️ Export em mobile pode ser lento (2-5 min) e consumir muita bateria.\n\n' +
+                'Recomendamos usar desktop para melhor performance.\n\n' +
+                'Continuar mesmo assim?'
+            );
+            if (!proceed) return;
+        }
+        
         const btn = document.getElementById('export-video-btn');
         const area = document.getElementById('export-progress-area');
         const bar = document.getElementById('export-progress-bar');
@@ -7597,6 +8430,18 @@ const App = {
     },
     
     async _exportVideoForLanguage(lang, btn, area, bar, statusText, pctText, progressOffset) {
+        // 🚨 CRITICAL BUG FIX: Force save all pending changes before export
+        if (this._narrativeSaveTimeout) clearTimeout(this._narrativeSaveTimeout);
+        if (this._coverSaveTimeout) clearTimeout(this._coverSaveTimeout);
+        if (this._coverMetaSaveTimeout) clearTimeout(this._coverMetaSaveTimeout);
+        
+        if (document.activeElement && document.activeElement.contentEditable === 'true') {
+            document.activeElement.blur();
+        }
+        
+        await Store.save();
+        console.log(`[EXPORT] Saved state before exporting language: ${lang}`);
+        
         const proj = Store.get('currentProject');
         const langSuffix = lang === 'pt-BR' ? '_pt-br' : '_en';
         const fmt = this._exportFormat || 'auto';
@@ -7677,6 +8522,21 @@ const App = {
         if (btn) btn.disabled = true;
         if (progEl) progEl.style.display = 'block';
         
+        // 🚨 CRITICAL BUG FIX: Force save all pending changes before export
+        // clear any pending timeouts (e.g. narrative typing) and force save immediately
+        if (this._narrativeSaveTimeout) clearTimeout(this._narrativeSaveTimeout);
+        if (this._coverSaveTimeout) clearTimeout(this._coverSaveTimeout);
+        if (this._coverMetaSaveTimeout) clearTimeout(this._coverMetaSaveTimeout);
+        
+        // Force an active contenteditable blur if user was typing
+        if (document.activeElement && document.activeElement.contentEditable === 'true') {
+            document.activeElement.blur();
+        }
+        
+        await Store.save();
+        console.log('[EXPORT] Saved state before export');
+        
+        // Fetch fresh project from Store after save
         const proj = Store.get('currentProject');
         const fmt = this._exportFormat || 'auto';
         

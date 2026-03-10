@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excalidraw Standalone Test</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+        #toolbar {
+            padding: 10px;
+            background: #f0f0f0;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            gap: 10px;
+        }
+        #app {
+            flex: 1;
+            width: 100%;
+            position: relative;
+        }
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #e0e0e0;
+        }
+        #result-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border: 2px solid #ccc;
+            padding: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: none;
+            max-width: 300px;
+        }
+        #result-container img {
+            max-width: 100%;
+            height: auto;
+        }
+        #close-result {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="toolbar">
+        <button id="btn-export-png">Export PNG</button>
+        <button id="btn-get-scene">Get Scene JSON</button>
+    </div>
+    
+    <div id="app"></div>
+
+    <div id="result-container">
+        <button id="close-result">X</button>
+        <div id="result-content"></div>
+    </div>
+
+    <!-- React Dependencies -->
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    
+    <!-- Excalidraw -->
+    <script src="https://unpkg.com/@excalidraw/excalidraw@0.17.6/dist/excalidraw.production.min.js"></script>
+
+    <script>
+        // Global variables to store Excalidraw API
+        let excalidrawAPI = null;
+
+        // Create Excalidraw Component wrapper
+        const App = () => {
+            return React.createElement(
+                React.Fragment,
+                null,
+                React.createElement(ExcalidrawLib.Excalidraw, {
+                    excalidrawAPI: (api) => {
+                        excalidrawAPI = api;
+                        console.log("Excalidraw API loaded:", api);
+                    },
+                    initialData: {
+                        appState: {
+                            viewBackgroundColor: "#ffffff",
+                            currentItemFontFamily: 1 // 1: Virgil (hand-drawn)
+                        }
+                    }
+                })
+            );
+        };
+
+        // Render React App
+        const root = ReactDOM.createRoot(document.getElementById("app"));
+        root.render(React.createElement(App));
+
+        // Result handling
+        const resultContainer = document.getElementById("result-container");
+        const resultContent = document.getElementById("result-content");
+        
+        document.getElementById("close-result").addEventListener("click", () => {
+            resultContainer.style.display = "none";
+        });
+
+        function showResult(content) {
+            resultContent.innerHTML = "";
+            resultContent.appendChild(content);
+            resultContainer.style.display = "block";
+        }
+
+        // Export handlers
+        document.getElementById("btn-export-png").addEventListener("click", async () => {
+            if (!excalidrawAPI) return alert("API not ready");
+            
+            const elements = excalidrawAPI.getSceneElements();
+            if (!elements || elements.length === 0) return alert("No elements to export");
+
+            try {
+                const canvas = await ExcalidrawLib.exportToCanvas({
+                    elements,
+                    appState: {
+                        ...excalidrawAPI.getAppState(),
+                        exportBackground: false // transparent background for integration
+                    },
+                    files: excalidrawAPI.getFiles(),
+                    exportPadding: 20
+                });
+
+                const img = document.createElement("img");
+                img.src = canvas.toDataURL("image/png");
+                showResult(img);
+            } catch (err) {
+                console.error("Export error:", err);
+                alert("Failed to export PNG");
+            }
+        });
+
+        document.getElementById("btn-get-scene").addEventListener("click", () => {
+            if (!excalidrawAPI) return alert("API not ready");
+            
+            const elements = excalidrawAPI.getSceneElements();
+            console.log("Scene Elements JSON:", JSON.stringify(elements, null, 2));
+            alert("Scene JSON printed to console");
+        });
+    </script>
+</body>
+</html>
