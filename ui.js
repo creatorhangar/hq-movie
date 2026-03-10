@@ -951,14 +951,16 @@ function renderCoverCanvas() {
           ondragover="event.preventDefault();this.classList.add('drag-over')"
           ondragleave="this.classList.remove('drag-over')"
           ondrop="event.preventDefault();this.classList.remove('drag-over');App._handleCoverDrop(event)"
-          style="pointer-events:all;width:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 30px;border:2px dashed rgba(20,184,166,0.35);border-radius:12px;background:rgba(20,184,166,0.03);cursor:pointer;transition:all 0.2s;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(20,184,166,0.5)" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-          <span style="font-size:14px;font-weight:600;color:rgba(20,184,166,0.7);margin-top:14px;text-align:center;">Click to add background image</span>
-          <span style="font-size:11px;color:rgba(20,184,166,0.4);margin-top:4px;">or drag & drop here</span>
+          style="pointer-events:all;width:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 40px;border:2px dashed rgba(107,114,128,0.3);background:rgba(107,114,128,0.05);cursor:pointer;transition:all 0.25s;"
+          onmouseenter="this.style.borderColor='rgba(20,184,166,0.5)';this.style.background='rgba(20,184,166,0.08)';this.querySelector('svg').style.stroke='rgba(20,184,166,0.7)';this.querySelectorAll('span')[0].style.color='rgba(20,184,166,0.85)';this.querySelectorAll('span')[1].style.color='rgba(20,184,166,0.6)';"
+          onmouseleave="this.style.borderColor='rgba(107,114,128,0.3)';this.style.background='rgba(107,114,128,0.05)';this.querySelector('svg').style.stroke='rgba(107,114,128,0.5)';this.querySelectorAll('span')[0].style.color='rgba(107,114,128,0.8)';this.querySelectorAll('span')[1].style.color='rgba(107,114,128,0.5)';">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="rgba(107,114,128,0.5)" stroke-width="1.5" style="transition:all 0.25s;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          <span style="font-size:15px;font-weight:600;color:rgba(107,114,128,0.8);margin-top:16px;text-align:center;transition:all 0.25s;">Click to add background image</span>
+          <span style="font-size:12px;color:rgba(107,114,128,0.5);margin-top:6px;transition:all 0.25s;">or drag & drop here</span>
         </div>
         <div style="margin-top:30px;text-align:center;">
-          <div style="font-family:'Archivo Black','Impact',sans-serif;font-size:28px;font-weight:700;color:rgba(0,0,0,0.15);letter-spacing:2px;line-height:1.1;text-transform:uppercase;">${S(coverTitle)}</div>
-          <div style="font-family:'Inter',sans-serif;font-size:11px;color:rgba(0,0,0,0.1);letter-spacing:1px;margin-top:6px;">${S(coverAuthor)} · Vol. ${coverVol} · ${coverYear}</div>
+          <div style="font-family:'Archivo Black','Impact',sans-serif;font-size:32px;font-weight:700;color:rgba(0,0,0,0.4);letter-spacing:2px;line-height:1.1;text-transform:uppercase;">${S(coverTitle)}</div>
+          <div style="font-family:'Inter',sans-serif;font-size:12px;color:rgba(0,0,0,0.3);letter-spacing:1px;margin-top:8px;font-weight:500;">${S(coverAuthor)} · Vol. ${coverVol} · ${coverYear}</div>
         </div>
       </div>`;
   } else if (!cover.backgroundImage) {
@@ -968,11 +970,11 @@ function renderCoverCanvas() {
         ondragover="event.preventDefault();this.classList.add('drag-over')"
         ondragleave="this.classList.remove('drag-over')"
         ondrop="event.preventDefault();this.classList.remove('drag-over');App._handleCoverDrop(event)"
-        style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;padding:30px 40px;border:2px dashed rgba(0,0,0,0.08);border-radius:8px;cursor:pointer;z-index:5;opacity:0.3;transition:opacity 0.2s;"
-        onmouseenter="this.style.opacity='0.7'" onmouseleave="this.style.opacity='0.3'">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:#bbb;">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-          <span style="font-size:10px;font-weight:500;">Add background image</span>
+        style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;padding:36px 48px;border:2px dashed rgba(107,114,128,0.25);cursor:pointer;z-index:5;opacity:0.4;transition:all 0.25s;"
+        onmouseenter="this.style.opacity='1';this.style.borderColor='rgba(20,184,166,0.5)';this.style.background='rgba(20,184,166,0.05)';" onmouseleave="this.style.opacity='0.4';this.style.borderColor='rgba(107,114,128,0.25)';this.style.background='transparent';">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;color:rgba(107,114,128,0.6);">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          <span style="font-size:11px;font-weight:500;">Add background image</span>
         </div>
       </div>`;
   }
@@ -1054,10 +1056,10 @@ function renderCoverCanvas() {
   }
 
   // Fixed back button — always visible regardless of zoom/pan
-  const fixedBackBtn = `<button class="cover-back-btn-fixed" onclick="App.setActivePage(0)" style="position:fixed;top:70px;left:16px;z-index:9999;padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text1);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3);transition:all 0.15s;" onmouseenter="this.style.background='var(--accent)';this.style.color='#fff';this.style.borderColor='var(--accent)'" onmouseleave="this.style.background='var(--surface)';this.style.color='var(--text1)';this.style.borderColor='var(--border)'" title="Back to pages (Esc)">← Back to Pages</button>`;
+  const fixedBackBtn = `<button class="cover-back-btn-fixed" onclick="App.setActivePage(0)" style="position:fixed;top:70px;left:16px;z-index:9999;padding:8px 14px;background:var(--surface);border:1px solid var(--border);color:var(--text1);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3);transition:all 0.15s;" onmouseenter="this.style.background='var(--accent)';this.style.color='#fff';this.style.borderColor='var(--accent)'" onmouseleave="this.style.background='var(--surface)';this.style.color='var(--text1)';this.style.borderColor='var(--border)'" title="Back to pages (Esc)">← Back to Pages</button>`;
   
   // Cover badge — also fixed position
-  const coverBadge = `<span style="position:fixed;top:70px;right:16px;z-index:9999;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:4px 12px;border-radius:6px;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">COVER</span>`;
+  const coverBadge = `<span style="position:fixed;top:70px;right:16px;z-index:9999;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:4px 12px;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">COVER</span>`;
 
   // Wrapper with actual zoomed dimensions for proper scrolling
   scrollEl.innerHTML = `
