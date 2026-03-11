@@ -103,6 +103,10 @@ class VideoExporter {
             
             if (this.onStatus) this.onStatus(t('exporter.preparingCanvas'));
             
+            // Preload all stickers before rendering - FIX for stickers not appearing
+            if (this.onStatus) this.onStatus('Carregando stickers...');
+            await this._preloadAllStickers();
+            
             // Criar canvas offscreen com suporte a 4K e HiDPI
             const dims = getProjectDims(this.project);
             
@@ -365,6 +369,14 @@ class VideoExporter {
             // Iniciar gravação (timeslice 1s para captura confiável)
             this.mediaRecorder.start(1000);
 
+            // ═══════════════════════════════════════════════════════════════
+            // RENDER COVER PAGE (if exists) - FIX: Covers were not being exported
+            // ═══════════════════════════════════════════════════════════════
+            if (this.project.cover) {
+                if (this.onStatus) this.onStatus('Renderizando capa...');
+                await this.renderCoverPage(this.project.cover, this.project.cover.duration || 3);
+            }
+
             // Renderizar cada página com transições
             const totalPages = this.project.pages.length;
             for (let i = 0; i < totalPages; i++) {
@@ -385,6 +397,14 @@ class VideoExporter {
                 if (transition === 'fade' && nextPage) {
                     await this.renderFadeTransition(page, nextPage, transitionDuration, i);
                 }
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // RENDER BACK COVER PAGE (if exists) - FIX: Back covers were not being exported
+            // ═══════════════════════════════════════════════════════════════
+            if (this.project.backCover) {
+                if (this.onStatus) this.onStatus('Renderizando contracapa...');
+                await this.renderCoverPage(this.project.backCover, this.project.backCover.duration || 3);
             }
 
             if (this.onStatus) this.onStatus('Finalizando vídeo...');
@@ -518,21 +538,30 @@ class VideoExporter {
         const narrativeMode = this.project.narrativeMode || 'per-page';
         const narrativePosition = this.project.narrativePosition || 'bottom';
 
-        // Preload image if exists
-        let preloadedImg = null;
-        if (page.images && page.images.length > 0 && page.images[0] && page.images[0].src) {
-            const imgSrc = page.images[0].src;
-            preloadedImg = await new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                    resolve(img);
-                };
-                img.onerror = (e) => {
-                    console.error(`[VideoExport] Image load FAILED:`, e);
-                    resolve(null);
-                };
-                img.src = imgSrc;
-            });
+        // FIX: Support multi-panel layouts - preload ALL images
+        const layout = this._getLayout(page.layoutId);
+        const panels = layout ? layout.panels : null;
+        const isMultiPanel = panels && panels.length > 1;
+        
+        // Preload all images for this page
+        const preloadedImages = [];
+        const images = page.images || [];
+        for (let i = 0; i < images.length; i++) {
+            const imgData = images[i];
+            if (imgData && imgData.src) {
+                const img = await new Promise((resolve) => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.onerror = (e) => {
+                        console.error(`[VideoExport] Image ${i} load FAILED:`, e);
+                        resolve(null);
+                    };
+                    image.src = imgData.src;
+                });
+                preloadedImages.push({ img, data: imgData, panelIndex: i });
+            } else {
+                preloadedImages.push(null);
+            }
         }
 
         for (let frame = 0; frame < totalFrames; frame++) {
@@ -542,19 +571,28 @@ class VideoExporter {
             this.ctx.fillStyle = '#ffffff';
             this.ctx.fillRect(0, 0, this._logicalWidth, this._logicalHeight);
 
-            // Aplicar Ken Burns
-            this.ctx.save();
-            this.applyKenBurns(kenBurns, progress);
+            // Render based on layout type
+            if (isMultiPanel && panels) {
+                // Multi-panel layout: render each panel separately
+                this._renderMultiPanelLayout(panels, preloadedImages, kenBurns, progress);
+            } else {
+                // Single panel: apply Ken Burns to entire canvas
+                this.ctx.save();
+                this.applyKenBurns(kenBurns, progress);
 
-            // Renderizar imagem (se houver) — cover fit (sem esticar)
-            if (preloadedImg) {
-                this._drawImageCover(preloadedImg, this._logicalWidth, this._logicalHeight);
+                // Renderizar imagem (se houver) — cover fit (sem esticar)
+                if (preloadedImages[0] && preloadedImages[0].img) {
+                    this._drawImageCover(preloadedImages[0].img, this._logicalWidth, this._logicalHeight);
+                }
+
+                this.ctx.restore();
             }
-
-            this.ctx.restore();
 
             // Renderizar balões (sem animação) - using active language
             this.drawBalloons(page.texts || [], this.language);
+
+            // Renderizar stickers - FIX: Stickers were not being exported
+            this.drawStickers(page.stickers || []);
 
             // Renderizar narrative track (se modo continuous-track ou híbrido)
             if (narrativeMode === 'continuous-track' || narrativeMode === 'hybrid') {
@@ -563,6 +601,9 @@ class VideoExporter {
                 // Per-page mode: render page narrative
                 this.drawPageNarrative(page, narrativePosition);
             }
+
+            // Renderizar watermark (FREE tier)
+            this.renderWatermark();
 
             // Force frame capture for MediaRecorder
             if (this.videoTrack && typeof this.videoTrack.requestFrame === 'function') {
@@ -719,12 +760,18 @@ class VideoExporter {
                 // Render balloons (if any)
                 this.drawBalloons(page.texts || [], this.language);
 
+                // Render stickers - FIX: Stickers were not being exported in slideshow
+                this.drawStickers(page.stickers || []);
+
                 // Render narrative
                 if (narrativeMode === 'continuous-track' || narrativeMode === 'hybrid') {
                     this.drawNarrativeTrack(pageIndex, narrativePosition, slideProgress);
                 } else if (page.showTextBelow && page.narrative) {
                     this.drawPageNarrative(page, narrativePosition);
                 }
+
+                // Render watermark (FREE tier)
+                this.renderWatermark();
 
                 // Force frame capture
                 if (this.videoTrack && typeof this.videoTrack.requestFrame === 'function') {
@@ -872,8 +919,11 @@ class VideoExporter {
         const dualOrder = this.project.narrativeOrder || 'pt-first';
         const dualSpacing = this.project.narrativeDualSpacing || 4;
 
+        // Safe zone position: use page-level setting, then format default, then fallback
+        const safePos = page.narrativeStyle?.position || position || 'top';
+
         if (isDual) {
-            this._drawDualNarrative(page, position, dualOrder, dualSpacing);
+            this._drawDualNarrative(page, safePos, dualOrder, dualSpacing);
             return;
         }
 
@@ -881,8 +931,6 @@ class VideoExporter {
             ? MultiLang.get(page.narrative, this.language)
             : (typeof page.narrative === 'string' ? page.narrative : page.narrative?.['pt-BR'] || '');
             
-        // Debug: text rendering
-        
         if (!text) return;
         
         const preset = this.getNarrativePreset();
@@ -903,7 +951,22 @@ class VideoExporter {
         const lineHeight = fontSize * (style.leading || 1.3);
         const maxLines = preset.maxLines || 3;
         const trackHeight = Math.round(lineHeight * maxLines + padding * 1.5);
-        const y = position === 'top' ? 0 : this._logicalHeight - trackHeight;
+        
+        // Safe zone aware positioning
+        let y;
+        const fmt = this.project.videoFormat || 'vertical';
+        if (typeof SafeZones !== 'undefined') {
+            const sz = SafeZones.textPosition(fmt, safePos);
+            if (safePos === 'top') {
+                y = sz.y;
+            } else if (safePos === 'middle') {
+                y = sz.y + Math.round((sz.maxHeight - trackHeight) / 2);
+            } else {
+                y = sz.y + sz.maxHeight - trackHeight;
+            }
+        } else {
+            y = safePos === 'top' ? 0 : this._logicalHeight - trackHeight;
+        }
         
         // Background — use actual style colors with opacity
         const bgOpacity = style.bgOpacity != null ? style.bgOpacity : 0.55;
@@ -985,7 +1048,21 @@ class VideoExporter {
         const totalContentH = topBlockH + dualSpacing + botBlockH + padding * 2;
         const trackHeight = Math.max(preset.trackHeight, totalContentH);
 
-        const y = position === 'top' ? 0 : this._logicalHeight - trackHeight;
+        // Safe zone aware positioning for dual narrative
+        let y;
+        const fmt = this.project.videoFormat || 'vertical';
+        if (typeof SafeZones !== 'undefined') {
+            const sz = SafeZones.textPosition(fmt, position);
+            if (position === 'top') {
+                y = sz.y;
+            } else if (position === 'middle') {
+                y = sz.y + Math.round((sz.maxHeight - trackHeight) / 2);
+            } else {
+                y = sz.y + sz.maxHeight - trackHeight;
+            }
+        } else {
+            y = position === 'top' ? 0 : this._logicalHeight - trackHeight;
+        }
 
         // Background
         this.ctx.fillStyle = this._narrativeBgRgba(style);
@@ -1109,6 +1186,140 @@ class VideoExporter {
         this.ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvasW, canvasH);
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // MULTI-PANEL LAYOUT SUPPORT - FIX: Only first image was exported
+    // ═══════════════════════════════════════════════════════════════
+    _getLayout(layoutId) {
+        if (!layoutId) return null;
+        
+        // Try to find layout in global Layouts object
+        if (typeof Layouts !== 'undefined' && Layouts[layoutId]) {
+            return Layouts[layoutId];
+        }
+        
+        // Try video layouts
+        if (typeof VideoLayoutsVertical !== 'undefined' && VideoLayoutsVertical[layoutId]) {
+            return VideoLayoutsVertical[layoutId];
+        }
+        if (typeof VideoLayoutsWidescreen !== 'undefined' && VideoLayoutsWidescreen[layoutId]) {
+            return VideoLayoutsWidescreen[layoutId];
+        }
+        if (typeof VideoLayoutsSquare !== 'undefined' && VideoLayoutsSquare[layoutId]) {
+            return VideoLayoutsSquare[layoutId];
+        }
+        if (typeof VideoLayoutsPortrait !== 'undefined' && VideoLayoutsPortrait[layoutId]) {
+            return VideoLayoutsPortrait[layoutId];
+        }
+        
+        return null;
+    }
+
+    _renderMultiPanelLayout(panels, preloadedImages, kenBurns, progress) {
+        // Get scale factors from layout coordinates to video resolution
+        const dims = typeof getProjectDims !== 'undefined' ? getProjectDims(this.project) : null;
+        const layoutW = dims ? dims.canvasW : 1080;
+        const layoutH = dims ? dims.canvasH : 1920;
+        const scaleX = this._logicalWidth / layoutW;
+        const scaleY = this._logicalHeight / layoutH;
+
+        panels.forEach((panel, idx) => {
+            const imgEntry = preloadedImages[idx];
+            if (!imgEntry || !imgEntry.img) return;
+
+            this.ctx.save();
+
+            // Scale panel coordinates to video resolution
+            const px = panel.x * scaleX;
+            const py = panel.y * scaleY;
+            const pw = panel.w * scaleX;
+            const ph = panel.h * scaleY;
+
+            // Clip to panel bounds
+            this.ctx.beginPath();
+            this.ctx.rect(px, py, pw, ph);
+            this.ctx.clip();
+
+            // Apply Ken Burns within panel (centered on panel)
+            this.ctx.translate(px + pw / 2, py + ph / 2);
+            this._applyKenBurnsScale(kenBurns, progress);
+            this.ctx.translate(-(px + pw / 2), -(py + ph / 2));
+
+            // Draw image to fit panel (cover mode)
+            this._drawImageToPanel(imgEntry.img, px, py, pw, ph, imgEntry.data);
+
+            this.ctx.restore();
+        });
+    }
+
+    _applyKenBurnsScale(mode, progress) {
+        // Simplified Ken Burns for panels (just scale, no translate)
+        if (typeof KenBurns !== 'undefined' && mode !== 'none' && mode !== 'static') {
+            const preset = KenBurns.getPreset(mode);
+            if (preset) {
+                const { scale } = KenBurns.interpolate(preset, progress);
+                this.ctx.scale(scale, scale);
+                return;
+            }
+        }
+        // Fallback
+        switch (mode) {
+            case 'zoom-in': case 'zoomIn': {
+                const s = 1 + (progress * 0.15);
+                this.ctx.scale(s, s);
+                break;
+            }
+            case 'zoom-out': case 'zoomOut': {
+                const s = 1.15 - (progress * 0.15);
+                this.ctx.scale(s, s);
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    _drawImageToPanel(img, px, py, pw, ph, imgData) {
+        // Apply user pan/zoom adjustments if present
+        const panX = imgData?.panX || 0;
+        const panY = imgData?.panY || 0;
+        const zoom = imgData?.zoom || 1;
+
+        const imgRatio = img.width / img.height;
+        const panelRatio = pw / ph;
+
+        let sw, sh, sx, sy;
+        if (imgRatio > panelRatio) {
+            // Image wider than panel — crop sides
+            sh = img.height;
+            sw = sh * panelRatio;
+            sx = (img.width - sw) / 2 - (panX * img.width / 100);
+            sy = 0 - (panY * img.height / 100);
+        } else {
+            // Image taller than panel — crop top/bottom
+            sw = img.width;
+            sh = sw / panelRatio;
+            sx = 0 - (panX * img.width / 100);
+            sy = (img.height - sh) / 2 - (panY * img.height / 100);
+        }
+
+        // Apply zoom
+        if (zoom !== 1) {
+            const zoomFactor = 1 / zoom;
+            const centerX = sw / 2;
+            const centerY = sh / 2;
+            sw *= zoomFactor;
+            sh *= zoomFactor;
+            sx += centerX * (1 - zoomFactor);
+            sy += centerY * (1 - zoomFactor);
+        }
+
+        // Clamp source coordinates
+        sx = Math.max(0, Math.min(sx, img.width - sw));
+        sy = Math.max(0, Math.min(sy, img.height - sh));
+
+        this.ctx.drawImage(img, sx, sy, sw, sh, px, py, pw, ph);
+    }
+
     async drawImage(imageData) {
         if (!imageData || !imageData.src) return;
 
@@ -1124,13 +1335,26 @@ class VideoExporter {
     }
 
     drawBalloons(texts, language = 'pt-BR') {
+        if (!texts || texts.length === 0) return;
+
+        // FIX: Scale balloon coordinates from editor to video resolution
+        // Editor uses the video format dimensions (e.g., 1080x1920 for vertical)
+        // but the actual canvas might be different if 4K or DPR scaling is applied
+        const dims = typeof getProjectDims !== 'undefined' ? getProjectDims(this.project) : null;
+        const editorW = dims ? dims.canvasW : 1080;
+        const editorH = dims ? dims.canvasH : 1920;
+        const scaleX = this._logicalWidth / editorW;
+        const scaleY = this._logicalHeight / editorH;
+        const scale = Math.min(scaleX, scaleY); // Uniform scale to prevent distortion
+
         texts.forEach(balloon => {
             this.ctx.save();
 
-            const x = balloon.x || 0;
-            const y = balloon.y || 0;
-            const w = balloon.w || 200;
-            const h = balloon.h || 100;
+            // Scale coordinates and dimensions
+            const x = (balloon.x || 0) * scaleX;
+            const y = (balloon.y || 0) * scaleY;
+            const w = (balloon.w || 200) * scaleX;
+            const h = (balloon.h || 100) * scaleY;
             const type = balloon.type || 'speech';
             const direction = balloon.direction || balloon.tailDirection || 's';
             const bgColor = balloon.bgColor || (type === 'narration' ? '#fffde7' : type === 'shout' ? '#fffde7' : 'rgba(255,255,255,0.95)');
@@ -1139,14 +1363,14 @@ class VideoExporter {
 
             this.ctx.fillStyle = bgColor;
             this.ctx.strokeStyle = strokeColor;
-            this.ctx.lineWidth = 2.5;
+            this.ctx.lineWidth = 2.5 * scale; // Scale stroke width too
             this.ctx.lineJoin = 'round';
             this.ctx.lineCap = 'round';
 
             // Draw balloon based on type
             if (type === 'narration') {
                 // Narration box: simple rounded rectangle, no tail
-                this._roundRect(x, y, w, h, 4);
+                this._roundRect(x, y, w, h, 4 * scale);
                 this.ctx.fill();
                 this.ctx.stroke();
             } else if (type === 'sfx') {
@@ -1163,11 +1387,13 @@ class VideoExporter {
                 this._drawSpeechBalloon(x, y, w, h, direction, bgColor, strokeColor, type === 'whisper');
             }
 
-            // Draw text
+            // Draw text - scale font size
+            const baseFontSize = balloon.fontSize || 16;
+            const scaledFontSize = Math.round(baseFontSize * scale);
             const fontWeight = balloon.bold ? 'bold ' : '';
             const fontStyle = balloon.italic ? 'italic ' : '';
             this.ctx.fillStyle = textColor;
-            this.ctx.font = `${fontStyle}${fontWeight}${balloon.fontSize || 16}px ${this.getFontFamily(balloon.font)}`;
+            this.ctx.font = `${fontStyle}${fontWeight}${scaledFontSize}px ${this.getFontFamily(balloon.font)}`;
             this.ctx.textAlign = balloon.textAlign || 'center';
             this.ctx.textBaseline = 'middle';
 
@@ -1175,14 +1401,236 @@ class VideoExporter {
                 ? MultiLang.get(balloon.text, language) 
                 : (typeof balloon.text === 'string' ? balloon.text : balloon.text?.['pt-BR'] || '');
 
-            const lines = this.wrapText(balloonText, w - 24);
-            const lineHeight = (balloon.fontSize || 16) * 1.3;
+            const lines = this.wrapText(balloonText, w - 24 * scale);
+            const lineHeight = scaledFontSize * 1.3;
             const startY = y + h / 2 - ((lines.length - 1) * lineHeight) / 2;
-            const textX = balloon.textAlign === 'left' ? x + 12 : balloon.textAlign === 'right' ? x + w - 12 : x + w / 2;
+            const textX = balloon.textAlign === 'left' ? x + 12 * scale : balloon.textAlign === 'right' ? x + w - 12 * scale : x + w / 2;
 
             lines.forEach((line, i) => {
                 this.ctx.fillText(line, textX, startY + i * lineHeight);
             });
+
+            this.ctx.restore();
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // DRAW STICKERS - FIX: Stickers were not being exported
+    // Stickers must be preloaded before rendering for proper display
+    // ═══════════════════════════════════════════════════════════════
+    drawStickers(stickers) {
+        if (!stickers || stickers.length === 0) return;
+        if (!this._preloadedStickers) return; // Must be preloaded first
+
+        // Calculate scale factor from editor canvas to video resolution
+        const dims = typeof getProjectDims !== 'undefined' ? getProjectDims(this.project) : null;
+        const editorW = dims ? dims.canvasW : 1080;
+        const editorH = dims ? dims.canvasH : 1920;
+        const scaleX = this._logicalWidth / editorW;
+        const scaleY = this._logicalHeight / editorH;
+
+        stickers.forEach((sticker, idx) => {
+            if (!sticker || !sticker.src) return;
+
+            // Get preloaded image
+            const preloaded = this._preloadedStickers.get(sticker.src);
+            if (!preloaded) return;
+
+            this.ctx.save();
+
+            // Scale coordinates from editor to video resolution
+            const x = (sticker.x || 0) * scaleX;
+            const y = (sticker.y || 0) * scaleY;
+            const w = (sticker.w || 100) * scaleX;
+            const h = (sticker.h || 100) * scaleY;
+            const rotation = sticker.rotation || 0;
+            const opacity = sticker.opacity !== undefined ? sticker.opacity : 1;
+
+            // Apply transformations
+            this.ctx.globalAlpha = opacity;
+            
+            if (rotation !== 0) {
+                const cx = x + w / 2;
+                const cy = y + h / 2;
+                this.ctx.translate(cx, cy);
+                this.ctx.rotate((rotation * Math.PI) / 180);
+                this.ctx.translate(-cx, -cy);
+            }
+
+            // Draw preloaded sticker image
+            this.ctx.drawImage(preloaded, x, y, w, h);
+
+            this.ctx.restore();
+        });
+    }
+
+    // Preload all stickers from all pages before export
+    async _preloadAllStickers() {
+        this._preloadedStickers = new Map();
+        const pages = this.project.pages || [];
+        
+        for (const page of pages) {
+            const stickers = page.stickers || [];
+            for (const sticker of stickers) {
+                if (!sticker || !sticker.src) continue;
+                if (this._preloadedStickers.has(sticker.src)) continue;
+                
+                const img = await new Promise((resolve) => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.onerror = () => {
+                        console.warn('[VideoExport] Failed to load sticker:', sticker.src.substring(0, 50));
+                        resolve(null);
+                    };
+                    image.src = sticker.src;
+                });
+                
+                if (img) {
+                    this._preloadedStickers.set(sticker.src, img);
+                }
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // RENDER COVER PAGE - FIX: Covers were not being exported
+    // ═══════════════════════════════════════════════════════════════
+    async renderCoverPage(cover, durationSeconds) {
+        if (!cover) return;
+
+        const totalFrames = Math.floor(durationSeconds * this.fps);
+        const kenBurns = cover.kenBurns || 'zoom-in'; // Default Ken Burns for covers
+
+        // Preload background image if exists
+        let bgImg = null;
+        if (cover.backgroundImage) {
+            bgImg = await new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+                img.src = cover.backgroundImage;
+            });
+        }
+
+        // Preload cover element images
+        const elements = cover.elements || [];
+        const imageElements = await Promise.all(
+            elements
+                .filter(el => el.type === 'cover-image' && el.src)
+                .map(async (el) => {
+                    const img = await new Promise((resolve) => {
+                        const image = new Image();
+                        image.onload = () => resolve({ ...el, imgElement: image });
+                        image.onerror = () => resolve({ ...el, imgElement: null });
+                        image.src = el.src;
+                    });
+                    return img;
+                })
+        );
+
+        for (let frame = 0; frame < totalFrames; frame++) {
+            const progress = frame / totalFrames;
+
+            // Clear canvas with background color
+            const bgColor = cover.backgroundColor || '#ffffff';
+            this.ctx.fillStyle = bgColor;
+            this.ctx.fillRect(0, 0, this._logicalWidth, this._logicalHeight);
+
+            // Apply Ken Burns and draw background image
+            if (bgImg) {
+                this.ctx.save();
+                this.applyKenBurns(kenBurns, progress);
+                this._drawImageCover(bgImg, this._logicalWidth, this._logicalHeight);
+                this.ctx.restore();
+            }
+
+            // Draw cover elements (text and images)
+            this.drawCoverElements(elements, imageElements);
+
+            // Render watermark
+            this.renderWatermark();
+
+            // Force frame capture
+            if (this.videoTrack && typeof this.videoTrack.requestFrame === 'function') {
+                this.videoTrack.requestFrame();
+            }
+
+            await this.waitFrame();
+        }
+    }
+
+    drawCoverElements(elements, imageElements) {
+        if (!elements || elements.length === 0) return;
+
+        // Scale factor from A4/editor to video resolution
+        const editorW = 714; // A4 content width
+        const editorH = 1043; // A4 content height
+        const scaleX = this._logicalWidth / editorW;
+        const scaleY = this._logicalHeight / editorH;
+        const scale = Math.min(scaleX, scaleY);
+
+        // Center offset
+        const offsetX = (this._logicalWidth - editorW * scale) / 2;
+        const offsetY = (this._logicalHeight - editorH * scale) / 2;
+
+        elements.forEach((el, idx) => {
+            if (!el) return;
+
+            this.ctx.save();
+
+            // Scale and position
+            const x = offsetX + (el.x || 0) * scale;
+            const y = offsetY + (el.y || 0) * scale;
+            const w = (el.width || 200) * scale;
+
+            if (el.type === 'cover-text') {
+                // Draw text element
+                const style = el.style || {};
+                const fontSize = Math.round((style.fontSize || 24) * scale);
+                const fontFamily = style.fontFamily || "'Inter', sans-serif";
+                const fontWeight = style.fontWeight || '400';
+                const fontStyle = style.fontStyle || 'normal';
+                const color = style.color || '#000000';
+                const textAlign = style.textAlign || 'left';
+                const lineHeight = parseFloat(style.lineHeight) || 1.4;
+                const textTransform = style.textTransform || 'none';
+                const letterSpacing = style.letterSpacing || '0';
+
+                this.ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+                this.ctx.fillStyle = color;
+                this.ctx.textAlign = textAlign;
+                this.ctx.textBaseline = 'top';
+
+                // Apply text shadow if specified
+                if (style.textShadow) {
+                    this.ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                    this.ctx.shadowBlur = 4;
+                    this.ctx.shadowOffsetX = 2;
+                    this.ctx.shadowOffsetY = 2;
+                }
+
+                // Get text and apply transform
+                let text = el.text || '';
+                if (textTransform === 'uppercase') text = text.toUpperCase();
+                else if (textTransform === 'lowercase') text = text.toLowerCase();
+
+                // Handle multiline text
+                const lines = text.split('\n');
+                const lh = fontSize * lineHeight;
+                const textX = textAlign === 'center' ? x + w / 2 : textAlign === 'right' ? x + w : x;
+
+                lines.forEach((line, i) => {
+                    this.ctx.fillText(line, textX, y + i * lh);
+                });
+
+            } else if (el.type === 'cover-image') {
+                // Find preloaded image
+                const imgEl = imageElements.find(ie => ie.id === el.id);
+                if (imgEl && imgEl.imgElement) {
+                    const h = (el.height || 200) * scale;
+                    this.ctx.drawImage(imgEl.imgElement, x, y, w, h);
+                }
+            }
 
             this.ctx.restore();
         });
@@ -1456,6 +1904,60 @@ class VideoExporter {
 
             this.mediaRecorder.stop();
         });
+    }
+
+    // ══════════════════════════════════════════
+    // WATERMARK - FREE TIER
+    // ══════════════════════════════════════════
+    renderWatermark() {
+        // Check premium status
+        const premiumKey = localStorage.getItem('hqm_premium_key');
+        if (premiumKey && this._validatePremiumKey(premiumKey)) {
+            return; // Premium user - no watermark
+        }
+
+        const ctx = this.ctx;
+        const w = this._logicalWidth;
+        const h = this._logicalHeight;
+        
+        // Watermark settings
+        const text = '🎬 HQ MOVIE';
+        const fontSize = Math.round(w * 0.028);
+        const margin = w * 0.03;
+        
+        ctx.save();
+        
+        // Position: bottom-right
+        ctx.font = `bold ${fontSize}px Inter, system-ui, sans-serif`;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        
+        const x = w - margin;
+        const y = h - margin;
+        
+        // Drop shadow
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+        
+        // Black stroke
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx.lineWidth = 3;
+        ctx.strokeText(text, x, y);
+        
+        // White fill with opacity
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.fillText(text, x, y);
+        
+        ctx.restore();
+    }
+    
+    _validatePremiumKey(key) {
+        // Format: HQM-XXXX-XXXX-XXXX
+        if (!key || typeof key !== 'string') return false;
+        const pattern = /^HQM-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+        return pattern.test(key);
     }
 
     static async exportProject(project, options = {}) {

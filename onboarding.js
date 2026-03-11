@@ -54,9 +54,32 @@ const Onboarding = {
         }
     },
 
+    _isMobile() {
+        return window.innerWidth <= 768;
+    },
+
     runEditorTour() {
-        // Define editor steps
-        const steps = [
+        // Define editor steps - different for mobile vs desktop
+        const steps = this._isMobile() ? [
+            {
+                sel: '#canvas-area',
+                title: t('onboarding.step1Title'),
+                text: t('onboarding.step1Description'),
+                pos: 'center'
+            },
+            {
+                sel: '.mobile-editor-nav',
+                title: t('onboarding.mobileNavTitle') || 'Navigation',
+                text: t('onboarding.mobileNavDescription') || 'Use these buttons to switch between Media, Text, Timing, Preview and Export.',
+                pos: 'top'
+            },
+            {
+                sel: '.mobile-editor-nav-btn:last-child',
+                title: t('onboarding.step4Title'),
+                text: t('onboarding.step4Description'),
+                pos: 'top'
+            }
+        ] : [
             {
                 sel: '#canvas-area',
                 title: t('onboarding.step1Title'),
@@ -195,8 +218,8 @@ style.textContent = `
     position: fixed;
     z-index: 10000;
     background: var(--surface-1, #1e1e1e);
-    border: 1px solid var(--accent, #14b8a6);
-    border-radius: 12px;
+    border: 1px solid var(--accent, #6b7280);
+    border-radius: 6px;
     padding: 16px;
     width: 280px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
@@ -214,7 +237,7 @@ style.textContent = `
 .onboarding-tooltip h3 {
     margin: 0 0 8px 0;
     font-size: 16px;
-    color: var(--accent, #14b8a6);
+    color: var(--accent, #6b7280);
 }
 .onboarding-tooltip p {
     margin: 0 0 16px 0;
@@ -228,7 +251,7 @@ style.textContent = `
     gap: 8px;
 }
 .ob-next {
-    background: var(--accent, #14b8a6);
+    background: var(--accent, #6b7280);
     color: white;
     border: none;
     padding: 6px 12px;
@@ -251,8 +274,43 @@ style.textContent = `
 .ob-highlight {
     position: relative;
     z-index: 100;
-    box-shadow: 0 0 0 4px var(--accent, #14b8a6) !important;
+    box-shadow: 0 0 0 4px var(--accent, #6b7280) !important;
     transition: box-shadow 0.3s ease;
+}
+
+/* Mobile Onboarding Adjustments */
+@media (max-width: 768px) {
+    .onboarding-tooltip {
+        width: calc(100vw - 32px) !important;
+        max-width: 340px;
+        left: 16px !important;
+        right: 16px !important;
+        padding: 20px;
+        border-radius: 12px;
+    }
+    .onboarding-tooltip h3 {
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+    .onboarding-tooltip p {
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+    .ob-actions {
+        gap: 12px;
+    }
+    .ob-next {
+        padding: 12px 20px;
+        font-size: 14px;
+        border-radius: 8px;
+        min-height: 44px;
+    }
+    .ob-skip {
+        padding: 12px;
+        font-size: 13px;
+        min-height: 44px;
+    }
 }
 `;
 document.head.appendChild(style);

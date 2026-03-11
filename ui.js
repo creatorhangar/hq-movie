@@ -13,7 +13,7 @@ function renderFormatSelector() {
     </div>
     <div class="format-selector" style="display:flex; gap:24px; justify-content:center; flex-wrap:wrap; margin:40px 0;">
       ${Object.values(VIDEO_FORMATS).map(fmt => `
-        <div class="format-card" onclick="App.selectVideoFormat('${fmt.id}')" style="
+        <button type="button" class="format-card" aria-label="${fmt.name} — ${fmt.description}" onclick="App.selectVideoFormat('${fmt.id}')" style="
           background: var(--surface-1);
           border: 2px solid var(--border);
           border-radius: 16px;
@@ -22,13 +22,14 @@ function renderFormatSelector() {
           transition: all 0.2s ease;
           text-align: center;
           width: 200px;
+          display: block;
         " onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-4px)'" 
            onmouseout="this.style.borderColor='var(--border)';this.style.transform='translateY(0)'">
           <div style="font-size:48px; margin-bottom:12px;">${fmt.icon}</div>
           <div style="font-size:18px; font-weight:600; color:var(--text-1); margin-bottom:4px;">${fmt.name}</div>
           <div style="font-size:13px; color:var(--text-2);">${fmt.description}</div>
           <div style="font-size:11px; color:var(--text-3); margin-top:8px;">${fmt.width}×${fmt.height}px</div>
-        </div>
+        </button>
       `).join('')}
     </div>
     <div style="text-align:center;">
@@ -49,6 +50,76 @@ function renderExportPage() {
   const fmtRes = vf ? `${vf.width}×${vf.height}` : '794×1123';
   const totalDuration = pages.reduce((s, p) => s + (p.duration || 4), 0);
   const durStr = `${Math.floor(totalDuration / 60).toString().padStart(2,'0')}:${(totalDuration % 60).toString().padStart(2,'0')}`;
+  const exportLang = Store.get('exportLanguage') || 'pt-BR';
+  const exportFormatRaw = (typeof App !== 'undefined' && App._exportFormat) ? App._exportFormat : 'auto';
+  const exportFormat = ['auto', 'mp4', 'webm'].includes(exportFormatRaw) ? exportFormatRaw : 'auto';
+  const exportQuality = (typeof App !== 'undefined' && App._videoQuality) ? App._videoQuality : 'high';
+  const exportFps = (typeof App !== 'undefined' && App._videoFps) ? App._videoFps : 30;
+  const exportButtonLabel = `${t('export.exportVideo')} · ${exportLang === 'both' ? t('export.both') : exportLang === 'en' ? t('export.english') : t('export.portuguese')} · ${exportFormat === 'auto' ? 'Auto' : exportFormat.toUpperCase()}`;
+  const pagesWithoutImages = pages.map((pg, i) => ({ pg, i })).filter(({ pg }) => !(pg.images && pg.images.some(img => img && img.src))).map(({ i }) => i + 1);
+  const missingImagesDetail = pagesWithoutImages.length === 1
+    ? `${t('export.missingImageSingle')} ${pagesWithoutImages[0]}`
+    : pagesWithoutImages.length
+      ? `${t('export.missingImages')} ${pagesWithoutImages.join(', ')}`
+      : t('export.visualsReady');
+  const hasAnyNarrative = pages.some(pg => {
+    if (!pg.narrative) return false;
+    if (typeof pg.narrative === 'string') return !!pg.narrative.trim();
+    return Object.values(pg.narrative).some(val => typeof val === 'string' && val.trim());
+  });
+  const missingExportLangPages = exportLang === 'both'
+    ? pages.map((pg, i) => ({ pg, i })).filter(({ pg }) => {
+        const pt = typeof pg.narrative === 'string' ? pg.narrative : (pg.narrative?.['pt-BR'] || '');
+        const en = typeof pg.narrative === 'string' ? '' : (pg.narrative?.en || '');
+        return !!(pt || en) && (!pt || !en);
+      }).map(({ i }) => i + 1)
+    : [];
+  const hasAnyAudio = !!proj.videoAudio?.background?.file || pages.some(pg => {
+    const narr = proj.videoAudio?.pages?.find(item => item.pageId === pg.id);
+    if (!narr) return false;
+    if (narr.file) return true;
+    return Object.values(narr).some(val => val && typeof val === 'object' && val.file);
+  });
+  const preflightItems = [
+    {
+      key: 'format',
+      title: t('export.formatCheck'),
+      detail: `${fmtName} · ${exportFormat === 'auto' ? 'Auto' : exportFormat.toUpperCase()} · ${exportQuality} · ${exportFps}fps`,
+      state: 'ready'
+    },
+    {
+      key: 'duration',
+      title: t('export.durationCheck'),
+      detail: `${durStr} · ${pages.length} ${t('export.pages')}`,
+      state: totalDuration > 0 && pages.length > 0 ? 'ready' : 'attention'
+    },
+    {
+      key: 'visuals',
+      title: t('export.visualsCheck'),
+      detail: missingImagesDetail,
+      state: pagesWithoutImages.length ? 'attention' : 'ready'
+    },
+    {
+      key: 'text',
+      title: t('export.textCheck'),
+      detail: missingExportLangPages.length
+        ? `${t('export.missingLanguagePages')} ${missingExportLangPages.join(', ')}`
+        : hasAnyNarrative ? t('export.textReady') : t('export.textOptional'),
+      state: missingExportLangPages.length ? 'attention' : (hasAnyNarrative ? 'ready' : 'optional')
+    },
+    {
+      key: 'audio',
+      title: t('export.audioCheck'),
+      detail: hasAnyAudio ? t('export.audioReady') : t('export.audioOptional'),
+      state: hasAnyAudio ? 'ready' : 'optional'
+    },
+    {
+      key: 'output',
+      title: t('export.outputCheck'),
+      detail: `${exportLang === 'both' ? t('export.both') : exportLang === 'en' ? t('export.english') : t('export.portuguese')} · ${exportFormat === 'auto' ? 'Auto' : exportFormat.toUpperCase()}`,
+      state: 'ready'
+    }
+  ];
   const kbIcons = { 'zoom-in': Icons.zoomIn, 'zoom-out': Icons.zoomOut, 'pan-left': Icons.arrowLeft, 'pan-right': Icons.arrowRight, 'pan-up': Icons.arrowUp, 'drift': Icons.waves, 'none': Icons.square };
   const trLabels = { none: '', cut: '', fade: 'fade 0.5s' };
 
@@ -71,21 +142,21 @@ function renderExportPage() {
   }).join('');
 
   return `
-  <div style="min-height:100vh;background:var(--bg-main);color:var(--text-1);display:flex;flex-direction:column;">
+  <div class="export-page" style="min-height:100vh;background:var(--bg-main);color:var(--text-1);display:flex;flex-direction:column;">
     <!-- Header -->
-    <div style="display:flex;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--bg-surface);">
+    <div class="export-page-header" style="display:flex;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--bg-surface);">
       <button onclick="Store.set({view:'editor'})" style="background:none;border:1px solid var(--border);color:var(--text-2);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">${t('export.backToEditor')}</button>
-      <div style="flex:1;text-align:center;">
+      <div class="export-page-header-summary" style="flex:1;text-align:center;">
         <span style="font-size:16px;font-weight:700;">${proj.metadata?.name || t('export.project')}</span>
         <span style="font-size:12px;color:var(--text-3);margin-left:8px;">${pages.length} ${t('export.pages')} · ${fmtName} · ${durStr}</span>
       </div>
-      <div style="width:120px;"></div>
+      <div class="export-page-header-spacer" style="width:120px;"></div>
     </div>
 
     <!-- Main content -->
-    <div style="flex:1;display:flex;gap:0;overflow:hidden;">
+    <div class="export-page-main" style="flex:1;display:flex;gap:0;overflow:hidden;">
       <!-- Left: Preview area -->
-      <div style="flex:1;display:flex;flex-direction:column;padding:24px;overflow-y:auto;">
+      <div class="export-page-preview-pane" style="flex:1;display:flex;flex-direction:column;padding:24px;overflow-y:auto;">
         <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.05em;">${t('export.pagesPreview')}</div>
         <div style="display:flex;gap:16px;overflow-x:auto;padding-bottom:16px;" id="export-thumbnails">
           ${thumbnails}
@@ -112,183 +183,245 @@ function renderExportPage() {
       </div>
 
       <!-- Right: Export options -->
-      <div style="width:340px;background:var(--bg-surface);border-left:1px solid var(--border);padding:24px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;">
+      <div class="export-page-sidebar" style="width:340px;background:var(--bg-surface);border-left:1px solid var(--border);padding:20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;">
         <div style="font-size:14px;font-weight:700;color:var(--accent);">${t('export.title')}</div>
 
-        <!-- EXPORT MODE SELECTOR -->
-        <div style="background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1));border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:14px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">${Icons.film} ${t('export.exportMode')}</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:10px;">${t('export.exportModeHint')}</div>
-          <button onclick="App.showExportModeSelector()" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(99,102,241,0.5);background:rgba(99,102,241,0.15);color:#818cf8;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='rgba(99,102,241,0.25)'" onmouseout="this.style.background='rgba(99,102,241,0.15)'">${t('export.chooseFormat')}</button>
-        </div>
-
-        <!-- VIDEO EXPORT -->
-        <div style="background:var(--bg-main);border:1px solid var(--border);border-radius:10px;padding:16px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;">${Icons.video} ${t('export.exportVideo')}</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">${t('export.videoDescription')}</div>
-
-          <div style="margin-bottom:10px;">
-            <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:6px;">${t('export.quality')}</div>
-            <div style="display:flex;gap:4px;" id="export-quality-btns">
-              <button onclick="App._setExportQuality('low')" class="export-opt-btn" data-val="low" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:11px;cursor:pointer;">${t('export.qualityFast')}</button>
-              <button onclick="App._setExportQuality('medium')" class="export-opt-btn" data-val="medium" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:11px;cursor:pointer;">${t('export.qualityNormal')}</button>
-              <button onclick="App._setExportQuality('high')" class="export-opt-btn active" data-val="high" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--accent);background:var(--accent-glow, rgba(20,184,166,0.1));color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">${t('export.qualityHigh')}</button>
+        <!-- QUICK EXPORT — always visible -->
+        <div class="export-quick-section" style="background:var(--bg-main);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;gap:4px;">
+            <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:4px;width:100%;">${t('export.quality')}
+              <div style="display:flex;gap:4px;margin-top:4px;" id="export-quality-btns">
+                <button onclick="App._setExportQuality('low')" class="export-opt-btn ${exportQuality === 'low' ? 'active' : ''}" data-val="low" style="flex:1;padding:5px;border-radius:6px;border:1px solid ${exportQuality === 'low' ? 'var(--accent)' : 'var(--border)'};background:${exportQuality === 'low' ? 'var(--accent-glow, rgba(107,114,128,0.1))' : 'var(--bg-surface)'};color:${exportQuality === 'low' ? 'var(--accent)' : 'var(--text-2)'};font-size:10px;cursor:pointer;font-weight:${exportQuality === 'low' ? '600' : '400'};">${t('export.qualityFast')}</button>
+                <button onclick="App._setExportQuality('medium')" class="export-opt-btn ${exportQuality === 'medium' ? 'active' : ''}" data-val="medium" style="flex:1;padding:5px;border-radius:6px;border:1px solid ${exportQuality === 'medium' ? 'var(--accent)' : 'var(--border)'};background:${exportQuality === 'medium' ? 'var(--accent-glow, rgba(107,114,128,0.1))' : 'var(--bg-surface)'};color:${exportQuality === 'medium' ? 'var(--accent)' : 'var(--text-2)'};font-size:10px;cursor:pointer;font-weight:${exportQuality === 'medium' ? '600' : '400'};">${t('export.qualityNormal')}</button>
+                <button onclick="App._setExportQuality('high')" class="export-opt-btn ${exportQuality === 'high' ? 'active' : ''}" data-val="high" style="flex:1;padding:5px;border-radius:6px;border:1px solid ${exportQuality === 'high' ? 'var(--accent)' : 'var(--border)'};background:${exportQuality === 'high' ? 'var(--accent-glow, rgba(107,114,128,0.1))' : 'var(--bg-surface)'};color:${exportQuality === 'high' ? 'var(--accent)' : 'var(--text-2)'};font-size:10px;cursor:pointer;font-weight:${exportQuality === 'high' ? '600' : '400'};">${t('export.qualityHigh')}</button>
+              </div>
             </div>
           </div>
 
-          <div style="margin-bottom:14px;">
-            <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:6px;">FPS</div>
-            <div style="display:flex;gap:4px;" id="export-fps-btns">
-              <button onclick="App._setExportFps(24)" class="export-opt-btn" data-val="24" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:11px;cursor:pointer;">24fps</button>
-              <button onclick="App._setExportFps(30)" class="export-opt-btn active" data-val="30" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--accent);background:var(--accent-glow, rgba(20,184,166,0.1));color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">30fps</button>
+          <div style="display:flex;gap:8px;">
+            <div style="flex:1;">
+              <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:4px;">${t('export.format')}</div>
+              <div style="display:flex;gap:3px;" id="export-format-btns">
+                ${(typeof VideoExporter !== 'undefined' ? VideoExporter.getSupportedFormats() : [{family:'mp4',label:'MP4',supported:true},{family:'webm',label:'WebM',supported:true}]).map(f => {
+                  const isActive = exportFormat === f.family;
+                  return `<button onclick="App._setExportFormat('${f.family}')" class="export-opt-btn ${isActive ? 'active' : ''}" data-val="${f.family}" style="flex:1;padding:5px;border-radius:6px;border:1px solid ${isActive ? 'var(--accent)' : 'var(--border)'};background:${isActive ? 'rgba(107,114,128,0.1)' : 'var(--bg-surface)'};color:${f.supported ? (isActive ? 'var(--accent)' : 'var(--text-2)') : 'var(--text-4)'};font-size:10px;cursor:${f.supported ? 'pointer' : 'not-allowed'};opacity:${f.supported ? '1' : '0.5'};font-weight:${isActive ? '600' : '400'};" ${f.supported ? '' : 'disabled'}>${f.label}</button>`;
+                }).join('')}
+                <button onclick="App._setExportFormat('auto')" class="export-opt-btn ${exportFormat === 'auto' ? 'active' : ''}" data-val="auto" style="flex:1;padding:5px;border-radius:6px;border:1px solid ${exportFormat === 'auto' ? 'var(--accent)' : 'var(--border)'};background:${exportFormat === 'auto' ? 'rgba(107,114,128,0.1)' : 'var(--bg-surface)'};color:${exportFormat === 'auto' ? 'var(--accent)' : 'var(--text-2)'};font-size:10px;cursor:pointer;font-weight:${exportFormat === 'auto' ? '600' : '400'};">Auto</button>
+              </div>
+            </div>
+            <div style="flex:0 0 auto;">
+              <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:4px;">FPS</div>
+              <div style="display:flex;gap:3px;" id="export-fps-btns">
+                <button onclick="App._setExportFps(24)" class="export-opt-btn ${exportFps === 24 ? 'active' : ''}" data-val="24" style="padding:5px 8px;border-radius:6px;border:1px solid ${exportFps === 24 ? 'var(--accent)' : 'var(--border)'};background:${exportFps === 24 ? 'var(--accent-glow, rgba(107,114,128,0.1))' : 'var(--bg-surface)'};color:${exportFps === 24 ? 'var(--accent)' : 'var(--text-2)'};font-size:10px;cursor:pointer;font-weight:${exportFps === 24 ? '600' : '400'};">24</button>
+                <button onclick="App._setExportFps(30)" class="export-opt-btn ${exportFps === 30 ? 'active' : ''}" data-val="30" style="padding:5px 8px;border-radius:6px;border:1px solid ${exportFps === 30 ? 'var(--accent)' : 'var(--border)'};background:${exportFps === 30 ? 'var(--accent-glow, rgba(107,114,128,0.1))' : 'var(--bg-surface)'};color:${exportFps === 30 ? 'var(--accent)' : 'var(--text-2)'};font-size:10px;cursor:pointer;font-weight:${exportFps === 30 ? '600' : '400'};">30</button>
+              </div>
             </div>
           </div>
 
-          <div style="margin-bottom:10px;">
-            <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:6px;">${t('export.format')}</div>
-            <div style="display:flex;gap:4px;" id="export-format-btns">
-              ${(typeof VideoExporter !== 'undefined' ? VideoExporter.getSupportedFormats() : [{family:'mp4',label:'MP4',supported:true},{family:'webm',label:'WebM',supported:true}]).map(f => {
-                const isDefault = f.family === 'auto';
-                return `<button onclick="App._setExportFormat('${f.family}')" class="export-opt-btn" data-val="${f.family}" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:${f.supported ? 'var(--text-2)' : 'var(--text-4)'};font-size:11px;cursor:${f.supported ? 'pointer' : 'not-allowed'};opacity:${f.supported ? '1' : '0.5'};" ${f.supported ? '' : 'disabled'}>${f.family === 'mp4' ? '✅ ' : ''}${f.label}</button>`;
-              }).join('')}
-              <button onclick="App._setExportFormat('auto')" class="export-opt-btn" data-val="auto" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--accent);background:rgba(20,184,166,0.1);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">Auto</button>
-            </div>
-          </div>
-
-          <div style="margin-bottom:14px;">
-            <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:6px;">${Icons.globe} ${t('export.language')}</div>
-            <div style="display:flex;gap:4px;" id="export-lang-btns">
-              <button onclick="App._setExportLanguage('pt-BR')" class="export-opt-btn ${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? 'active' : ''}" data-val="pt-BR" style="flex:1;padding:6px;border-radius:6px;border:1px solid ${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? 'var(--accent)' : 'var(--border)'};background:${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? 'var(--accent-glow, rgba(20,184,166,0.1))' : 'var(--bg-surface)'};color:${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? 'var(--accent)' : 'var(--text-2)'};font-size:11px;cursor:pointer;font-weight:${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? '600' : '400'};">${Icons.flagBR} PT-BR</button>
-              <button onclick="App._setExportLanguage('en')" class="export-opt-btn ${Store.get('exportLanguage') === 'en' ? 'active' : ''}" data-val="en" style="flex:1;padding:6px;border-radius:6px;border:1px solid ${Store.get('exportLanguage') === 'en' ? 'var(--accent)' : 'var(--border)'};background:${Store.get('exportLanguage') === 'en' ? 'var(--accent-glow, rgba(20,184,166,0.1))' : 'var(--bg-surface)'};color:${Store.get('exportLanguage') === 'en' ? 'var(--accent)' : 'var(--text-2)'};font-size:11px;cursor:pointer;font-weight:${Store.get('exportLanguage') === 'en' ? '600' : '400'};">${Icons.flagUS} EN</button>
-              <button onclick="App._setExportLanguage('both')" class="export-opt-btn ${Store.get('exportLanguage') === 'both' ? 'active' : ''}" data-val="both" style="flex:1;padding:6px;border-radius:6px;border:1px solid ${Store.get('exportLanguage') === 'both' ? 'var(--accent)' : 'var(--border)'};background:${Store.get('exportLanguage') === 'both' ? 'var(--accent-glow, rgba(20,184,166,0.1))' : 'var(--bg-surface)'};color:${Store.get('exportLanguage') === 'both' ? 'var(--accent)' : 'var(--text-2)'};font-size:11px;cursor:pointer;font-weight:${Store.get('exportLanguage') === 'both' ? '600' : '400'};">Ambos</button>
-            </div>
-          </div>
-
-          <button onclick="App._startVideoExport()" id="export-video-btn" style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">${Icons.video} ${t('export.exportVideo')}</button>
-
-          <!-- Progress -->
-          <div id="export-progress-area" style="display:none;margin-top:12px;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-              <span id="export-status-text" style="font-size:10px;color:var(--text-3);">${t('export.preparing')}</span>
-              <span id="export-pct-text" style="font-size:10px;color:var(--accent);font-weight:700;">0%</span>
-            </div>
-            <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
-              <div id="export-progress-bar" style="height:100%;width:0%;background:var(--accent);border-radius:3px;transition:width 0.2s;"></div>
+          <div>
+            <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:4px;">${Icons.globe} ${t('export.language')}</div>
+            <div style="display:flex;gap:3px;" id="export-lang-btns">
+              <button onclick="App._setExportLanguage('pt-BR')" class="export-opt-btn ${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? 'active' : ''}" data-val="pt-BR" style="flex:1;padding:5px;border-radius:6px;border:1px solid ${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? 'var(--accent)' : 'var(--border)'};background:${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? 'var(--accent-glow, rgba(107,114,128,0.1))' : 'var(--bg-surface)'};color:${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? 'var(--accent)' : 'var(--text-2)'};font-size:10px;cursor:pointer;font-weight:${(Store.get('exportLanguage') || 'pt-BR') === 'pt-BR' ? '600' : '400'};">${Icons.flagBR} PT</button>
+              <button onclick="App._setExportLanguage('en')" class="export-opt-btn ${Store.get('exportLanguage') === 'en' ? 'active' : ''}" data-val="en" style="flex:1;padding:5px;border-radius:6px;border:1px solid ${Store.get('exportLanguage') === 'en' ? 'var(--accent)' : 'var(--border)'};background:${Store.get('exportLanguage') === 'en' ? 'var(--accent-glow, rgba(107,114,128,0.1))' : 'var(--bg-surface)'};color:${Store.get('exportLanguage') === 'en' ? 'var(--accent)' : 'var(--text-2)'};font-size:10px;cursor:pointer;font-weight:${Store.get('exportLanguage') === 'en' ? '600' : '400'};">${Icons.flagUS} EN</button>
+              <button onclick="App._setExportLanguage('both')" class="export-opt-btn ${Store.get('exportLanguage') === 'both' ? 'active' : ''}" data-val="both" style="flex:1;padding:5px;border-radius:6px;border:1px solid ${Store.get('exportLanguage') === 'both' ? 'var(--accent)' : 'var(--border)'};background:${Store.get('exportLanguage') === 'both' ? 'var(--accent-glow, rgba(107,114,128,0.1))' : 'var(--bg-surface)'};color:${Store.get('exportLanguage') === 'both' ? 'var(--accent)' : 'var(--text-2)'};font-size:10px;cursor:pointer;font-weight:${Store.get('exportLanguage') === 'both' ? '600' : '400'};">${t('export.both')}</button>
             </div>
           </div>
         </div>
 
-        <!-- PNG EXPORT -->
-        <div style="background:var(--bg-main);border:1px solid var(--border);border-radius:10px;padding:16px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">${Icons.camera} ${t('export.pngIndividual')}</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">${t('export.pngDescription')}</div>
-          <button onclick="App._exportAllPng()" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;">${t('export.exportAllPages')}</button>
-        </div>
+        <!-- PRIMARY EXPORT BUTTON — always visible -->
+        <button onclick="App._startVideoExport()" id="export-video-btn" class="export-video-primary-btn" style="width:100%;padding:12px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;min-height:48px;display:flex;align-items:center;justify-content:center;gap:8px;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">${Icons.video} ${t('export.exportVideo')}</button>
 
-        <!-- STORY/FEED EXPORT -->
-        <div style="background:var(--bg-main);border:1px solid var(--border);border-radius:10px;padding:16px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">${Icons.smartphone} ${t('export.socialMedia')}</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">${t('export.socialMediaDescription')}</div>
-          <div style="display:flex;gap:6px;">
-            <button onclick="App.doExport('story')" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:11px;cursor:pointer;">${t('export.story')}</button>
-            <button onclick="App.doExport('feed')" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:11px;cursor:pointer;">${t('export.feed')}</button>
+        <!-- Progress -->
+        <div id="export-progress-area" style="display:none;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span id="export-status-text" style="font-size:10px;color:var(--text-3);">${t('export.preparing')}</span>
+            <span id="export-pct-text" style="font-size:10px;color:var(--accent);font-weight:700;">0%</span>
+          </div>
+          <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div id="export-progress-bar" style="height:100%;width:0%;background:var(--accent);border-radius:3px;transition:width 0.2s;"></div>
           </div>
         </div>
 
-        <!-- ASSET EXPORT (ZIP) -->
-        <div style="background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(234,88,12,0.08));border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:16px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;">${Icons.package} ${t('export.assetsZip')}</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">${t('export.assetsDescription')}</div>
-
-          <div id="asset-export-summary" style="background:var(--bg-main);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--text-2);">
-            ${t('export.analyzingProject')}
+        <!-- COLLAPSIBLE: Preflight Checklist -->
+        <details class="export-collapse" style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+          <summary style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text-2);cursor:pointer;background:var(--bg-main);display:flex;align-items:center;gap:6px;list-style:none;">
+            <span style="transition:transform 0.2s;display:inline-block;" class="collapse-arrow">▶</span>
+            ${Icons.check || '✓'} ${t('export.preflightTitle')}
+            <span style="margin-left:auto;font-size:9px;color:var(--accent);font-weight:600;">${preflightItems.filter(i => i.state === 'attention').length ? '⚠' : '✓'}</span>
+          </summary>
+          <div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px;background:var(--bg-main);">
+            ${preflightItems.map(item => {
+              const isAttention = item.state === 'attention';
+              const isOptional = item.state === 'optional';
+              const accent = isAttention ? '#f59e0b' : isOptional ? 'var(--text-3)' : 'var(--accent)';
+              const badge = isAttention ? t('export.statusAttention') : isOptional ? t('export.statusOptional') : t('export.statusReady');
+              return `<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);">
+                <span style="font-size:10px;color:var(--text-2);">${item.title}</span>
+                <span style="font-size:9px;font-weight:700;color:${accent};white-space:nowrap;">${badge}</span>
+              </div>`;
+            }).join('')}
           </div>
+        </details>
 
-          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
-            <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-2);cursor:pointer;">
-              <input type="checkbox" id="asset-chk-images" checked style="accent-color:var(--accent);"> ${Icons.imageIcon} ${t('export.imagesOption')}
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-2);cursor:pointer;">
-              <input type="checkbox" id="asset-chk-narration" checked style="accent-color:var(--accent);"> ${Icons.mic} ${t('export.narrationOption')}
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-2);cursor:pointer;">
-              <input type="checkbox" id="asset-chk-music" checked style="accent-color:var(--accent);"> ${Icons.music} ${t('export.musicOption')}
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-2);cursor:pointer;">
-              <input type="checkbox" id="asset-chk-project" checked style="accent-color:var(--accent);"> ${Icons.save} ${t('export.projectFileOption')}
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-2);cursor:pointer;">
-              <input type="checkbox" id="asset-chk-readme" checked style="accent-color:var(--accent);"> ${Icons.fileText} ${t('export.readmeOption')}
-            </label>
+        <!-- COLLAPSIBLE: Export Mode -->
+        <details class="export-collapse" style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+          <summary style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text-2);cursor:pointer;background:var(--bg-main);display:flex;align-items:center;gap:6px;list-style:none;">
+            <span style="transition:transform 0.2s;display:inline-block;" class="collapse-arrow">▶</span>
+            ${Icons.film} ${t('export.exportMode')}
+          </summary>
+          <div style="padding:10px 14px;background:var(--bg-main);">
+            <div style="font-size:10px;color:var(--text-3);margin-bottom:8px;">${t('export.exportModeHint')}</div>
+            <button onclick="App.showExportModeSelector()" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(99,102,241,0.5);background:rgba(99,102,241,0.15);color:#818cf8;font-size:11px;font-weight:600;cursor:pointer;">${t('export.chooseFormat')}</button>
           </div>
+        </details>
 
-          <div style="display:flex;gap:6px;margin-bottom:8px;">
-            <button onclick="App._setAssetPreset('lightweight')" class="asset-preset-btn" data-preset="lightweight" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:10px;cursor:pointer;transition:all 0.15s;" title="${t('tooltip.lightPreset')}">${Icons.feather} ${t('export.presetLight')}</button>
-            <button onclick="App._setAssetPreset('complete')" class="asset-preset-btn active" data-preset="complete" style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.1);color:#f59e0b;font-size:10px;cursor:pointer;font-weight:600;transition:all 0.15s;" title="${t('tooltip.completePreset')}">${Icons.package} ${t('export.presetComplete')}</button>
-            <button onclick="App._setAssetPreset('edit')" class="asset-preset-btn" data-preset="edit" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:10px;cursor:pointer;transition:all 0.15s;" title="${t('tooltip.editPreset')}">${Icons.scissors} ${t('export.presetEdit')}</button>
-          </div>
-
-          <button onclick="App._startAssetExport()" id="asset-export-btn" style="width:100%;padding:10px;border-radius:8px;border:none;background:#4b5563;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">${Icons.package} ${t('export.exportAssets')}</button>
-
-          <div id="asset-export-progress" style="display:none;margin-top:10px;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-              <span id="asset-status-text" style="font-size:10px;color:var(--text-3);">${t('export.preparing')}</span>
-              <span id="asset-pct-text" style="font-size:10px;color:#f59e0b;font-weight:700;">0%</span>
+        <!-- COLLAPSIBLE: PNG Export -->
+        <details class="export-collapse" style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+          <summary style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text-2);cursor:pointer;background:var(--bg-main);display:flex;align-items:center;gap:6px;list-style:none;">
+            <span style="transition:transform 0.2s;display:inline-block;" class="collapse-arrow">▶</span>
+            ${Icons.camera} ${t('export.pngIndividual')}
+          </summary>
+          <div style="padding:10px 14px;background:var(--bg-main);">
+            <div style="font-size:10px;color:var(--text-3);margin-bottom:8px;">${t('export.pngDescription')}</div>
+            <div style="display:flex;gap:6px;">
+              <button onclick="App._exportAllPng()" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;">${t('export.exportAllPages')}</button>
             </div>
-            <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
-              <div id="asset-progress-bar" style="height:100%;width:0%;background:#6b7280;border-radius:3px;transition:width 0.2s;"></div>
+            <div style="display:flex;gap:6px;margin-top:6px;">
+              <button onclick="App.doExport('story')" style="flex:1;padding:7px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:10px;cursor:pointer;">${t('export.story')}</button>
+              <button onclick="App.doExport('feed')" style="flex:1;padding:7px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:10px;cursor:pointer;">${t('export.feed')}</button>
             </div>
           </div>
-        </div>
+        </details>
+
+        <!-- COLLAPSIBLE: Asset Export (ZIP) -->
+        <details class="export-collapse" style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+          <summary style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text-2);cursor:pointer;background:var(--bg-main);display:flex;align-items:center;gap:6px;list-style:none;">
+            <span style="transition:transform 0.2s;display:inline-block;" class="collapse-arrow">▶</span>
+            ${Icons.package} ${t('export.assetsZip')}
+          </summary>
+          <div style="padding:10px 14px;background:var(--bg-main);">
+            <div id="asset-export-summary" style="background:var(--bg-surface);border-radius:6px;padding:8px 10px;margin-bottom:8px;font-size:10px;color:var(--text-2);">
+              ${t('export.analyzingProject')}
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
+              <label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-2);cursor:pointer;">
+                <input type="checkbox" id="asset-chk-images" checked style="accent-color:var(--accent);"> ${Icons.imageIcon} ${t('export.imagesOption')}
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-2);cursor:pointer;">
+                <input type="checkbox" id="asset-chk-narration" checked style="accent-color:var(--accent);"> ${Icons.mic} ${t('export.narrationOption')}
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-2);cursor:pointer;">
+                <input type="checkbox" id="asset-chk-music" checked style="accent-color:var(--accent);"> ${Icons.music} ${t('export.musicOption')}
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-2);cursor:pointer;">
+                <input type="checkbox" id="asset-chk-project" checked style="accent-color:var(--accent);"> ${Icons.save} ${t('export.projectFileOption')}
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-2);cursor:pointer;">
+                <input type="checkbox" id="asset-chk-readme" checked style="accent-color:var(--accent);"> ${Icons.fileText} ${t('export.readmeOption')}
+              </label>
+            </div>
+
+            <div style="display:flex;gap:4px;margin-bottom:8px;">
+              <button onclick="App._setAssetPreset('lightweight')" class="asset-preset-btn" data-preset="lightweight" style="flex:1;padding:5px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:9px;cursor:pointer;" title="${t('tooltip.lightPreset')}">${Icons.feather} ${t('export.presetLight')}</button>
+              <button onclick="App._setAssetPreset('complete')" class="asset-preset-btn active" data-preset="complete" style="flex:1;padding:5px;border-radius:6px;border:1px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.1);color:#f59e0b;font-size:9px;cursor:pointer;font-weight:600;" title="${t('tooltip.completePreset')}">${Icons.package} ${t('export.presetComplete')}</button>
+              <button onclick="App._setAssetPreset('edit')" class="asset-preset-btn" data-preset="edit" style="flex:1;padding:5px;border-radius:6px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-2);font-size:9px;cursor:pointer;" title="${t('tooltip.editPreset')}">${Icons.scissors} ${t('export.presetEdit')}</button>
+            </div>
+
+            <button onclick="App._startAssetExport()" id="asset-export-btn" style="width:100%;padding:8px;border-radius:8px;border:none;background:#4b5563;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">${Icons.package} ${t('export.exportAssets')}</button>
+
+            <div id="asset-export-progress" style="display:none;margin-top:8px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                <span id="asset-status-text" style="font-size:10px;color:var(--text-3);">${t('export.preparing')}</span>
+                <span id="asset-pct-text" style="font-size:10px;color:#f59e0b;font-weight:700;">0%</span>
+              </div>
+              <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+                <div id="asset-progress-bar" style="height:100%;width:0%;background:#6b7280;border-radius:3px;transition:width 0.2s;"></div>
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
     </div>
   </div>`;
 }
 
 function renderDashboard() {
+  const currentLang = i18n.getLocale();
   return `
   <div class="dashboard" id="dashboard">
+    <!-- Language Selector (Top Right) -->
+    <div style="position:absolute;top:16px;right:24px;display:flex;gap:4px;background:var(--surface-2);border-radius:6px;padding:3px;z-index:100;">
+      <button onclick="i18n.changeLocale('en')" title="English" style="padding:6px 12px;border-radius:4px;border:none;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;background:${currentLang === 'en' ? 'var(--accent)' : 'transparent'};color:${currentLang === 'en' ? '#fff' : 'var(--text-2)'};">EN</button>
+      <button onclick="i18n.changeLocale('pt-BR')" title="Português" style="padding:6px 12px;border-radius:4px;border:none;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;background:${currentLang === 'pt-BR' ? 'var(--accent)' : 'transparent'};color:${currentLang === 'pt-BR' ? '#fff' : 'var(--text-2)'};">PT</button>
+    </div>
     <div class="dashboard-header">
       <div class="logo-big">${Icons.logo.replace(/width="\d+"/, 'width="48"').replace(/height="\d+"/, 'height="48"')}</div>
       <h1>${t('dashboard.title')}</h1>
       <p>${t('dashboard.subtitle')}</p>
     </div>
     <div class="dashboard-actions">
-      <div style="display:flex; gap:12px; margin-bottom:16px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn btn-primary btn-lg" onclick="App.showFormatSelector()" style="display:flex; align-items:center; gap:8px;">${Icons.plus} ${t('dashboard.newProject')}</button>
-        <button class="btn btn-ghost btn-lg" onclick="App.createDemoProject()" style="display:flex; align-items:center; gap:8px;">${Icons.palette} ${t('dashboard.createDemo')}</button>
-        <button class="btn btn-ghost btn-lg" onclick="document.getElementById('import-project-input').click()" style="display:flex; align-items:center; gap:8px;">${Icons.download} ${t('dashboard.import')}</button>
-      </div>
-      <div style="display:flex; gap:12px; margin-bottom:32px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn btn-lg" onclick="App.showBulkTextModal()" style="display:flex; align-items:center; gap:8px; background:#4b5563; color:#fff; border:none; font-weight:600;">${Icons.fileText} ${t('dashboard.createFromScript')}</button>
-        <button class="btn btn-lg" onclick="App.showBulkAudioModal()" style="display:flex; align-items:center; gap:8px; background:#4b5563; color:#fff; border:none; font-weight:600;">${Icons.music} ${t('dashboard.createFromAudio')}</button>
-      </div>
-
-      <!-- Templates Section -->
-      <div style="margin-bottom:40px;">
-        <div style="font-size:14px; font-weight:600; color:var(--text-2); margin-bottom:16px; text-transform:uppercase; letter-spacing:1px;">${t('dashboard.templatesTitle')}</div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:16px; max-width:900px; margin:0 auto;">
-          <div class="template-card" onclick="App.createFromTemplate('motion-comic')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left;">
-            <div style="font-size:24px; margin-bottom:8px;">${Icons.shield}</div>
-            <div style="font-weight:600; color:var(--text-1);">${t('templates.motionComic')}</div>
-            <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.motionComicDescription')}</div>
-          </div>
-          <div class="template-card" onclick="App.createFromTemplate('podcast')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left;">
-            <div style="font-size:24px; margin-bottom:8px;">${Icons.radio}</div>
-            <div style="font-weight:600; color:var(--text-1);">${t('templates.podcast')}</div>
-            <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.podcastDescription')}</div>
-          </div>
-          <div class="template-card" onclick="App.createFromTemplate('tutorial')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left;">
-            <div style="font-size:24px; margin-bottom:8px;">${Icons.bookOpen}</div>
-            <div style="font-weight:600; color:var(--text-1);">${t('templates.tutorial')}</div>
-            <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.tutorialDescription')}</div>
-          </div>
-          <div class="template-card" onclick="App.createFromTemplate('story')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left;">
-            <div style="font-size:24px; margin-bottom:8px;">${Icons.smartphone}</div>
-            <div style="font-weight:600; color:var(--text-1);">${t('templates.story')}</div>
-            <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.storyDescription')}</div>
-          </div>
+      <div style="width:100%;max-width:980px;margin:0 auto 40px;display:grid;gap:18px;">
+        <div style="background:linear-gradient(135deg,rgba(20,184,166,0.12),rgba(99,102,241,0.08));border:1px solid rgba(20,184,166,0.24);border-radius:18px;padding:24px 24px 22px;box-shadow:var(--sh-md);">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">${t('dashboard.primaryTitle')}</div>
+          <div style="font-size:14px;color:var(--text-2);max-width:620px;line-height:1.5;margin-bottom:18px;">${t('dashboard.primaryDescription')}</div>
+          <button class="btn btn-primary btn-lg" onclick="App.showFormatSelector()" style="display:inline-flex;align-items:center;gap:8px;padding:14px 20px;font-size:15px;box-shadow:var(--sh-accent);">${Icons.plus} ${t('dashboard.newProject')}</button>
         </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
+          <button class="btn btn-ghost btn-lg" onclick="document.getElementById('import-project-input').click()" style="display:flex;align-items:flex-start;gap:10px;justify-content:flex-start;text-align:left;padding:18px;background:var(--surface);border:1px solid var(--border);border-radius:14px;min-height:84px;">
+            <span style="color:var(--accent);margin-top:1px;">${Icons.download}</span>
+            <span>
+              <span style="display:block;font-size:13px;font-weight:700;color:var(--text-1);margin-bottom:4px;">${t('dashboard.import')}</span>
+              <span style="display:block;font-size:11px;color:var(--text-3);line-height:1.4;">${t('dashboard.importDescription')}</span>
+            </span>
+          </button>
+          <button class="btn btn-ghost btn-lg" onclick="App.showBulkTextModal()" style="display:flex;align-items:flex-start;gap:10px;justify-content:flex-start;text-align:left;padding:18px;background:var(--surface);border:1px solid var(--border);border-radius:14px;min-height:84px;">
+            <span style="color:var(--accent);margin-top:1px;">${Icons.fileText}</span>
+            <span>
+              <span style="display:block;font-size:13px;font-weight:700;color:var(--text-1);margin-bottom:4px;">${t('dashboard.createFromScript')}</span>
+              <span style="display:block;font-size:11px;color:var(--text-3);line-height:1.4;">${t('dashboard.scriptDescription')}</span>
+            </span>
+          </button>
+        </div>
+
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:0 18px;overflow:hidden;">
+          <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:18px 0;font-size:13px;font-weight:700;color:var(--text-1);">
+            <span>${t('dashboard.advancedToggle')}</span>
+            <span style="font-size:11px;color:var(--text-3);font-weight:600;">${t('dashboard.advancedDescription')}</span>
+          </summary>
+          <div style="padding:0 0 18px;display:grid;gap:18px;">
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <button class="btn btn-ghost" onclick="App.showBulkAudioModal()" style="display:flex;align-items:center;gap:8px;background:#4b5563;color:#fff;border:none;font-weight:600;">${Icons.music} ${t('dashboard.createFromAudio')}</button>
+              <button class="btn btn-ghost" onclick="App.createDemoProject()" style="display:flex;align-items:center;gap:8px;">${Icons.palette} ${t('dashboard.createDemo')}</button>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">${t('dashboard.templatesTitle')}</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;max-width:900px;">
+                <button type="button" class="template-card" aria-label="${t('templates.motionComic')}" onclick="App.createFromTemplate('motion-comic')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left; width:100%;">
+                  <div style="font-size:24px; margin-bottom:8px;">${Icons.shield}</div>
+                  <div style="font-weight:600; color:var(--text-1);">${t('templates.motionComic')}</div>
+                  <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.motionComicDescription')}</div>
+                </button>
+                <button type="button" class="template-card" aria-label="${t('templates.podcast')}" onclick="App.createFromTemplate('podcast')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left; width:100%;">
+                  <div style="font-size:24px; margin-bottom:8px;">${Icons.radio}</div>
+                  <div style="font-weight:600; color:var(--text-1);">${t('templates.podcast')}</div>
+                  <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.podcastDescription')}</div>
+                </button>
+                <button type="button" class="template-card" aria-label="${t('templates.tutorial')}" onclick="App.createFromTemplate('tutorial')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left; width:100%;">
+                  <div style="font-size:24px; margin-bottom:8px;">${Icons.bookOpen}</div>
+                  <div style="font-weight:600; color:var(--text-1);">${t('templates.tutorial')}</div>
+                  <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.tutorialDescription')}</div>
+                </button>
+                <button type="button" class="template-card" aria-label="${t('templates.story')}" onclick="App.createFromTemplate('story')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left; width:100%;">
+                  <div style="font-size:24px; margin-bottom:8px;">${Icons.smartphone}</div>
+                  <div style="font-weight:600; color:var(--text-1);">${t('templates.story')}</div>
+                  <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.storyDescription')}</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
     </div>
     <div class="dashboard-projects" id="projects-section"></div>
@@ -304,7 +437,7 @@ function renderProjectsList() {
   const cards = projects.map(p => {
     const d = new Date(p.metadata.updatedAt);
     const preview = p.thumbnail ? `<img src="${p.thumbnail}" loading="lazy" style="width:100%;height:100%;object-fit:cover;" alt="Preview">` : Icons.page;
-    return `<div class="project-card" onclick="App.openProject('${p.id}')">
+    return `<div class="project-card" role="button" tabindex="0" aria-label="${S_ATTR(p.metadata.name)}" onclick="App.openProject('${p.id}')" onkeydown="if(event.target===this && (event.key==='Enter' || event.key===' ')){event.preventDefault();App.openProject('${p.id}');}">
       <div class="card-preview">${preview}</div>
       <h4 class="truncate">${S(p.metadata.name)}</h4>
       <div class="card-meta"><span>${p.pages?.length || 0} ${t('dashboard.pag')}</span><span>${d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span></div>
@@ -329,29 +462,30 @@ function renderEditor() {
       <span id="save-indicator" class="save-indicator" style="font-size:10px;color:var(--success);margin-left:8px;opacity:0.8;">${t('toolbar.saved')}</span>
     </div>
     <div class="toolbar-center">
-      <div style="position:relative;display:inline-flex;">
-        <button class="btn btn-icon" onclick="App.undo()" title="${t('toolbar.undo')}" style="${Store.get('undoStack')?.length ? '' : 'opacity:0.35;pointer-events:none;'}">${Icons.undo}</button>
-        ${Store.get('undoStack')?.length ? `<span style="position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:var(--accent);color:#fff;font-size:8px;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;">${Store.get('undoStack').length}</span>` : ''}
-      </div>
-      <div style="position:relative;display:inline-flex;">
-        <button class="btn btn-icon" onclick="App.redo()" title="${t('toolbar.redo')}" style="${Store.get('redoStack')?.length ? '' : 'opacity:0.35;pointer-events:none;'}">${Icons.redo}</button>
-        ${Store.get('redoStack')?.length ? `<span style="position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:var(--accent);color:#fff;font-size:8px;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;">${Store.get('redoStack').length}</span>` : ''}
-      </div>
+     <div style="position:relative;display:inline-flex;">
+       <button class="btn btn-icon" onclick="App.undo()" title="${t('toolbar.undo')}" style="${Store.get('undoStack')?.length ? '' : 'opacity:0.35;pointer-events:none;'}">${Icons.undo}</button>
+       ${Store.get('undoStack')?.length ? `<span style="position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:var(--accent);color:#fff;font-size:8px;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;">${Store.get('undoStack').length}</span>` : ''}
+     </div>
+     <div style="position:relative;display:inline-flex;">
+       <button class="btn btn-icon" onclick="App.redo()" title="${t('toolbar.redo')}" style="${Store.get('redoStack')?.length ? '' : 'opacity:0.35;pointer-events:none;'}">${Icons.redo}</button>
+       ${Store.get('redoStack')?.length ? `<span style="position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:var(--accent);color:#fff;font-size:8px;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;">${Store.get('redoStack').length}</span>` : ''}
+     </div>
       <div class="toolbar-divider"></div>
-      <button class="btn btn-sm ${tbActive ? 'btn-active' : 'btn-ghost'}" onclick="App.toggleTextBelow()" title="${t('toolbar.textBelow')}">${Icons.textBelow} ${t('toolbar.text')}</button>
-      <button class="btn btn-sm ${Store.get('showGuides') ? 'btn-active' : 'btn-ghost'}" onclick="App.toggleGuides()" title="${t('toolbar.guides')}">${Icons.grid} ${t('toolbar.guides')}</button>
-      <div class="toolbar-divider"></div>
-      <!-- Language Selector -->
-      <div class="lang-selector" style="display:flex;gap:2px;background:var(--surface-2);border-radius:4px;padding:2px;">
-        <button onclick="App.setActiveLanguage('pt-BR')" title="Português (Ctrl+T)" class="lang-btn ${(p.activeLanguage || 'pt-BR') === 'pt-BR' ? 'active' : ''}" style="padding:3px 8px;border-radius:3px;border:none;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.15s;background:${(p.activeLanguage || 'pt-BR') === 'pt-BR' ? 'var(--accent)' : 'transparent'};color:${(p.activeLanguage || 'pt-BR') === 'pt-BR' ? '#fff' : 'var(--text-2)'};">PT</button>
-        <button onclick="App.setActiveLanguage('en')" title="English (Ctrl+T)" class="lang-btn ${p.activeLanguage === 'en' ? 'active' : ''}" style="padding:3px 8px;border-radius:3px;border:none;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.15s;background:${p.activeLanguage === 'en' ? 'var(--accent)' : 'transparent'};color:${p.activeLanguage === 'en' ? '#fff' : 'var(--text-2)'}">EN</button>
-      </div>
+      <details class="toolbar-compact-menu">
+        <summary class="toolbar-compact-summary" title="${t('toolbar.properties')}">${Icons.settings}<span>Canvas</span></summary>
+        <div class="toolbar-compact-panel">
+          <button class="btn btn-sm ${tbActive ? 'btn-active' : 'btn-ghost'}" onclick="App.toggleTextBelow()" title="${t('toolbar.textBelow')}">${Icons.textBelow} ${t('toolbar.text')}</button>
+          <button class="btn btn-sm ${Store.get('showGuides') ? 'btn-active' : 'btn-ghost'}" onclick="App.toggleGuides()" title="${t('toolbar.guides')}">${Icons.grid} ${t('toolbar.guides')}</button>
+        </div>
+      </details>
     </div>
     <div class="toolbar-right">
-      <!-- UI Language Switcher -->
-      <div class="ui-lang-selector" style="display:flex;gap:2px;background:var(--surface-2);border-radius:4px;padding:2px;margin-right:8px;">
-        <button onclick="i18n.changeLocale('en')" title="English (UI)" class="ui-lang-btn ${i18n.getLocale() === 'en' ? 'active' : ''}" style="padding:3px 8px;border-radius:3px;border:none;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.15s;background:${i18n.getLocale() === 'en' ? 'var(--accent)' : 'transparent'};color:${i18n.getLocale() === 'en' ? '#fff' : 'var(--text-2)'};">EN</button>
-        <button onclick="i18n.changeLocale('pt-BR')" title="Português (UI)" class="ui-lang-btn ${i18n.getLocale() === 'pt-BR' ? 'active' : ''}" style="padding:3px 8px;border-radius:3px;border:none;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.15s;background:${i18n.getLocale() === 'pt-BR' ? 'var(--accent)' : 'transparent'};color:${i18n.getLocale() === 'pt-BR' ? '#fff' : 'var(--text-2)'};">PT</button>
+      <div class="toolbar-lang-section" style="display:inline-flex;align-items:center;gap:6px;margin-right:8px;">
+        <span style="font-size:11px;color:var(--text-2);font-weight:500;">${t('toolbar.language')}:</span>
+        <div class="toolbar-lang-toggle" style="display:inline-flex;gap:3px;background:rgba(107,114,128,0.15);border:1px solid rgba(107,114,128,0.3);border-radius:4px;padding:3px;">
+          <button onclick="i18n.changeLocale('en')" title="${t('toolbar.switchToEnglish')}" class="btn-lang${i18n.getLocale() === 'en' ? ' btn-lang-active' : ''}" style="padding:6px 14px;border-radius:3px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;background:${i18n.getLocale() === 'en' ? 'var(--accent)' : 'transparent'};color:${i18n.getLocale() === 'en' ? '#fff' : 'var(--text-2)'};">EN</button>
+          <button onclick="i18n.changeLocale('pt-BR')" title="${t('toolbar.switchToPortuguese')}" class="btn-lang${i18n.getLocale() === 'pt-BR' ? ' btn-lang-active' : ''}" style="padding:6px 14px;border-radius:3px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;background:${i18n.getLocale() === 'pt-BR' ? 'var(--accent)' : 'transparent'};color:${i18n.getLocale() === 'pt-BR' ? '#fff' : 'var(--text-2)'};">PT</button>
+        </div>
       </div>
       <button class="btn btn-icon" onclick="App.toggleFullscreenPreview()" title="${t('toolbar.fullscreenPreview')}" aria-label="${t('toolbar.fullscreenPreview')}">${Icons.zoomFit}</button>
       <button class="btn btn-icon" onclick="App.showShortcutsHelp()" title="${t('toolbar.shortcuts')}" aria-label="${t('toolbar.shortcuts')}">?</button>
@@ -380,16 +514,126 @@ function renderEditor() {
     </div>
   </div>
   <div id="timeline-bar" class="timeline-bar hidden"></div>
+  <div class="mobile-editor-nav" aria-label="${t('mobileNav.title')}">
+    <button class="mobile-editor-nav-btn ${(Store.get('mobileWorkflowStep') || 'media') === 'media' ? 'active' : ''}" onclick="App.openMobileWorkflow('media')">${Icons.imageIcon}<span>${t('mobileNav.media')}</span></button>
+    <button class="mobile-editor-nav-btn ${(Store.get('mobileWorkflowStep') || 'media') === 'text' ? 'active' : ''}" onclick="App.openMobileWorkflow('text')">${Icons.text}<span>${t('mobileNav.text')}</span></button>
+    <button class="mobile-editor-nav-btn" onclick="App.openExcalidraw()">${Icons.pencil}<span>${t('mobileNav.draw')}</span></button>
+    <button class="mobile-editor-nav-btn ${(Store.get('mobileWorkflowStep') || 'media') === 'timing' ? 'active' : ''}" onclick="App.openMobileWorkflow('timing')">${Icons.clock}<span>${t('mobileNav.timing')}</span></button>
+    <button class="mobile-editor-nav-btn" onclick="App.openMobileWorkflow('preview')">${Icons.zoomFit}<span>${t('mobileNav.preview')}</span></button>
+    <button class="mobile-editor-nav-btn" onclick="App.openMobileWorkflow('export')">${Icons.export}<span>${t('mobileNav.export')}</span></button>
+  </div>
   <div class="toast-container" id="toast-container"></div>
   <div class="modal-backdrop" id="modal-backdrop" onclick="App.closeModal()">
     <div class="modal" id="modal-content" onclick="event.stopPropagation()"></div>
   </div>
   <!-- Mobile Sidebar Toggle (FAB) -->
-  <button class="mobile-sidebar-fab" onclick="App.toggleMobileSidebar()" title="Propriedades" aria-label="Abrir painel de propriedades">
+  <button class="mobile-sidebar-fab" onclick="App.toggleMobileSidebar()" title="${t('toolbar.properties')}" aria-label="${t('toolbar.properties')}">
     ☰
   </button>
   <div class="mobile-backdrop" onclick="App.toggleMobileSidebar()"></div>
   <!-- file-input is in index.html as file-input-persistent -->`;
+}
+
+function renderMobileDrawerShell(title, content) {
+  return `
+    <div class="mobile-drawer-shell">
+      <div class="mobile-drawer-title">${title}</div>
+      ${content}
+    </div>
+  `;
+}
+
+function getMobileDrawerContextTitle(step, mode) {
+  const stepLabel = step === 'text'
+    ? t('mobileNav.text')
+    : step === 'timing'
+      ? t('mobileNav.timing')
+      : t('mobileNav.media');
+  const modeLabel = mode === 'tools' ? t('toolbar.tools') : t('toolbar.properties');
+  return `${stepLabel} · ${modeLabel}`;
+}
+
+function renderMobileTextTools() {
+  const p = Store.get('currentProject');
+  if (!p) return '';
+  const page = Store.getActivePage() || {};
+  const _isMateria = page?.type === 'materia' || page?.isMateria === true;
+  const _dis = (type) => _isMateria && ['thought','shout','sfx'].includes(type) ? 'disabled-in-context' : '';
+  const _title = (type, orig) => _isMateria && ['thought','shout','sfx'].includes(type) ? t('balloons.notAvailableMateria') : orig;
+  const _btnStyle = `display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px 8px; border:1px solid var(--border); border-radius:8px; background:var(--surface2); color:var(--text2); cursor:pointer; font-size:11px; transition:all 0.12s; min-height:60px;`;
+  const _hover = `onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'"`;
+  
+  return `
+    <div style="padding:12px;">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1px;margin-bottom:10px;">${t('sidebar.comicElements')}</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <button data-balloon-type="narration" class="${_dis('narration')}" onclick="App.startBalloonPlacement('narration');App.closeMobileSidebar()" title="${_title('narration',t('balloons.narrationTooltip'))}" style="${_btnStyle}" ${_hover}>
+          ${Icons.narrationBox} <span>${t('balloons.narration')}</span>
+        </button>
+        <button data-balloon-type="speech" class="${_dis('speech')}" onclick="App.startBalloonPlacement('speech');App.closeMobileSidebar()" title="${_title('speech',t('balloons.speechTooltip'))}" style="${_btnStyle}" ${_hover}>
+          ${Icons.balloon} <span>${t('balloons.speech')}</span>
+        </button>
+        <button data-balloon-type="thought" class="${_dis('thought')}" onclick="App.startBalloonPlacement('thought');App.closeMobileSidebar()" title="${_title('thought',t('balloons.thoughtTooltip'))}" style="${_btnStyle}" ${_hover}>
+          ${Icons.thought} <span>${t('balloons.thought')}</span>
+        </button>
+        <button data-balloon-type="shout" class="${_dis('shout')}" onclick="App.startBalloonPlacement('shout');App.closeMobileSidebar()" title="${_title('shout',t('balloons.shoutTooltip'))}" style="${_btnStyle}" ${_hover}>
+          ${Icons.shout} <span>${t('balloons.shout')}</span>
+        </button>
+        <button data-balloon-type="whisper" class="${_dis('whisper')}" onclick="App.startBalloonPlacement('whisper');App.closeMobileSidebar()" title="${_title('whisper',t('balloons.whisperTooltip'))}" style="${_btnStyle}" ${_hover}>
+          ${Icons.balloon} <span>${t('balloons.whisper')}</span>
+        </button>
+        <button data-balloon-type="sfx" class="${_dis('sfx')}" onclick="App.addSfxToPage();App.closeMobileSidebar()" title="${_title('sfx',t('balloons.sfxTooltip'))}" style="${_btnStyle}" ${_hover}>
+          ${Icons.text} <span>${t('balloons.sfx')}</span>
+        </button>
+      </div>
+      <button onclick="App.openExcalidrawModal()" style="margin-top:12px;width:100%;padding:12px;border-radius:8px;border:1px dashed var(--accent);background:rgba(107,114,128,0.05);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;">
+        ${t('sidebar.createArt')}
+      </button>
+      
+      <!-- TEXTO NARRATIVO Section -->
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);">
+        <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1px;margin-bottom:10px;">TEXTO NARRATIVO</div>
+        ${(() => {
+          const _pg = Store.getActivePage();
+          const _active = _pg?.showTextBelow || false;
+          const _narr = _pg?.narrative || '';
+          const _narrText = typeof _narr === 'string' ? _narr : (_narr?.['pt-BR'] || _narr?.en || '');
+          const _h = _pg?.narrativeHeight || 120;
+          
+          return `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border-radius:8px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              ${Icons.textBelow}
+              <span style="font-size:12px;font-weight:500;color:var(--text);">Ativar Narrativa</span>
+            </div>
+            <button onclick="App.toggleTextBelow()" style="width:44px;height:24px;border-radius:12px;border:none;cursor:pointer;position:relative;transition:all 0.2s;background:${_active ? 'var(--accent)' : 'var(--border)'};">
+              <span style="position:absolute;top:2px;${_active ? 'right:2px' : 'left:2px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:all 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></span>
+            </button>
+          </div>
+          ${_active ? `
+          <textarea 
+            placeholder="Escreva a narrativa aqui..."
+            oninput="App.updateNarrative(this.value)"
+            style="width:100%;min-height:80px;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;line-height:1.5;resize:vertical;font-family:var(--font-story);margin-bottom:10px;box-sizing:border-box;"
+          >${_narrText}</textarea>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border-radius:8px;">
+            <span style="font-size:10px;color:var(--text3);white-space:nowrap;">Altura:</span>
+            <input type="range" min="40" max="400" value="${_h}" 
+              oninput="App.setNarrativeHeight(parseInt(this.value));this.nextElementSibling.textContent=this.value+'px'"
+              style="flex:1;height:4px;cursor:pointer;">
+            <span style="font-size:10px;color:var(--text2);min-width:40px;text-align:right;">${_h}px</span>
+          </div>
+          ` : `
+          <div style="padding:16px;background:rgba(107,114,128,0.05);border-radius:8px;border:1px dashed var(--border);">
+            <p style="font-size:11px;color:var(--text3);margin:0;text-align:center;">
+              Ative para adicionar texto embaixo dos painéis
+            </p>
+          </div>
+          `}`;
+        })()}
+      </div>
+    </div>
+  `;
 }
 
 function renderPanelCountButtons(targetCount) {
@@ -413,7 +657,7 @@ function renderVideoLayoutsSection(layoutOptions, currentLayoutId, videoFormat) 
   return layoutOptions.map(opt => {
     const isCurrentLayout = opt.id === currentLayoutId;
     const optBorder = isCurrentLayout ? 'var(--accent)' : 'var(--border)';
-    const bgColor = isCurrentLayout ? 'rgba(20,184,166,0.15)' : 'var(--surface2)';
+    const bgColor = isCurrentLayout ? 'rgba(107,114,128,0.15)' : 'var(--surface2)';
     const textColor = isCurrentLayout ? 'var(--accent)' : 'var(--text2)';
     const fontWeight = isCurrentLayout ? '700' : '500';
     const checkmark = isCurrentLayout ? '<span style="position:absolute;top:4px;right:4px;font-size:10px;color:var(--accent);">✓</span>' : '';
@@ -439,7 +683,7 @@ function renderCustomLayoutsSection(p, currentLayoutId) {
           const isFavorite = p.favoriteLayoutId === custom.id;
           const optBorder = isCurrentLayout ? 'var(--accent)' : 'var(--border)';
           const optName = custom.name.length > 10 ? custom.name.substring(0,9)+'…' : custom.name;
-          return `<div style="border-radius:6px;border:2px solid ${optBorder};background:${isCurrentLayout ? 'rgba(20,184,166,0.15)' : 'var(--surface2)'};padding:4px;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;">
+          return `<div style="border-radius:6px;border:2px solid ${optBorder};background:${isCurrentLayout ? 'rgba(107,114,128,0.15)' : 'var(--surface2)'};padding:4px;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;">
             <img src="${custom.thumbnail}" onclick="App.setLayout('${custom.id}')" style="width:36px;height:50px;border-radius:3px;cursor:pointer;" title="${custom.name}">
             ${isCurrentLayout ? '<span style="position:absolute;top:2px;right:2px;font-size:8px;color:var(--accent);">✓</span>' : ''}
             <span onclick="event.stopPropagation();App.setFavoriteLayout('${custom.id}')" style="position:absolute;top:2px;left:2px;font-size:9px;color:${isFavorite ? 'var(--warning)' : 'var(--text3)'};cursor:pointer;opacity:${isFavorite ? '1' : '0.4'};" title="${isFavorite ? 'Remover padrao' : 'Definir como padrao'}">★</span>
@@ -509,7 +753,7 @@ function renderLayoutEditorSidebar() {
 
   return `
     <div style="padding:8px 0;overflow-y:auto;height:100%;">
-      <div style="padding:8px 12px 10px;background:linear-gradient(135deg,rgba(20,184,166,0.12),rgba(20,184,166,0.04));border-bottom:1px solid var(--border);margin-bottom:8px;">
+      <div style="padding:8px 12px 10px;background:linear-gradient(135deg,rgba(107,114,128,0.12),rgba(107,114,128,0.04));border-bottom:1px solid var(--border);margin-bottom:8px;">
         <div style="font-size:12px;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:6px;">
           <span style="font-size:16px;">✏</span> ${t('layoutEditor.title')}
         </div>
@@ -591,6 +835,7 @@ function renderLeftPanel() {
   const currentLayoutId = page.layoutId || (isVideoProject ? getDefaultVideoLayout(videoFormat) : LayoutEngine.getDefaultForCount(targetCount));
   const variationsExpanded = ((Store.get('sidebarCollapsed') || {}).variationsExpanded === true);
   const layoutCollapsed = (Store.get('sidebarCollapsed') || {}).leftLayout;
+  const leftMateriaCollapsed = (Store.get('sidebarCollapsed') || {}).leftMateria === undefined ? true : (Store.get('sidebarCollapsed') || {}).leftMateria;
 
   const coverActive = Store.get('coverActive');
 
@@ -599,7 +844,7 @@ function renderLeftPanel() {
   if (p.cover) {
     const coverTitle = p.cover.title ? p.cover.title.substring(0, 12) + (p.cover.title.length > 12 ? '…' : '') : t('sidebar.noTitle');
     const coverBorder = coverActive ? '3px solid var(--accent)' : '3px solid transparent';
-    const coverBg = coverActive ? 'var(--hover)' : 'rgba(20,184,166,0.06)';
+    const coverBg = coverActive ? 'var(--hover)' : 'rgba(107,114,128,0.06)';
     const coverColor = coverActive ? 'var(--text)' : 'var(--accent)';
     const coverActiveClass = coverActive ? 'active' : '';
     coverSectionHTML = '<div class="scene-item cover-scene-item ' + coverActiveClass + '" onclick="App.setActiveCover()" oncontextmenu="event.preventDefault();App.showCoverContextMenu(event)" title="Capa do quadrinho" style="padding:6px 10px;margin:1px 8px 3px 8px;cursor:pointer;border-radius:6px;border-left:' + coverBorder + ';background:' + coverBg + ';display:flex;align-items:center;justify-content:space-between;">'
@@ -608,7 +853,7 @@ function renderLeftPanel() {
       + '<button onclick="event.stopPropagation();App.removeCover()" title="' + t('sidebar.removeCover') + '" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0;font-size:11px;line-height:1;opacity:0.5;">✕</button></div></div>'
       + '<div style="margin:0 12px 4px 12px;height:1px;background:var(--border);"></div>';
   } else {
-    coverSectionHTML = '<button onclick="App.addCover()" class="cover-add-btn" style="margin:2px 12px 6px 12px;padding:7px 10px;background:rgba(20,184,166,0.08);border:1px dashed rgba(20,184,166,0.4);color:var(--accent);border-radius:6px;cursor:pointer;font-weight:600;font-size:11px;display:flex;align-items:center;gap:6px;transition:all 0.15s;" onmouseenter="this.style.background=\'rgba(20,184,166,0.16)\'" onmouseleave="this.style.background=\'rgba(20,184,166,0.08)\'">' + Icons.palette + ' ' + t('sidebar.addCover') + '</button>';
+    coverSectionHTML = '<button onclick="App.addCover()" class="cover-add-btn" style="margin:2px 12px 6px 12px;padding:7px 10px;background:rgba(107,114,128,0.08);border:1px dashed rgba(107,114,128,0.4);color:var(--accent);border-radius:6px;cursor:pointer;font-weight:600;font-size:11px;display:flex;align-items:center;gap:6px;transition:all 0.15s;" onmouseenter="this.style.background=\'rgba(107,114,128,0.16)\'" onmouseleave="this.style.background=\'rgba(107,114,128,0.08)\'">' + Icons.palette + ' ' + t('sidebar.addCover') + '</button>';
   }
 
   // Back cover item in sidebar
@@ -617,21 +862,21 @@ function renderLeftPanel() {
   if (p.cover) {
     if (p.backCover) {
       const bcBorder = backCoverActive ? '3px solid var(--accent)' : '3px solid transparent';
-      const bcBg = backCoverActive ? 'var(--hover)' : 'rgba(139,92,246,0.06)';
-      const bcColor = backCoverActive ? 'var(--text)' : 'rgba(139,92,246,0.9)';
+      const bcBg = backCoverActive ? 'var(--hover)' : 'rgba(107,114,128,0.06)';
+      const bcColor = backCoverActive ? 'var(--text)' : 'rgba(107,114,128,0.9)';
       backCoverSectionHTML = '<div class="scene-item cover-scene-item ' + (backCoverActive ? 'active' : '') + '" onclick="App.setActiveBackCover()" title="Contracapa" style="padding:6px 10px;margin:1px 8px 3px 8px;cursor:pointer;border-radius:6px;border-left:' + bcBorder + ';background:' + bcBg + ';display:flex;align-items:center;justify-content:space-between;">'
-        + '<div style="display:flex;align-items:center;gap:6px;"><span style="display:inline-flex;color:rgba(139,92,246,0.9);">' + Icons.copy + '</span><span style="font-weight:700;font-size:12px;color:' + bcColor + ';letter-spacing:0.5px;">' + t('sidebar.backCover') + '</span></div>'
+        + '<div style="display:flex;align-items:center;gap:6px;"><span style="display:inline-flex;color:rgba(107,114,128,0.9);">' + Icons.copy + '</span><span style="font-weight:700;font-size:12px;color:' + bcColor + ';letter-spacing:0.5px;">' + t('sidebar.backCover') + '</span></div>'
         + '<div style="display:flex;align-items:center;gap:4px;">'
         + '<button onclick="event.stopPropagation();App.removeBackCover()" title="' + t('sidebar.removeBackCover') + '" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0;font-size:11px;line-height:1;opacity:0.5;">✕</button></div></div>';
     } else {
-      backCoverSectionHTML = '<button onclick="App.addBackCover()" style="margin:1px 12px 3px 12px;padding:5px 10px;background:rgba(139,92,246,0.06);border:1px dashed rgba(139,92,246,0.3);color:rgba(139,92,246,0.8);border-radius:6px;cursor:pointer;font-weight:600;font-size:10px;display:flex;align-items:center;gap:6px;transition:all 0.15s;" onmouseenter="this.style.background=\'rgba(139,92,246,0.12)\'" onmouseleave="this.style.background=\'rgba(139,92,246,0.06)\'">' + Icons.copy + ' ' + t('sidebar.addBackCover') + '</button>';
+      backCoverSectionHTML = '<button onclick="App.addBackCover()" style="margin:1px 12px 3px 12px;padding:5px 10px;background:rgba(107,114,128,0.06);border:1px dashed rgba(107,114,128,0.3);color:rgba(107,114,128,0.8);border-radius:6px;cursor:pointer;font-weight:600;font-size:10px;display:flex;align-items:center;gap:6px;transition:all 0.15s;" onmouseenter="this.style.background=\'rgba(107,114,128,0.12)\'" onmouseleave="this.style.background=\'rgba(107,114,128,0.06)\'">' + Icons.copy + ' ' + t('sidebar.addBackCover') + '</button>';
     }
   }
 
   const pagesCollapsed = (Store.get('sidebarCollapsed') || {}).leftPages;
 
   return `
-    <div style="padding: 8px 0; overflow-y:auto; height:100%;">
+    <div id="mobile-anchor-pages" style="padding: 8px 0; overflow-y:auto; height:100%;">
       <div onclick="App.toggleSidebarSection('leftPages')" style="display:flex;align-items:center;padding:4px 12px;cursor:pointer;user-select:none;margin-bottom:6px;">
         <span style="font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 1px; flex:1;">${t('sidebar.pages')}</span>
         <span style="font-size:10px;color:var(--text3);">${pagesCollapsed ? '+' : '-'}</span>
@@ -681,7 +926,7 @@ function renderLeftPanel() {
                   const isFavorite = p.favoriteLayoutId === opt.id;
                   const optBorder = isCurrentLayout ? 'var(--accent)' : 'var(--border)';
                   const optName = opt.name.length > 12 ? opt.name.substring(0,11)+'…' : opt.name;
-                  return `<button onclick="App.setLayout('${opt.id}')" title="${opt.name}${isFavorite ? ' (Padrao)' : ''}" style="border-radius:6px;border:2px solid ${optBorder};background:${isCurrentLayout ? 'rgba(20,184,166,0.15)' : 'var(--surface2)'};cursor:pointer;padding:6px 4px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.15s;position:relative;" onmouseenter="this.style.borderColor='var(--accent)';this.style.transform='scale(1.03)'" onmouseleave="this.style.borderColor='${optBorder}';this.style.transform='scale(1)'">
+                  return `<button onclick="App.setLayout('${opt.id}')" title="${opt.name}${isFavorite ? ' (Padrao)' : ''}" style="border-radius:6px;border:2px solid ${optBorder};background:${isCurrentLayout ? 'rgba(107,114,128,0.15)' : 'var(--surface2)'};cursor:pointer;padding:6px 4px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.15s;position:relative;" onmouseenter="this.style.borderColor='var(--accent)';this.style.transform='scale(1.03)'" onmouseleave="this.style.borderColor='${optBorder}';this.style.transform='scale(1)'">
                     ${isCurrentLayout ? '<span style="position:absolute;top:2px;right:2px;font-size:8px;color:var(--accent);">✓</span>' : ''}
                     <span onclick="event.stopPropagation();App.setFavoriteLayout('${opt.id}')" style="position:absolute;top:2px;left:2px;font-size:9px;color:${isFavorite ? 'var(--warning)' : 'var(--text3)'};cursor:pointer;opacity:${isFavorite ? '1' : '0.4'};" title="${isFavorite ? 'Remover padrao' : 'Definir como padrao'}">★</span>
                     ${LayoutEngine.preview(opt.id, 36, 50)}
@@ -696,7 +941,7 @@ function renderLeftPanel() {
         `)
         : ''}
         <!-- Create Custom Layout Button — ALWAYS visible -->
-        <button onclick="App.enterLayoutEditor()" style="margin-top:10px;width:100%;padding:10px;border:2px dashed var(--accent);background:rgba(20,184,166,0.08);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s;" onmouseenter="this.style.background='rgba(20,184,166,0.18)';this.style.borderStyle='solid'" onmouseleave="this.style.background='rgba(20,184,166,0.08)';this.style.borderStyle='dashed'">
+        <button onclick="App.enterLayoutEditor()" style="margin-top:10px;width:100%;padding:10px;border:2px dashed var(--accent);background:rgba(107,114,128,0.08);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s;" onmouseenter="this.style.background='rgba(107,114,128,0.18)';this.style.borderStyle='solid'" onmouseleave="this.style.background='rgba(107,114,128,0.08)';this.style.borderStyle='dashed'">
           <span style="display:inline-flex;">${Icons.feather}</span> Criar Meu Layout
         </button>
 
@@ -705,9 +950,9 @@ function renderLeftPanel() {
         <div style="margin-top:10px;">
           <div onclick="App.toggleSidebarSection('leftMateria')" style="display:flex;align-items:center;padding:4px;cursor:pointer;user-select:none;">
             <span style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1px;flex:1;">${Icons.narrationBox} MATÉRIA (ESPECIAL)</span>
-            <span style="font-size:10px;color:var(--text3);">${(Store.get('sidebarCollapsed') || {}).leftMateria ? '+' : '-'}</span>
+            <span style="font-size:10px;color:var(--text3);">${leftMateriaCollapsed ? '+' : '-'}</span>
           </div>
-          ${!(Store.get('sidebarCollapsed') || {}).leftMateria ? `
+          ${!leftMateriaCollapsed ? `
             <div style="font-size:9px;color:var(--text3);padding:0 2px 6px;line-height:1.4;">Páginas com texto longo + imagem. Ideal para zines, capítulos introdutórios e narração densa.</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
               ${Object.entries(Layouts).filter(([k,v]) => v.isMateria).map(([id, layout]) => {
@@ -724,7 +969,7 @@ function renderLeftPanel() {
         ` : ''}
       </div>
 
-      <div style="font-size: 10px; font-weight: 700; color: var(--text3); margin: 12px 12px 6px 12px; letter-spacing: 1px;">${t('sidebar.comicElements')}</div>
+      <div id="mobile-anchor-texttools" style="font-size: 10px; font-weight: 700; color: var(--text3); margin: 12px 12px 6px 12px; letter-spacing: 1px;">${t('sidebar.comicElements')}</div>
       ${(() => {
         const _isMateria = page?.type === 'materia' || page?.isMateria === true;
         const _dis = (type) => _isMateria && ['thought','shout','sfx'].includes(type) ? 'disabled-in-context' : '';
@@ -754,9 +999,63 @@ function renderLeftPanel() {
       })()}
       
       <div style="margin: 12px 8px 6px 8px;">
-        <button onclick="App.openExcalidrawModal()" style="width:100%;padding:8px;border-radius:6px;border:1px dashed var(--accent);background:rgba(20,184,166,0.05);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;" onmouseenter="this.style.background='rgba(20,184,166,0.15)'" onmouseleave="this.style.background='rgba(20,184,166,0.05)'">
+        <button onclick="App.openExcalidrawModal()" style="width:100%;padding:8px;border-radius:6px;border:1px dashed var(--accent);background:rgba(107,114,128,0.05);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;" onmouseenter="this.style.background='rgba(107,114,128,0.15)'" onmouseleave="this.style.background='rgba(107,114,128,0.05)'">
           ${t('sidebar.createArt')}
         </button>
+      </div>
+
+      <!-- TEXTO NARRATIVO - Mobile Section -->
+      <div id="mobile-anchor-narrative-section" style="margin: 16px 8px 8px 8px; padding-top: 12px; border-top: 1px solid var(--border);">
+        <div style="font-size: 10px; font-weight: 700; color: var(--text3); margin-bottom: 8px; letter-spacing: 1px;">TEXTO NARRATIVO</div>
+        
+        ${(() => {
+          const _page = Store.getActivePage();
+          const _isActive = _page?.showTextBelow || false;
+          const _narrative = _page?.narrative || '';
+          const _narrativeText = typeof _narrative === 'string' ? _narrative : (_narrative?.['pt-BR'] || _narrative?.en || '');
+          const _height = _page?.narrativeHeight || 120;
+          
+          return `
+          <!-- Toggle ON/OFF -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:6px;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              ${Icons.textBelow}
+              <span style="font-size:11px;font-weight:500;color:var(--text);">Ativar Texto Narrativo</span>
+            </div>
+            <button onclick="App.toggleTextBelow()" style="width:40px;height:22px;border-radius:11px;border:none;cursor:pointer;position:relative;transition:all 0.2s;background:${_isActive ? 'var(--accent)' : 'var(--border)'};">
+              <span style="position:absolute;top:2px;${_isActive ? 'right:2px' : 'left:2px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:all 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></span>
+            </button>
+          </div>
+          
+          ${_isActive ? `
+          <!-- Editor de Texto -->
+          <div style="margin-bottom:8px;">
+            <textarea 
+              id="mobile-narrative-editor"
+              placeholder="Escreva a narrativa aqui..."
+              oninput="App.updateNarrative(this.value)"
+              style="width:100%;min-height:80px;padding:10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;line-height:1.5;resize:vertical;font-family:var(--font-story);"
+            >${_narrativeText}</textarea>
+          </div>
+          
+          <!-- Altura do Texto -->
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:6px;">
+            <span style="font-size:10px;color:var(--text3);white-space:nowrap;">Altura:</span>
+            <input type="range" min="40" max="400" value="${_height}" 
+              oninput="App.setNarrativeHeight(parseInt(this.value))"
+              style="flex:1;height:4px;cursor:pointer;">
+            <span style="font-size:10px;color:var(--text2);min-width:35px;text-align:right;">${_height}px</span>
+          </div>
+          ` : `
+          <!-- Hint quando desativado -->
+          <div style="padding:12px;background:rgba(107,114,128,0.05);border-radius:6px;border:1px dashed var(--border);">
+            <p style="font-size:11px;color:var(--text3);margin:0;text-align:center;">
+              Ative para adicionar texto narrativo embaixo dos painéis
+            </p>
+          </div>
+          `}
+          `;
+        })()}
       </div>
     </div>
   `;
@@ -797,9 +1096,9 @@ function renderTimeline() {
     const backCoverItem = (p.cover && p.backCover) ? `<button class="tl-page tl-cover ${backCoverActive ? 'active' : ''}"
       onclick="App.setActiveBackCover()"
       title="Contracapa"
-      style="${backCoverActive ? 'border-color:rgba(139,92,246,0.6);background:rgba(139,92,246,0.1);' : ''}">
+      style="${backCoverActive ? 'border-color:rgba(107,114,128,0.6);background:rgba(107,114,128,0.1);' : ''}">
       <span style="display:inline-flex;">${Icons.copy}</span>
-      ${backCoverActive ? '<span class="tl-active-bar" style="background:rgba(139,92,246,0.8);"></span>' : ''}
+      ${backCoverActive ? '<span class="tl-active-bar" style="background:rgba(107,114,128,0.8);"></span>' : ''}
     </button>` : '';
 
     items = coverItem + backCoverItem + p.pages.map((page, i) => {
@@ -898,7 +1197,7 @@ function renderPageList() {
         <button onclick="event.stopPropagation();App.duplicatePage(${i})">${Icons.copy}</button>
         <button class="danger" onclick="event.stopPropagation();App.deletePage(${i})">${Icons.trash}</button>
       </div></div>`;
-  }).join('') + `<button class="page-add-btn" onclick="App.addPage()">${Icons.plus} Nova Pagina</button>`;
+  }).join('') + `<button class="page-add-btn" onclick="App.addPage()">${Icons.plus} ${t('sidebar.newPage')}</button>`;
 }
 
 /* ═══════════════════════════════════════
@@ -942,7 +1241,7 @@ function renderCoverCanvas() {
   // Impactful placeholder when cover is empty (no bg image AND no template elements)
   const hasElements = (cover.elements || []).length > 0;
   const isEmpty = !cover.backgroundImage && !hasElements;
-  const accentColor = 'rgba(20,184,166,1)';
+  const accentColor = 'rgba(107,114,128,1)';
   const coverTitle = cover.title || p.metadata.name || 'MY PROJECT';
   const coverAuthor = cover.author || 'Author';
   const coverVol = cover.volume || 1;
@@ -958,7 +1257,7 @@ function renderCoverCanvas() {
           ondragleave="this.classList.remove('drag-over')"
           ondrop="event.preventDefault();this.classList.remove('drag-over');App._handleCoverDrop(event)"
           style="pointer-events:all;width:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 40px;border:2px dashed rgba(107,114,128,0.3);background:rgba(107,114,128,0.05);cursor:pointer;transition:all 0.25s;"
-          onmouseenter="this.style.borderColor='rgba(20,184,166,0.5)';this.style.background='rgba(20,184,166,0.08)';this.querySelector('svg').style.stroke='rgba(20,184,166,0.7)';this.querySelectorAll('span')[0].style.color='rgba(20,184,166,0.85)';this.querySelectorAll('span')[1].style.color='rgba(20,184,166,0.6)';"
+          onmouseenter="this.style.borderColor='rgba(107,114,128,0.5)';this.style.background='rgba(107,114,128,0.08)';this.querySelector('svg').style.stroke='rgba(107,114,128,0.7)';this.querySelectorAll('span')[0].style.color='rgba(107,114,128,0.85)';this.querySelectorAll('span')[1].style.color='rgba(107,114,128,0.6)';"
           onmouseleave="this.style.borderColor='rgba(107,114,128,0.3)';this.style.background='rgba(107,114,128,0.05)';this.querySelector('svg').style.stroke='rgba(107,114,128,0.5)';this.querySelectorAll('span')[0].style.color='rgba(107,114,128,0.8)';this.querySelectorAll('span')[1].style.color='rgba(107,114,128,0.5)';">
           <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="rgba(107,114,128,0.5)" stroke-width="1.5" style="transition:all 0.25s;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
           <span style="font-size:15px;font-weight:600;color:rgba(107,114,128,0.8);margin-top:16px;text-align:center;transition:all 0.25s;">Click to add background image</span>
@@ -977,7 +1276,7 @@ function renderCoverCanvas() {
         ondragleave="this.classList.remove('drag-over')"
         ondrop="event.preventDefault();this.classList.remove('drag-over');App._handleCoverDrop(event)"
         style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;padding:36px 48px;border:2px dashed rgba(107,114,128,0.25);cursor:pointer;z-index:5;opacity:0.4;transition:all 0.25s;"
-        onmouseenter="this.style.opacity='1';this.style.borderColor='rgba(20,184,166,0.5)';this.style.background='rgba(20,184,166,0.05)';" onmouseleave="this.style.opacity='0.4';this.style.borderColor='rgba(107,114,128,0.25)';this.style.background='transparent';">
+        onmouseenter="this.style.opacity='1';this.style.borderColor='rgba(107,114,128,0.5)';this.style.background='rgba(107,114,128,0.05)';" onmouseleave="this.style.opacity='0.4';this.style.borderColor='rgba(107,114,128,0.25)';this.style.background='transparent';">
         <div style="display:flex;flex-direction:column;align-items:center;gap:8px;color:rgba(107,114,128,0.6);">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
           <span style="font-size:11px;font-weight:500;">Add background image</span>
@@ -1124,10 +1423,10 @@ function renderBackCoverCanvas() {
           ondragover="event.preventDefault();this.classList.add('drag-over')"
           ondragleave="this.classList.remove('drag-over')"
           ondrop="event.preventDefault();this.classList.remove('drag-over');App._handleBackCoverDrop(event)"
-          style="pointer-events:all;width:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 30px;border:2px dashed rgba(139,92,246,0.3);border-radius:12px;background:rgba(139,92,246,0.03);cursor:pointer;transition:all 0.2s;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(139,92,246,0.4)" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-          <span style="font-size:14px;font-weight:600;color:rgba(139,92,246,0.6);margin-top:14px;text-align:center;">Click to add background image</span>
-          <span style="font-size:11px;color:rgba(139,92,246,0.35);margin-top:4px;">or drag & drop here</span>
+          style="pointer-events:all;width:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 30px;border:2px dashed rgba(107,114,128,0.3);border-radius:12px;background:rgba(107,114,128,0.03);cursor:pointer;transition:all 0.2s;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(107,114,128,0.4)" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          <span style="font-size:14px;font-weight:600;color:rgba(107,114,128,0.6);margin-top:14px;text-align:center;">Click to add background image</span>
+          <span style="font-size:11px;color:rgba(107,114,128,0.35);margin-top:4px;">or drag & drop here</span>
         </div>
         <div style="margin-top:20px;text-align:center;">
           <div style="font-family:'Inter',sans-serif;font-size:12px;color:rgba(0,0,0,0.12);letter-spacing:1px;">Pick a template or add text elements from the right panel</div>
@@ -1178,7 +1477,7 @@ function renderBackCoverCanvas() {
   const fixedBackBtn = `<button class="cover-back-btn-fixed" onclick="App.setActivePage(0)" style="position:fixed;top:70px;left:16px;z-index:9999;padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text1);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3);transition:all 0.15s;" onmouseenter="this.style.background='var(--accent)';this.style.color='#fff';this.style.borderColor='var(--accent)'" onmouseleave="this.style.background='var(--surface)';this.style.color='var(--text1)';this.style.borderColor='var(--border)'" title="Back to pages (Esc)">← Back to Pages</button>`;
   
   // Back cover badge — also fixed position
-  const backBadge = `<span style="position:fixed;top:70px;right:16px;z-index:9999;background:rgba(139,92,246,0.9);color:#fff;font-size:10px;font-weight:700;padding:4px 12px;border-radius:6px;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">BACK COVER</span>`;
+  const backBadge = `<span style="position:fixed;top:70px;right:16px;z-index:9999;background:rgba(107,114,128,0.9);color:#fff;font-size:10px;font-weight:700;padding:4px 12px;border-radius:6px;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">BACK COVER</span>`;
 
   scrollEl.innerHTML = `
     ${fixedBackBtn}
@@ -1272,12 +1571,12 @@ function renderLayoutEditorCanvas() {
   // Grid guides
   const g3 = Math.floor(CW / 3), g2 = Math.floor(CW / 2);
   const guidesHTML = `
-    <div style="position:absolute;left:${g3}px;top:0;width:0;height:100%;border-left:1px dashed rgba(20,184,166,0.2);pointer-events:none;z-index:0;"></div>
-    <div style="position:absolute;left:${g3*2}px;top:0;width:0;height:100%;border-left:1px dashed rgba(20,184,166,0.2);pointer-events:none;z-index:0;"></div>
-    <div style="position:absolute;left:${g2}px;top:0;width:0;height:100%;border-left:1px dashed rgba(20,184,166,0.35);pointer-events:none;z-index:0;"></div>
-    <div style="position:absolute;left:0;top:${Math.floor(CH/2)}px;width:100%;height:0;border-top:1px dashed rgba(20,184,166,0.35);pointer-events:none;z-index:0;"></div>
-    <div style="position:absolute;left:0;top:${Math.floor(CH/3)}px;width:100%;height:0;border-top:1px dashed rgba(20,184,166,0.2);pointer-events:none;z-index:0;"></div>
-    <div style="position:absolute;left:0;top:${Math.floor(CH*2/3)}px;width:100%;height:0;border-top:1px dashed rgba(20,184,166,0.2);pointer-events:none;z-index:0;"></div>
+    <div style="position:absolute;left:${g3}px;top:0;width:0;height:100%;border-left:1px dashed rgba(107,114,128,0.2);pointer-events:none;z-index:0;"></div>
+    <div style="position:absolute;left:${g3*2}px;top:0;width:0;height:100%;border-left:1px dashed rgba(107,114,128,0.2);pointer-events:none;z-index:0;"></div>
+    <div style="position:absolute;left:${g2}px;top:0;width:0;height:100%;border-left:1px dashed rgba(107,114,128,0.35);pointer-events:none;z-index:0;"></div>
+    <div style="position:absolute;left:0;top:${Math.floor(CH/2)}px;width:100%;height:0;border-top:1px dashed rgba(107,114,128,0.35);pointer-events:none;z-index:0;"></div>
+    <div style="position:absolute;left:0;top:${Math.floor(CH/3)}px;width:100%;height:0;border-top:1px dashed rgba(107,114,128,0.2);pointer-events:none;z-index:0;"></div>
+    <div style="position:absolute;left:0;top:${Math.floor(CH*2/3)}px;width:100%;height:0;border-top:1px dashed rgba(107,114,128,0.2);pointer-events:none;z-index:0;"></div>
   `;
 
   // Banner toolbar
@@ -1393,7 +1692,7 @@ function renderCanvas() {
     if (slides.length === 0) {
       // Empty slideshow - show prompt
       panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;">
-        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(20,184,166,0.02);border:2px dashed var(--accent);border-radius:8px;margin:20px;">
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(107,114,128,0.02);border:2px dashed var(--accent);border-radius:8px;margin:20px;">
           <div style="color:var(--accent);margin-bottom:12px;font-size:48px;">🎬</div>
           <div style="color:var(--accent);font-weight:600;font-size:16px;margin-bottom:6px;">Modo Slideshow</div>
           <div style="color:var(--text3);font-size:13px;text-align:center;line-height:1.5;max-width:300px;">Adicione slides usando o painel ao lado para criar uma sequência de imagens com transições e Ken Burns</div>
@@ -1566,7 +1865,7 @@ function renderCanvas() {
       <div style="width:100%;margin-bottom:4px;">
         <div contenteditable="true" class="materia-text-zone"
           style="font-family:${tFont};font-size:${tSize}px;font-weight:${tWeight};color:${tColor};text-align:${tAlign};line-height:${tLeading};letter-spacing:${tLetterSpacing};text-transform:${tUppercase};padding:8px 4px 6px;border-bottom:3px solid rgba(0,0,0,0.15);outline:none;min-height:40px;"
-          onfocus="this.style.borderBottomColor='rgba(20,184,166,0.6)'"
+          onfocus="this.style.borderBottomColor='rgba(107,114,128,0.6)'"
           onblur="this.style.borderBottomColor='rgba(0,0,0,0.15)';App.saveMateriaTitle(${pageIdx},this.innerText)"
           onclick="event.stopPropagation();App.handleTextZoneClick(this, 'materia-titulo')"
           onkeydown="event.stopImmediatePropagation();"
@@ -1578,7 +1877,7 @@ function renderCanvas() {
       <div style="width:100%;margin-bottom:${gap}px;">
         <div contenteditable="true" class="materia-text-zone materia-subtitle"
           style="font-family:${stFont};font-size:${stSize}px;color:${stColor};text-align:${stAlign};text-transform:${stUppercase};letter-spacing:0.12em;font-weight:400;border-top:1px solid #ccc;border-bottom:1px solid #ccc;padding:6px 4px;outline:none;min-height:16px;"
-          onfocus="this.style.borderColor='rgba(20,184,166,0.4)'"
+          onfocus="this.style.borderColor='rgba(107,114,128,0.4)'"
           onblur="this.style.borderTopColor='#ccc';this.style.borderBottomColor='#ccc';App.saveMateriaText(${pageIdx},'subtitulo',this.innerText)"
           onclick="event.stopPropagation();App.handleTextZoneClick(this, 'materia-subtitulo')"
           onkeydown="event.stopImmediatePropagation();"
@@ -1709,9 +2008,9 @@ function renderCanvas() {
       const gutters = findGutters(panels, scaleX, scaleY);
       gutterHTML = gutters.map(g => {
         if (g.dir === 'h') {
-          return `<div class="gutter-handle gutter-h" style="position:absolute;left:${Math.round(g.x)}px;top:${Math.round(g.y - 10)}px;width:${Math.round(g.len)}px;height:20px;cursor:default;z-index:45;display:flex;align-items:center;justify-content:center;" title="Para ajustar proporções, escolha um layout na sidebar ←"><div class="gutter-handle-line" style="width:50px;height:4px;border-radius:2px;background:rgba(20,184,166,0.4);transition:all 0.15s;"></div></div>`;
+          return `<div class="gutter-handle gutter-h" style="position:absolute;left:${Math.round(g.x)}px;top:${Math.round(g.y - 10)}px;width:${Math.round(g.len)}px;height:20px;cursor:default;z-index:45;display:flex;align-items:center;justify-content:center;" title="Para ajustar proporções, escolha um layout na sidebar ←"><div class="gutter-handle-line" style="width:50px;height:4px;border-radius:2px;background:rgba(107,114,128,0.4);transition:all 0.15s;"></div></div>`;
         } else {
-          return `<div class="gutter-handle gutter-v" style="position:absolute;left:${Math.round(g.x - 10)}px;top:${Math.round(g.y)}px;width:20px;height:${Math.round(g.len)}px;cursor:default;z-index:45;display:flex;align-items:center;justify-content:center;" title="Para ajustar proporções, escolha um layout na sidebar ←"><div class="gutter-handle-line" style="width:4px;height:50px;border-radius:2px;background:rgba(20,184,166,0.4);transition:all 0.15s;"></div></div>`;
+          return `<div class="gutter-handle gutter-v" style="position:absolute;left:${Math.round(g.x - 10)}px;top:${Math.round(g.y)}px;width:20px;height:${Math.round(g.len)}px;cursor:default;z-index:45;display:flex;align-items:center;justify-content:center;" title="Para ajustar proporções, escolha um layout na sidebar ←"><div class="gutter-handle-line" style="width:4px;height:50px;border-radius:2px;background:rgba(107,114,128,0.4);transition:all 0.15s;"></div></div>`;
         }
       }).join('');
     }
@@ -1745,9 +2044,9 @@ function renderCanvas() {
   const _nBaseStyle = `font-family:${narrativeFont};text-align:${narrativeStyle.align};${narrativeStyle.bold ? 'font-weight:bold;' : 'font-weight:normal;'}${narrativeStyle.italic ? 'font-style:italic;' : ''}color:${narrativeStyle.color || narrativeStyle.textColor || '#ffffff'};${narrativeStyle.leading ? 'line-height:'+narrativeStyle.leading+';' : ''}text-shadow:0 1px 2px rgba(0,0,0,0.5);letter-spacing:0.01em;`;
   const narrativeHTML = textBelowActive ? `
     <div class="narrative-resize-handle" style="position:absolute;left:0;top:${panelZoneH - 12}px;width:${pageW}px;height:24px;cursor:ns-resize;z-index:50;display:flex;align-items:center;justify-content:center;gap:8px;" onmousedown="App.startNarrativeDrag(event)">
-      <div style="width:40px;height:3px;border-radius:1px;background:rgba(20,184,166,0.5);"></div>
-      <span style="font-size:9px;color:rgba(20,184,166,0.7);font-weight:600;pointer-events:none;">${textBelowH}px${_isDualNarr ? ' · DUAL' : ''}</span>
-      <div style="width:40px;height:3px;border-radius:1px;background:rgba(20,184,166,0.5);"></div>
+      <div style="width:40px;height:3px;border-radius:1px;background:rgba(107,114,128,0.5);"></div>
+      <span style="font-size:9px;color:rgba(107,114,128,0.7);font-weight:600;pointer-events:none;">${textBelowH}px${_isDualNarr ? ' · DUAL' : ''}</span>
+      <div style="width:40px;height:3px;border-radius:1px;background:rgba(107,114,128,0.5);"></div>
     </div>
     <div class="text-below-area narrative-box-pro" style="position:absolute;left:0;top:${panelZoneH}px;width:${pageW}px;height:${textBelowH}px;background:${_nBg};backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 -2px 12px rgba(0,0,0,0.3);">
       ${_isDualNarr ? `
@@ -1840,8 +2139,8 @@ function renderCanvas() {
   const showGuides = isVideoMode ? false : Store.get('showGuides');
   const mx = canvasMarginX, my = canvasMarginY;
   const marginGuides = showGuides ? `
-    <div style="position:absolute;left:${mx}px;top:${my}px;width:${pageW}px;height:${pageH}px;border:1.5px dashed rgba(20,184,166,0.25);pointer-events:none;z-index:5;box-sizing:border-box;"></div>
-    <span style="position:absolute;top:${my - 14}px;left:${mx}px;font-size:8px;color:rgba(20,184,166,0.35);pointer-events:none;z-index:5;">MARGEM</span>` : '';
+    <div style="position:absolute;left:${mx}px;top:${my}px;width:${pageW}px;height:${pageH}px;border:1.5px dashed rgba(107,114,128,0.25);pointer-events:none;z-index:5;box-sizing:border-box;"></div>
+    <span style="position:absolute;top:${my - 14}px;left:${mx}px;font-size:8px;color:rgba(107,114,128,0.35);pointer-events:none;z-index:5;">MARGEM</span>` : '';
 
   // Fixed panel selector buttons (1-9)
   const selectorLayoutId = page.layoutId || LayoutEngine.getDefaultForCount(realImgCount || 1);
@@ -1974,8 +2273,8 @@ function renderCoverRightPanel() {
     <div style="display:flex;align-items:center;gap:8px;padding:6px 4px 10px;border-bottom:1px solid var(--border);margin-bottom:8px;">
       <span style="display:inline-flex;color:var(--accent);">${Icons.palette}</span>
       <div>
-        <div style="font-size:12px;font-weight:700;color:var(--accent);">CAPA DO QUADRINHO</div>
-        <div style="font-size:9px;color:var(--text3);">Design livre · Sem grid de painéis</div>
+        <div style="font-size:12px;font-weight:700;color:var(--accent);">${t('cover.title')}</div>
+        <div style="font-size:9px;color:var(--text3);">${t('cover.subtitle')}</div>
       </div>
     </div>`;
 
@@ -1984,7 +2283,7 @@ function renderCoverRightPanel() {
     const el_id = selectedCoverEl.id;
     const s = selectedCoverEl.style || {};
     const _hex = c => { if (!c || c === 'transparent') return '#000000'; if (/^#[0-9a-f]{6}$/i.test(c)) return c; if (/^#[0-9a-f]{3}$/i.test(c)) return '#'+c[1]+c[1]+c[2]+c[2]+c[3]+c[3]; return '#000000'; };
-    const roleLabels = { title: 'Título', subtitle: 'Subtítulo', author: 'Autor', publisher: 'Editora', tagline: 'Tagline', custom: 'Personalizado' };
+    const roleLabels = { title: t('cover.metaTitle'), subtitle: t('cover.metaSubtitle'), author: t('cover.metaAuthor'), publisher: t('cover.metaPublisher'), tagline: 'Tagline', custom: t('cover.customElement').replace('+ ','') };
     html += `
       <div style="background:var(--surface2);border-radius:6px;padding:8px;margin-bottom:8px;">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;">
@@ -2096,9 +2395,9 @@ function renderCoverRightPanel() {
   // ── ADD TEXT ELEMENTS ──
   html += `
     <div style="margin-bottom:6px;">
-      <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0 6px;">+ ADICIONAR ELEMENTOS</div>
+      <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0 6px;">${t('cover.addElements')}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
-        ${[['title','Título'],['subtitle','Subtítulo'],['author','Autor'],['publisher','Editora'],['tagline','Tagline'],['custom','Personalizado']].map(([role,label]) =>
+        ${[['title',t('cover.titleElement')],['subtitle',t('cover.subtitleElement')],['author',t('cover.authorElement')],['publisher',t('cover.publisherElement')],['tagline',t('cover.taglineElement')],['custom',t('cover.customElement')]].map(([role,label]) =>
           `<button onclick="App.addCoverTextElement('${role}')" style="padding:4px;border-radius:4px;border:1px dashed var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;text-align:center;transition:all 0.12s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">+ ${label}</button>`
         ).join('')}
       </div>
@@ -2109,12 +2408,12 @@ function renderCoverRightPanel() {
   html += `
     <div style="margin-bottom:6px;">
       <div onclick="App.toggleSidebarSection('coverMeta')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
-        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">${Icons.fileText} METADADOS</span>
+        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">${Icons.fileText} ${t('cover.metadata')}</span>
         <span style="font-size:10px;color:var(--text3);">${metaCollapsed ? '+' : '-'}</span>
       </div>
       ${!metaCollapsed ? `
         <div style="display:flex;flex-direction:column;gap:5px;">
-          ${[['title','Título'],['subtitle','Subtítulo'],['author','Autor'],['penciller','Desenhista'],['colorist','Colorista'],['publisher','Editora']].map(([f,l]) =>
+          ${[['title',t('cover.metaTitle')],['subtitle',t('cover.metaSubtitle')],['author',t('cover.metaAuthor')],['penciller',t('cover.metaArtist')],['colorist',t('cover.metaColorist')],['publisher',t('cover.metaPublisher')]].map(([f,l]) =>
             `<div style="display:flex;align-items:center;gap:4px;">
               <span style="font-size:10px;color:var(--text3);width:60px;flex-shrink:0;">${l}</span>
               <input type="text" value="${(cover[f]||'').replace(/"/g,'&quot;')}" onchange="App.updateCoverMeta('${f}',this.value)" placeholder="${l}..." style="flex:1;padding:4px 6px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:10px;outline:none;">
@@ -2126,13 +2425,13 @@ function renderCoverRightPanel() {
               <input type="number" value="${cover.volume||1}" min="1" onchange="App.updateCoverMeta('volume',parseInt(this.value))" style="flex:1;padding:4px 6px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:10px;outline:none;">
             </div>
             <div style="flex:1;display:flex;align-items:center;gap:4px;">
-              <span style="font-size:10px;color:var(--text3);width:30px;">Ano</span>
+              <span style="font-size:10px;color:var(--text3);width:30px;">${t('cover.metaYear')}</span>
               <input type="number" value="${cover.year||new Date().getFullYear()}" min="1900" onchange="App.updateCoverMeta('year',parseInt(this.value))" style="flex:1;padding:4px 6px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:10px;outline:none;">
             </div>
           </div>
           <div style="display:flex;gap:4px;">
             <div style="flex:1;display:flex;align-items:center;gap:4px;">
-              <span style="font-size:10px;color:var(--text3);width:44px;">Gênero</span>
+              <span style="font-size:10px;color:var(--text3);width:44px;">${t('cover.metaGenre')}</span>
               <input type="text" list="genre-suggestions" value="${(cover.genre||'').replace(/"/g,'&quot;')}" onchange="App.updateCoverMeta('genre',this.value)" placeholder="Ex: Aventura..." style="flex:1;padding:4px 6px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:10px;outline:none;">
               <datalist id="genre-suggestions">
                 ${['Aventura','Ação','Drama','Comédia','Terror','Ficção Científica','Romance','Fantasia','Mistério','Slice of Life','Horror','Policial','Sobrenatural','Escolar','Esporte','Histórico','Psicológico'].map(g => '<option value="'+g+'">').join('')}
@@ -2147,8 +2446,8 @@ function renderCoverRightPanel() {
             </div>
           </div>
           <div>
-            <span style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Sinopse</span>
-            <textarea oninput="App.updateCoverMeta('synopsis',this.value)" placeholder="Escreva uma sinopse..." style="width:100%;min-height:60px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);padding:6px;font-size:10px;resize:vertical;outline:none;">${cover.synopsis||''}</textarea>
+            <span style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">${t('cover.metaSynopsis')}</span>
+            <textarea oninput="App.updateCoverMeta('synopsis',this.value)" placeholder="${t('cover.metaSynopsisPlaceholder')}" style="width:100%;min-height:60px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);padding:6px;font-size:10px;resize:vertical;outline:none;">${cover.synopsis||''}</textarea>
           </div>
         </div>
       ` : ''}
@@ -2165,11 +2464,11 @@ function renderCoverRightPanel() {
       ${!designCollapsed ? `
         <div style="display:flex;flex-direction:column;gap:5px;">
           <div style="display:flex;align-items:center;gap:4px;">
-            <span style="font-size:10px;color:var(--text3);flex:1;">Fundo cor</span>
+            <span style="font-size:10px;color:var(--text3);flex:1;">${t('cover.bgColor')}</span>
             <input type="color" value="${cover.backgroundColor||'#ffffff'}" onchange="App.setCoverBgColor(this.value)" style="width:28px;height:22px;border:1px solid var(--border);border-radius:3px;cursor:pointer;padding:0;">
           </div>
           <div style="display:flex;gap:4px;">
-            <button onclick="App.triggerCoverImageUpload()" style="flex:1;padding:5px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:10px;cursor:pointer;">${Icons.imageIcon} ${cover.backgroundImage ? 'Trocar imagem' : 'Fundo imagem'}</button>
+            <button onclick="App.triggerCoverImageUpload()" style="flex:1;padding:5px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:10px;cursor:pointer;">${Icons.imageIcon} ${cover.backgroundImage ? t('cover.changeImage') : t('cover.bgImage')}</button>
             ${cover.backgroundImage ? `<button onclick="App.setCoverBackground(null)" style="padding:5px 8px;border-radius:4px;border:1px solid #c00;background:rgba(200,0,0,0.15);color:#e06060;font-size:10px;cursor:pointer;">✕</button>` : ''}
           </div>
           <div style="display:flex;gap:4px;">
@@ -2183,10 +2482,10 @@ function renderCoverRightPanel() {
   // ── EXPORTAR ──
   html += `
     <div style="margin-bottom:6px;">
-      <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0 6px;">${Icons.export} EXPORTAR</div>
+      <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0 6px;">${Icons.export} ${t('cover.exportSection')}</div>
       <div style="display:flex;flex-direction:column;gap:4px;">
-        <button onclick="App.exportCoverPng()" style="padding:8px;border-radius:6px;border:1px solid var(--accent);background:var(--accent-glow);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;text-align:center;">${Icons.camera} Exportar Capa (PNG)</button>
-        <button onclick="App.openExportPage()" style="padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;cursor:pointer;text-align:center;">${Icons.export} Exportar Projeto Completo</button>
+        <button onclick="App.exportCoverPng()" style="padding:8px;border-radius:6px;border:1px solid var(--accent);background:var(--accent-glow);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;text-align:center;">${Icons.camera} ${t('cover.exportPng')}</button>
+        <button onclick="App.openExportPage()" style="padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;cursor:pointer;text-align:center;">${Icons.export} ${t('cover.exportFull')}</button>
       </div>
     </div>`;
 
@@ -2211,9 +2510,9 @@ function renderBackCoverRightPanel() {
 
   let html = `<div style="padding:6px;font-size:11px;">
     <div style="display:flex;align-items:center;gap:8px;padding:6px 4px 10px;border-bottom:1px solid var(--border);margin-bottom:8px;">
-      <span style="display:inline-flex;color:rgba(139,92,246,0.9);">${Icons.copy}</span>
+      <span style="display:inline-flex;color:rgba(107,114,128,0.9);">${Icons.copy}</span>
       <div>
-        <div style="font-size:12px;font-weight:700;color:rgba(139,92,246,0.9);">CONTRACAPA</div>
+        <div style="font-size:12px;font-weight:700;color:rgba(107,114,128,0.9);">CONTRACAPA</div>
         <div style="font-size:9px;color:var(--text3);">Sinopse, créditos e ISBN</div>
       </div>
     </div>`;
@@ -2227,7 +2526,7 @@ function renderBackCoverRightPanel() {
     html += `
       <div style="background:var(--surface2);border-radius:6px;padding:8px;margin-bottom:8px;">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;">
-          <span style="font-size:10px;font-weight:700;color:rgba(139,92,246,0.9);flex:1;">${Icons.feather} ${roleLabels[selectedBcEl.role] || 'Texto'}</span>
+          <span style="font-size:10px;font-weight:700;color:rgba(107,114,128,0.9);flex:1;">${Icons.feather} ${roleLabels[selectedBcEl.role] || 'Texto'}</span>
           <button onclick="App.deleteCoverElement('${el_id}')" style="padding:2px 6px;border-radius:3px;border:1px solid #c00;background:#400;color:#fff;font-size:10px;cursor:pointer;">✕</button>
         </div>
         <textarea oninput="App.updateCoverElement('${el_id}','text',this.value)"
@@ -2281,7 +2580,7 @@ function renderBackCoverRightPanel() {
       ${!tmplCollapsed ? `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
           ${Object.entries(BACKCOVER_TEMPLATES).map(([id, tmpl]) => `
-            <button onclick="App.applyBackCoverTemplate('${id}')" style="padding:8px 6px;border-radius:6px;border:1.5px solid ${bc.template===id?'rgba(139,92,246,0.8)':'var(--border)'};background:${bc.template===id?'rgba(139,92,246,0.1)':'var(--surface2)'};color:${bc.template===id?'rgba(139,92,246,0.9)':'var(--text2)'};cursor:pointer;text-align:left;font-size:10px;font-weight:${bc.template===id?'700':'400'};transition:all 0.15s;" onmouseenter="this.style.borderColor='rgba(139,92,246,0.6)'" onmouseleave="this.style.borderColor='${bc.template===id?'rgba(139,92,246,0.8)':'var(--border)'}'">
+            <button onclick="App.applyBackCoverTemplate('${id}')" style="padding:8px 6px;border-radius:6px;border:1.5px solid ${bc.template===id?'rgba(107,114,128,0.8)':'var(--border)'};background:${bc.template===id?'rgba(107,114,128,0.1)':'var(--surface2)'};color:${bc.template===id?'rgba(107,114,128,0.9)':'var(--text2)'};cursor:pointer;text-align:left;font-size:10px;font-weight:${bc.template===id?'700':'400'};transition:all 0.15s;" onmouseenter="this.style.borderColor='rgba(107,114,128,0.6)'" onmouseleave="this.style.borderColor='${bc.template===id?'rgba(107,114,128,0.8)':'var(--border)'}'">
               <span style="font-size:16px;display:block;margin-bottom:2px;">${tmpl.icon}</span>
               <span style="font-weight:600;">${tmpl.name}</span>
               ${tmpl.description ? '<br><span style="font-size:8px;opacity:0.6;">'+tmpl.description+'</span>' : ''}
@@ -2294,10 +2593,10 @@ function renderBackCoverRightPanel() {
   // ── ADD TEXT ELEMENTS ──
   html += `
     <div style="margin-bottom:6px;">
-      <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0 6px;">+ ADICIONAR ELEMENTOS</div>
+      <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0 6px;">${t('cover.addElements')}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
         ${[['synopsis','Sinopse'],['tagline','Citação'],['custom','Texto Livre'],['publisher','Editora']].map(([role,label]) =>
-          `<button onclick="App.addCoverTextElement('${role}')" style="padding:4px;border-radius:4px;border:1px dashed var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;text-align:center;transition:all 0.12s;" onmouseenter="this.style.borderColor='rgba(139,92,246,0.6)';this.style.color='rgba(139,92,246,0.9)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">+ ${label}</button>`
+          `<button onclick="App.addCoverTextElement('${role}')" style="padding:4px;border-radius:4px;border:1px dashed var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;text-align:center;transition:all 0.12s;" onmouseenter="this.style.borderColor='rgba(107,114,128,0.6)';this.style.color='rgba(107,114,128,0.9)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">+ ${label}</button>`
         ).join('')}
       </div>
     </div>`;
@@ -2327,8 +2626,8 @@ function renderBackCoverRightPanel() {
   // ── EXPORTAR ──
   html += `
     <div style="margin-bottom:6px;">
-      <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0 6px;">${Icons.export} EXPORTAR</div>
-      <button onclick="App.exportCoverPng()" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(139,92,246,0.6);background:rgba(139,92,246,0.08);color:rgba(139,92,246,0.9);font-size:11px;cursor:pointer;font-weight:600;text-align:center;">${Icons.camera} Exportar Contracapa (PNG)</button>
+      <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0 6px;">${Icons.export} ${t('cover.exportSection')}</div>
+      <button onclick="App.exportCoverPng()" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(107,114,128,0.6);background:rgba(107,114,128,0.08);color:rgba(107,114,128,0.9);font-size:11px;cursor:pointer;font-weight:600;text-align:center;">${Icons.camera} ${t('backCover.title')} (PNG)</button>
     </div>`;
 
   html += `</div>`;
@@ -2341,6 +2640,15 @@ function renderBackCoverRightPanel() {
 function renderRightPanel() {
   const el = document.getElementById('right-panel-content');
   if (!el) return;
+
+  if ((typeof App !== 'undefined' && App.isMobile && App.isMobile()) && Store.get('mobileDrawerContent') === 'tools') {
+    const step = Store.get('mobileWorkflowStep') || 'media';
+    const title = getMobileDrawerContextTitle(step, 'tools');
+    // Use focused text tools panel for text workflow, full left panel for media
+    const content = step === 'text' ? renderMobileTextTools() : renderLeftPanel();
+    el.innerHTML = renderMobileDrawerShell(title, content);
+    return;
+  }
 
   // Preserve sidebar text context panel if matéria zone is active
   const prevTextCtx = el.querySelector('#sidebar-text-context');
@@ -2368,8 +2676,15 @@ function renderRightPanel() {
   
   const collapsed = Store.get('sidebarCollapsed') || {};
   const selectedSticker = selectedEl && selectedEl.type === 'sticker' && page.stickers ? page.stickers[selectedEl.index] : null;
+  const isMobileDrawer = (typeof App !== 'undefined' && App.isMobile && App.isMobile());
+  const mobileStep = Store.get('mobileWorkflowStep') || 'media';
+  const mobileDrawerMode = Store.get('mobileDrawerContent') || 'properties';
+  const shouldShowMobileContextLabel = isMobileDrawer && (mobileStep === 'text' || mobileStep === 'timing');
 
   let html = `<div style="padding:4px 6px;font-size:11px;">`;
+  if (shouldShowMobileContextLabel) {
+    html += `<div class="mobile-panel-context-label">${getMobileDrawerContextTitle(mobileStep, mobileDrawerMode)}</div>`;
+  }
 
   // ── PAINEL ATIVO (Active Panel Card) ──
   const selectedSlot = Store.get('selectedSlot');
@@ -2446,7 +2761,7 @@ function renderRightPanel() {
     };
 
     html += `
-      <div style="background:var(--surface2);border-radius:3px;padding:6px;margin-bottom:4px;">
+      <div id="mobile-anchor-selected-text" style="background:var(--surface2);border-radius:3px;padding:6px;margin-bottom:4px;">
         <!-- HEADER compact -->
         <div style="display:flex;align-items:center;gap:3px;margin-bottom:4px;">
           <span style="font-size:9px;font-weight:700;color:var(--accent);flex:1;">BALÃO #${idx + 1}</span>
@@ -2622,9 +2937,9 @@ function renderRightPanel() {
   const usageMap = Library.getUsageForPage(proj, pageIdx);
   
   html += `
-    <div style="margin-bottom:6px;">
+    <div id="mobile-anchor-library" style="margin-bottom:6px;">
       <div onclick="App.toggleSidebarSection('biblioteca')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
-        <span style="font-size:10px;font-weight:700;color:var(--accent);flex:1;">${Icons.folder} BIBLIOTECA (${libEntries.length})</span>
+        <span style="font-size:10px;font-weight:700;color:var(--accent);flex:1;">${Icons.folder} ${t('sidebar.library')} (${libEntries.length})</span>
         <span style="font-size:10px;color:var(--text3);">${libCollapsed ? '+' : '-'}</span>
       </div>
       ${!libCollapsed ? `
@@ -2636,14 +2951,14 @@ function renderRightPanel() {
             const usage = usageMap[entry.id] || 'unused';
             const usageDot = usage === 'current' ? '<div class="lib-usage-dot current" title="Usada nesta página"></div>'
               : usage === 'other' ? '<div class="lib-usage-dot other" title="Usada em outra página"></div>' : '';
-            return '<div class="library-thumb" onclick="App.insertLibraryImage(\'' + escapedSrc + '\')" draggable="true" ondragstart="event.dataTransfer.setData(\'text/plain\',\'libimg:' + escapedSrc + '\');event.dataTransfer.effectAllowed=\'copy\';" title="Clique: inserir ' + insertHint + '&#10;Arraste: soltar em um quadro&#10;Fonte: ' + (entry.source || 'upload') + '" style="aspect-ratio:1;border-radius:4px;overflow:hidden;border:1px solid var(--border);cursor:grab;position:relative;transition:all 0.12s;" onmouseenter="this.style.transform=\'scale(1.08)\';this.style.borderColor=\'var(--accent)\';this.style.boxShadow=\'0 2px 8px rgba(20,184,166,0.3)\';App._libHoverTimer=setTimeout(()=>App.showLibraryPreview(this, \'' + escapedSrc + '\'), 300);" onmouseleave="this.style.transform=\'scale(1)\';this.style.borderColor=\'var(--border)\';this.style.boxShadow=\'none\';clearTimeout(App._libHoverTimer);App.hideLibraryPreview();"><img src="' + entry.src + '" style="width:100%;height:100%;object-fit:cover;pointer-events:none;">' + usageDot + '<div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 40%);opacity:0;transition:opacity 0.15s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;gap:3px;" class="lib-thumb-overlay"><span onclick="event.stopPropagation();App.insertLibraryImage(\'' + escapedSrc + '\')" style="color:#fff;font-size:9px;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,0.8);background:rgba(20,184,166,0.8);padding:1px 5px;border-radius:3px;cursor:pointer;">+ Usar</span><span onclick="event.stopPropagation();App.removeFromLibrary(\'' + entry.id + '\')" style="color:#fff;font-size:9px;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,0.8);background:rgba(200,0,0,0.7);padding:1px 5px;border-radius:3px;cursor:pointer;">✕</span></div></div>';
+            return '<div class="library-thumb" onclick="App.insertLibraryImage(\'' + escapedSrc + '\')" draggable="true" ondragstart="event.dataTransfer.setData(\'text/plain\',\'libimg:' + escapedSrc + '\');event.dataTransfer.effectAllowed=\'copy\';" title="Clique: inserir ' + insertHint + '&#10;Arraste: soltar em um quadro&#10;Fonte: ' + (entry.source || 'upload') + '" style="aspect-ratio:1;border-radius:4px;overflow:hidden;border:1px solid var(--border);cursor:grab;position:relative;transition:all 0.12s;" onmouseenter="this.style.transform=\'scale(1.08)\';this.style.borderColor=\'var(--accent)\';this.style.boxShadow=\'0 2px 8px rgba(107,114,128,0.3)\';App._libHoverTimer=setTimeout(()=>App.showLibraryPreview(this, \'' + escapedSrc + '\'), 300);" onmouseleave="this.style.transform=\'scale(1)\';this.style.borderColor=\'var(--border)\';this.style.boxShadow=\'none\';clearTimeout(App._libHoverTimer);App.hideLibraryPreview();"><img src="' + entry.src + '" style="width:100%;height:100%;object-fit:cover;pointer-events:none;">' + usageDot + '<div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 40%);opacity:0;transition:opacity 0.15s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;gap:3px;" class="lib-thumb-overlay"><span onclick="event.stopPropagation();App.insertLibraryImage(\'' + escapedSrc + '\')" style="color:#fff;font-size:9px;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,0.8);background:rgba(107,114,128,0.8);padding:1px 5px;border-radius:3px;cursor:pointer;">+ Usar</span><span onclick="event.stopPropagation();App.removeFromLibrary(\'' + entry.id + '\')" style="color:#fff;font-size:9px;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,0.8);background:rgba(200,0,0,0.7);padding:1px 5px;border-radius:3px;cursor:pointer;">✕</span></div></div>';
           }).join('')}
         </div>
         <style>.library-thumb:hover .lib-thumb-overlay{opacity:1!important;}</style>
         ${libEntries.length > 24 ? '<div style="font-size:9px;color:var(--text3);padding:2px 0 4px;">+' + (libEntries.length - 24) + ' mais imagens</div>' : ''}
-        <div style="display:flex;gap:4px;">
-          <button onclick="App.triggerImageUpload()" style="flex:1;padding:5px;border-radius:4px;background:transparent;border:1px dashed var(--accent);color:var(--accent);cursor:pointer;font-size:10px;font-weight:600;">+ Upload</button>
-          <button onclick="App.promptImageUrl()" style="flex:1;padding:5px;border-radius:4px;background:transparent;border:1px dashed var(--accent);color:var(--accent);cursor:pointer;font-size:10px;font-weight:600;">+ URL</button>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <button onclick="App.triggerImageUpload()" style="flex:1;padding:7px 10px;border-radius:3px;background:transparent;border:1px dashed var(--border3);color:var(--text2);cursor:pointer;font-size:10px;font-weight:600;transition:all 0.15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';" onmouseleave="this.style.borderColor='var(--border3)';this.style.color='var(--text2)';">+ Upload</button>
+          <button onclick="App.promptImageUrl()" style="flex:1;padding:7px 10px;border-radius:3px;background:transparent;border:1px dashed var(--border3);color:var(--text2);cursor:pointer;font-size:10px;font-weight:600;transition:all 0.15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';" onmouseleave="this.style.borderColor='var(--border3)';this.style.color='var(--text2)';">+ URL</button>
         </div>
       ` : ''}
     </div>`;
@@ -2658,7 +2973,7 @@ function renderRightPanel() {
     const slideshowCollapsed = collapsed.slideshow;
     
     html += `
-      <div style="margin-bottom:6px;border:2px solid var(--accent);border-radius:6px;padding:6px;background:rgba(20,184,166,0.05);">
+      <div style="margin-bottom:6px;border:2px solid var(--accent);border-radius:6px;padding:6px;background:rgba(107,114,128,0.05);">
         <div onclick="App.toggleSidebarSection('slideshow')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
           <span style="font-size:11px;font-weight:700;color:var(--accent);flex:1;">🎬 SLIDESHOW (${slides.length} slides)</span>
           <span style="font-size:10px;color:var(--accent);">${slideshowCollapsed ? '+' : '-'}</span>
@@ -2751,7 +3066,7 @@ function renderRightPanel() {
           <!-- Actions -->
           <div style="display:flex;gap:4px;margin-bottom:4px;">
             <button onclick="App.addSlideFromLibrary()" 
-                    style="flex:1;padding:6px;border-radius:4px;border:1px dashed var(--accent);background:rgba(20,184,166,0.06);color:var(--accent);font-size:10px;cursor:pointer;font-weight:600;">+ Adicionar Slide</button>
+                    style="flex:1;padding:6px;border-radius:4px;border:1px dashed var(--accent);background:rgba(107,114,128,0.06);color:var(--accent);font-size:10px;cursor:pointer;font-weight:600;">+ Adicionar Slide</button>
             <button onclick="App.divideSlidesEqually()" title="Dividir tempo igualmente entre slides" 
                     style="padding:6px 8px;border-radius:4px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-size:10px;cursor:pointer;font-weight:600;">⚡ Dividir Igual</button>
           </div>
@@ -2781,13 +3096,13 @@ function renderRightPanel() {
   html += `
     <div style="margin-bottom:6px;">
       <div onclick="App.toggleSidebarSection('pageSettings')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
-        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">PÁGINA</span>
+        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">${t('sidebar.page')}</span>
         <span style="font-size:10px;color:var(--text3);">${pageCollapsed ? '+' : '-'}</span>
       </div>
       ${!pageCollapsed ? `
         <div style="display:flex;flex-direction:column;gap:4px;">
           <!-- + Nova Página (prominent, near layout) -->
-          <button onclick="App.addPage()" style="width:100%;padding:6px;border-radius:4px;border:1px dashed var(--accent);background:rgba(20,184,166,0.06);color:var(--accent);font-size:10px;cursor:pointer;font-weight:600;">+ Nova Página</button>
+          <button onclick="App.addPage()" style="width:100%;padding:6px;border-radius:4px;border:1px dashed var(--accent);background:rgba(107,114,128,0.06);color:var(--accent);font-size:10px;cursor:pointer;font-weight:600;">${t('sidebar.newPageFull')}</button>
           
           ${_isVideoProject ? '' : `
           <div style="display:flex;align-items:center;gap:4px;">
@@ -2815,11 +3130,11 @@ function renderRightPanel() {
           
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0;">
             <input type="checkbox" ${proj?.settings?.autoPastePage ? 'checked' : ''} onchange="App.toggleAutoPastePage(this.checked)" style="accent-color:var(--accent);">
-            <span style="font-size:9px;color:var(--text2);flex:1;">Colar imagem cria nova página (layout full)</span>
+            <span style="font-size:9px;color:var(--text2);flex:1;">${t('sidebar.createImageOrPage')}</span>
           </label>
 
           <div style="display:flex;gap:4px;">
-            <button onclick="App.savePageAsPng()" title="Salvar esta página como PNG" style="flex:1;padding:4px;border-radius:4px;border:1px solid var(--accent);background:var(--accent-glow);color:var(--accent);font-size:10px;cursor:pointer;font-weight:600;">${Icons.camera} Salvar PNG</button>
+            <button onclick="App.savePageAsPng()" title="Salvar esta página como PNG" style="flex:1;padding:4px;border-radius:4px;border:1px solid var(--accent);background:var(--accent-glow);color:var(--accent);font-size:10px;cursor:pointer;font-weight:600;">${Icons.camera} ${t('sidebar.savePng')}</button>
             <button onclick="App.resetPanelOverrides()" title="Resetar layout" style="flex:1;padding:4px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:10px;cursor:pointer;font-weight:500;">↺ Resetar</button>
           </div>
         </div>
@@ -2827,7 +3142,7 @@ function renderRightPanel() {
     </div>`;
 
   // ── EFEITOS VISUAIS (per-image, 6 effects with radio selection) ──
-  const fxCollapsed = collapsed.visualEffects;
+  const fxCollapsed = collapsed.visualEffects === undefined ? true : collapsed.visualEffects;
   const selSlot = Store.get('selectedSlot');
   const selImg = (selSlot >= 0 && page.images) ? page.images[selSlot] : null;
   const hasImage = selImg && selImg.src;
@@ -2888,12 +3203,12 @@ function renderRightPanel() {
   html += `
     <div style="margin-bottom:4px;">
       <div onclick="App.toggleSidebarSection('visualEffects')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
-        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">EFEITOS</span>
+        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">${t('sidebar.effects')}</span>
         <span style="font-size:10px;color:var(--text3);">${fxCollapsed ? '+' : '-'}</span>
       </div>
       ${!fxCollapsed ? `
         <div class="fx-section">
-          ${!hasImage ? `<div style="padding:12px 8px;text-align:center;color:var(--text3);font-size:10px;">Selecione um painel com imagem</div>` : `
+          ${!hasImage ? `<div style="padding:12px 8px;text-align:center;color:var(--text3);font-size:10px;">${t('sidebar.selectPanelWithImage')}</div>` : `
           ${EFFECT_DEFINITIONS.map(e => `
             <div class="effect-option ${currentEffect === e.id ? 'active' : ''}" onclick="App.selectEffect('${e.id}')">
               <div class="effect-radio ${currentEffect === e.id ? 'checked' : ''}"></div>
@@ -2914,7 +3229,7 @@ function renderRightPanel() {
             ` : ''}
           `).join('')}
           <div style="display:flex;gap:6px;margin-top:10px;">
-            <button onclick="App.applyEffectToAll()" style="flex:1;padding:6px;border-radius:4px;border:1px solid var(--accent);background:rgba(20,184,166,0.1);color:var(--accent);font-size:10px;font-weight:600;cursor:pointer;">Aplicar a Todas</button>
+            <button onclick="App.applyEffectToAll()" style="flex:1;padding:6px;border-radius:4px;border:1px solid var(--accent);background:rgba(107,114,128,0.1);color:var(--accent);font-size:10px;font-weight:600;cursor:pointer;">Aplicar a Todas</button>
             <button onclick="App.resetEffect()" style="flex:1;padding:6px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:10px;font-weight:600;cursor:pointer;">Resetar</button>
           </div>
           `}
@@ -2931,7 +3246,7 @@ function renderRightPanel() {
   const narrativeMode = proj?.narrativeMode || 'per-page';
   if (showNarrative) {
     html += `
-    <div style="margin-bottom:4px;">
+    <div id="mobile-anchor-narrative" style="margin-bottom:4px;">
       <div onclick="App.toggleSidebarSection('narrative')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
         <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">NARRATIVA</span>
         <span style="font-size:8px;padding:2px 4px;border-radius:3px;background:${activeLangSidebar === 'pt-BR' ? '#22c55e' : '#3b82f6'};color:#fff;font-weight:600;margin-right:4px;">${activeLangSidebar === 'pt-BR' ? 'PT' : 'EN'}</span>
@@ -2942,7 +3257,7 @@ function renderRightPanel() {
   }
 
   // ── LAYERS (unified: images + balloons + stickers + narrative) ──
-  const layersCollapsed = collapsed.layers;
+  const layersCollapsed = collapsed.layers === undefined ? true : collapsed.layers;
   const imageCount = page.images ? page.images.filter(img => img && img.src).length : 0;
   const balloonCount = page.texts ? page.texts.length : 0;
   const stickerCount = page.stickers ? page.stickers.length : 0;
@@ -2953,7 +3268,7 @@ function renderRightPanel() {
   html += `
     <div style="margin-bottom:4px;">
       <div onclick="App.toggleSidebarSection('layers')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
-        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">CAMADAS (${totalLayers})</span>
+        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">${t('sidebar.layers')} (${totalLayers})</span>
         <span style="font-size:10px;color:var(--text3);">${layersCollapsed ? '+' : '-'}</span>
       </div>
       ${!layersCollapsed ? `
@@ -3045,7 +3360,7 @@ function renderRightPanel() {
     </div>`;
 
   // ── ÁUDIO (HQ Movie Audio System) ──
-  const audioCollapsed = collapsed.audio === undefined ? false : collapsed.audio;
+  const audioCollapsed = collapsed.audio === undefined ? true : collapsed.audio;
   const videoAudio = proj.videoAudio || { background: { file: null, volume: 0.6, loop: true }, pages: [] };
   const bgMusic = videoAudio.background;
   const pageNarration = AudioManager.getPageNarration(proj, page.id);
@@ -3056,7 +3371,7 @@ function renderRightPanel() {
   html += `
     <div style="margin-bottom:4px;">
       <div onclick="App.toggleSidebarSection('audio')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
-        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">${Icons.music} ÁUDIO</span>
+        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">${Icons.music} ${t('sidebar.audio')}</span>
         <span style="font-size:10px;color:var(--text3);">${audioCollapsed ? '+' : '-'}</span>
       </div>
       ${!audioCollapsed ? `
@@ -3064,7 +3379,7 @@ function renderRightPanel() {
           
           <!-- Música de Fundo -->
           <div style="background:var(--surface2);border-radius:6px;padding:8px;">
-            <div style="font-size:9px;font-weight:700;color:var(--accent);margin-bottom:6px;">${Icons.music} MÚSICA DE FUNDO</div>
+            <div style="font-size:9px;font-weight:700;color:var(--accent);margin-bottom:6px;">${Icons.music} ${t('sidebar.backgroundMusic')}</div>
             ${bgMusic.file ? `
               <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
                 <button onclick="App.toggleBackgroundMusic()" title="${isPlayingBg ? 'Pausar' : 'Play'}" 
@@ -3097,7 +3412,7 @@ function renderRightPanel() {
           
           <!-- Narração da Página (Multi-idioma) -->
           <div style="background:var(--surface2);border-radius:6px;padding:8px;">
-            <div style="font-size:9px;font-weight:700;color:var(--warning);margin-bottom:8px;">${Icons.mic} NARRAÇÃO - Página ${Store.get('activePageIndex') + 1}</div>
+            <div style="font-size:9px;font-weight:700;color:var(--warning);margin-bottom:8px;">${Icons.mic} ${t('sidebar.narrationPage')} ${Store.get('activePageIndex') + 1}</div>
             
             <!-- PT-BR Narração -->
             <div style="margin-bottom:6px;padding:6px;background:var(--surface);border-radius:4px;border-left:3px solid #22c55e;">
@@ -3136,12 +3451,12 @@ function renderRightPanel() {
           
           <!-- Criar Páginas por Áudio -->
           <div style="background:var(--surface2);border-radius:6px;padding:8px;">
-            <div style="font-size:9px;font-weight:700;color:#f59e0b;margin-bottom:4px;">${Icons.scissors} CRIAR PÁGINAS POR ÁUDIO</div>
+            <div style="font-size:9px;font-weight:700;color:#f59e0b;margin-bottom:4px;">${Icons.scissors} ${t('sidebar.createPagesFromAudio')}</div>
             <div style="font-size:8px;color:var(--text3);margin-bottom:6px;line-height:1.3;">
               Áudio longo → divida → cada parte vira uma página.
             </div>
             <button onclick="App.openAudioSplitEditor()" style="width:100%;padding:6px;border-radius:4px;background:#4b5563;border:none;color:#fff;cursor:pointer;font-size:10px;font-weight:600;">
-              ${Icons.scissors} Abrir Editor de Corte
+              ${Icons.scissors} ${t('sidebar.openCutEditor')}
             </button>
           </div>
           
@@ -3152,7 +3467,7 @@ function renderRightPanel() {
   // ── DURAÇÃO (colapsável) ──
   const durationCollapsed = collapsed.duration === undefined ? false : collapsed.duration;
   html += `
-    <div style="margin-bottom:4px;">
+    <div id="mobile-anchor-duration" style="margin-bottom:4px;">
       <div onclick="App.toggleSidebarSection('duration')" style="display:flex;align-items:center;gap:6px;padding:4px 0;cursor:pointer;user-select:none;">
         <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;display:flex;align-items:center;gap:6px;">${Icons.clock} DURAÇÃO</span>
         <span style="font-size:10px;color:var(--text3);">${durationCollapsed ? '+' : '-'}</span>
@@ -3292,142 +3607,184 @@ function renderNarrativeControlsMarkup({ page, proj, panelMode = 'sidebar' } = {
 
   const style = { font: 'serif', size: 48, align: 'justify', color: '#ffffff', textColor: '#ffffff', bgColor: '#000000', bgOpacity: 0.55, leading: 1.4, bold: false, italic: false, ...(activePage.narrativeStyle || {}) };
   const settings = { heightLocked: false, fontSizeLocked: false, overflow: 'shrink', minFontSize: 12, warnOnMin: false, ...(project.narrativeSettings || {}) };
-  const preview = typeof App !== 'undefined' && App.getNarrativeLayoutInfo
-    ? App.getNarrativeLayoutInfo(activePage, project)
-    : { height: activePage.narrativeHeight || 120, baseSize: style.size || 48, finalSize: style.size || 48, statusLabel: '✓ Texto cabe', statusColor: '#22c55e' };
   const fontList = Object.values(APP_FONTS || {}).filter(f => f && (f.category === 'text' || f.category === 'display'));
   const fontOpts = fontList.map(f => `<option value="${f.id}" ${style.font === f.id ? 'selected' : ''}>${f.name}</option>`).join('');
-  const fontPreview = preview.baseSize === preview.finalSize ? `${preview.baseSize}px` : `${preview.baseSize}px → ${preview.finalSize}px`;
-  const minDisabled = settings.overflow !== 'shrink';
   const textColor = style.color || style.textColor || '#ffffff';
   const _btn = (active) => `width:28px;height:28px;border-radius:4px;border:1px solid ${active ? '#3182ce' : '#4a5568'};background:${active ? '#3182ce' : 'transparent'};color:${active ? '#fff' : '#a0aec0'};display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;`;
 
+  // Get accordion states from Store
+  const narrAccordion = Store.get('narrAccordion') || { basicText: true, advancedLayout: false, position: true, bilingual: false };
+  const _expanded = (key) => narrAccordion[key] ? 'expanded' : 'collapsed';
+  const _icon = (key) => narrAccordion[key] ? '▼' : '▶';
+
+  // Position/Safe Zones data
+  const _fmt = project.videoFormat || 'vertical';
+  const _isVert = _fmt === 'vertical';
+  const _textPos = style.position || (typeof SafeZones !== 'undefined' ? SafeZones.defaultPosition(_fmt) : 'top');
+  const _unsafeBot = _isVert;
+  const _posBtn = (pos, label, desc, isUnsafe) => {
+    const isActive = _textPos === pos;
+    const borderC = isActive ? (isUnsafe ? '#ef4444' : 'var(--accent, #14b8a6)') : '#4a5568';
+    const bgC = isActive ? (isUnsafe ? 'rgba(239,68,68,0.15)' : 'rgba(107,114,128,0.15)') : 'transparent';
+    const txtC = isActive ? (isUnsafe ? '#ef4444' : 'var(--accent, #14b8a6)') : '#a0aec0';
+    return `<button onclick="App.setTextPosition('${pos}')" style="flex:1;padding:6px 4px;border-radius:4px;border:1px solid ${borderC};background:${bgC};color:${txtC};font-size:10px;cursor:pointer;font-weight:${isActive ? '700' : '400'};display:flex;flex-direction:column;align-items:center;gap:2px;" title="${desc}"><span>${label}</span>${isUnsafe && isActive ? '<span style="font-size:8px;color:#ef4444;font-weight:600;">UNSAFE</span>' : ''}</button>`;
+  };
+  const _topDesc = _isVert ? t('safeZones.topDescVertical') : t('safeZones.topDesc');
+  const _midDesc = t('safeZones.middleDesc');
+  const _botDesc = _isVert ? t('safeZones.bottomDescVertical') : t('safeZones.bottomDesc');
+  const isDual = (project.narrativeDisplay || 'single') === 'dual';
+
   return `
-    <div class="narrative-controls-shell" style="display:flex;flex-direction:column;gap:10px;padding:${panelMode === 'context' ? '10px' : '12px'};">
+    <div class="narr-accordion" style="padding:${panelMode === 'context' ? '8px' : '10px'};">
 
-      <div style="display:flex;gap:6px;align-items:end;">
-        <label style="flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;">
-          <span style="font-size:10px;font-weight:600;color:#a0aec0;">Fonte</span>
-          <select onchange="App.setNarrativeStyle('font', this.value)" style="height:30px;padding:0 8px;border-radius:4px;border:1px solid #3a3a3a;background:#2a2a2a;color:#fff;font-size:11px;min-width:0;">
-            ${fontOpts}
-          </select>
-        </label>
-        <label style="width:64px;display:flex;flex-direction:column;gap:3px;">
-          <span style="font-size:10px;font-weight:600;color:#a0aec0;">Tamanho</span>
-          <input type="number" min="8" max="250" step="1" value="${style.size || 48}" onchange="App.setNarrativeStyle('size', parseInt(this.value,10))" style="height:30px;padding:0 6px;border-radius:4px;border:1px solid #3a3a3a;background:#2a2a2a;color:#fff;font-size:11px;text-align:center;outline:none;">
-        </label>
-      </div>
-
-      <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
-        <button onclick="App.setNarrativeStyle('bold',!${!!style.bold})" title="Negrito" style="${_btn(!!style.bold)}font-weight:800;">B</button>
-        <button onclick="App.setNarrativeStyle('italic',!${!!style.italic})" title="Itálico" style="${_btn(!!style.italic)}font-style:italic;">I</button>
-        <span style="width:1px;height:20px;background:#3a3a3a;margin:0 2px;"></span>
-        <button onclick="App.setNarrativeStyle('align','left')" title="Esquerda" style="${_btn(style.align==='left')}">${_stpAlignSVG('left')}</button>
-        <button onclick="App.setNarrativeStyle('align','center')" title="Centro" style="${_btn(style.align==='center')}">${_stpAlignSVG('center')}</button>
-        <button onclick="App.setNarrativeStyle('align','right')" title="Direita" style="${_btn(style.align==='right')}">${_stpAlignSVG('right')}</button>
-        <button onclick="App.setNarrativeStyle('align','justify')" title="Justificar" style="${_btn(style.align==='justify')}">${_stpAlignSVG('justify')}</button>
-      </div>
-
-      <div style="display:flex;gap:6px;align-items:center;">
-        <label style="display:flex;align-items:center;gap:4px;flex:1;" title="Cor do texto">
-          <input type="color" value="${textColor}" onchange="App.setNarrativeStyle('color', this.value)" style="width:24px;height:24px;border:1px solid #3a3a3a;border-radius:4px;padding:0;cursor:pointer;background:transparent;">
-          <span style="font-size:10px;color:#a0aec0;">Texto</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:4px;flex:1;" title="Cor de fundo">
-          <input type="color" value="${style.bgColor && style.bgColor.startsWith('#') ? style.bgColor : '#000000'}" onchange="App.setNarrativeStyle('bgColor', this.value)" style="width:24px;height:24px;border:1px solid #3a3a3a;border-radius:4px;padding:0;cursor:pointer;background:transparent;">
-          <span style="font-size:10px;color:#a0aec0;">Fundo</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:4px;" title="Opacidade do fundo">
-          <input type="range" min="0" max="100" step="5" value="${Math.round((style.bgOpacity ?? 0.55) * 100)}" oninput="this.nextElementSibling.textContent=this.value+'%'; App.setNarrativeStyle('bgOpacity', this.value/100)" style="width:60px;accent-color:#60a5fa;">
-          <span style="font-size:10px;color:#a0aec0;min-width:28px;text-align:right;">${Math.round((style.bgOpacity ?? 0.55) * 100)}%</span>
-        </label>
-      </div>
-
-      <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:10px;font-weight:600;color:#a0aec0;width:44px;">Leading</span>
-        <input type="range" min="0.8" max="3" step="0.1" value="${style.leading || 1.4}" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1); App.setNarrativeStyle('leading', parseFloat(this.value))" style="flex:1;accent-color:#60a5fa;">
-        <span style="min-width:24px;font-size:11px;color:#e2e8f0;text-align:right;">${Number(style.leading || 1.4).toFixed(1)}</span>
-      </div>
-
-      <div style="display:flex;gap:6px;align-items:end;">
-        <label style="flex:1;display:flex;flex-direction:column;gap:3px;">
-          <span style="font-size:10px;font-weight:600;color:#a0aec0;">Altura</span>
-          <div style="display:flex;align-items:center;gap:4px;">
-            <input type="number" min="40" max="420" step="10" value="${activePage.narrativeHeight || 120}" ${settings.heightLocked ? 'disabled' : ''} onchange="App.setNarrativeHeight(parseInt(this.value,10))" style="flex:1;height:30px;padding:0 6px;border-radius:4px;border:1px solid #3a3a3a;background:${settings.heightLocked ? '#222' : '#2a2a2a'};color:#fff;font-size:11px;outline:none;opacity:${settings.heightLocked ? '0.5' : '1'};">
-            <span style="font-size:10px;color:#666;">px</span>
-            <button onclick="App.setNarrativeLock('height')" title="${settings.heightLocked ? 'Destravar' : 'Travar'}" style="width:28px;height:28px;border-radius:4px;border:1px solid ${settings.heightLocked ? '#3182ce' : '#4a5568'};background:${settings.heightLocked ? '#3182ce' : 'transparent'};color:${settings.heightLocked ? '#fff' : '#a0aec0'};cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;">${settings.heightLocked ? Icons.lock : Icons.unlock}</button>
+      <!-- SECTION 1: Basic Text (expanded by default) -->
+      <div class="narr-section" data-narr-section="basicText">
+        <div class="narr-section-header" onclick="App.toggleNarrSection('basicText')">
+          <span class="narr-toggle-icon">${_icon('basicText')}</span>
+          <span class="narr-section-title">${t('sidebar.basicText')}</span>
+          <span class="narr-section-count">6</span>
+        </div>
+        <div class="narr-section-content ${_expanded('basicText')}">
+          <div style="display:flex;gap:6px;align-items:end;margin-bottom:8px;">
+            <label style="flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;">
+              <span style="font-size:10px;font-weight:600;color:#a0aec0;">Fonte</span>
+              <select onchange="App.setNarrativeStyle('font', this.value)" style="height:28px;padding:0 6px;border-radius:4px;border:1px solid #3a3a3a;background:#2a2a2a;color:#fff;font-size:11px;min-width:0;">
+                ${fontOpts}
+              </select>
+            </label>
+            <label style="width:56px;display:flex;flex-direction:column;gap:3px;">
+              <span style="font-size:10px;font-weight:600;color:#a0aec0;">Tam.</span>
+              <input type="number" min="8" max="250" step="1" value="${style.size || 48}" onchange="App.setNarrativeStyle('size', parseInt(this.value,10))" style="height:28px;padding:0 4px;border-radius:4px;border:1px solid #3a3a3a;background:#2a2a2a;color:#fff;font-size:11px;text-align:center;outline:none;">
+            </label>
           </div>
-        </label>
-      </div>
-
-      <div style="padding:8px;border-radius:4px;background:#222;border:1px solid #333;">
-        <span style="font-size:10px;font-weight:600;color:#a0aec0;display:block;margin-bottom:6px;">Se o texto não couber:</span>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#ccc;cursor:pointer;" title="Reduz o tamanho da fonte automaticamente até caber">
-            <input type="radio" name="narr-overflow-${panelMode}" value="shrink" ${settings.overflow === 'shrink' ? 'checked' : ''} onchange="if(this.checked) App.setNarrativeAutoFit(this.value)" style="accent-color:#60a5fa;margin:0;">
-            <span>${Icons.arrowDown} Diminuir fonte automaticamente</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#ccc;cursor:pointer;" title="Adiciona reticências (...) no final do texto">
-            <input type="radio" name="narr-overflow-${panelMode}" value="truncate" ${settings.overflow === 'truncate' ? 'checked' : ''} onchange="if(this.checked) App.setNarrativeAutoFit(this.value)" style="accent-color:#60a5fa;margin:0;">
-            <span>${Icons.scissors} Cortar com reticências...</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#ccc;cursor:pointer;" title="Apenas mostra um aviso, mas não altera nada">
-            <input type="radio" name="narr-overflow-${panelMode}" value="warn" ${settings.overflow === 'warn' ? 'checked' : ''} onchange="if(this.checked) App.setNarrativeAutoFit(this.value)" style="accent-color:#60a5fa;margin:0;">
-            <span>${Icons.alert} Só me avisar</span>
-          </label>
-        </div>
-        ${settings.overflow === 'shrink' ? `<div style="display:flex;align-items:center;gap:6px;margin-top:6px;padding-top:6px;border-top:1px solid #333;">
-          <span style="font-size:10px;color:#a0aec0;">Mín:</span>
-          <input type="number" min="8" max="100" step="1" value="${settings.minFontSize || 12}" onchange="App.setNarrativeMinFont(parseInt(this.value,10))" style="width:48px;height:24px;padding:0 4px;border-radius:4px;border:1px solid #3a3a3a;background:#2a2a2a;color:#fff;font-size:11px;outline:none;text-align:center;">
-          <span style="font-size:10px;color:#666;">px</span>
-          <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:#888;cursor:pointer;margin-left:auto;">
-            <input type="checkbox" ${settings.warnOnMin ? 'checked' : ''} onchange="App.setNarrativeWarnOnMin(this.checked)" style="accent-color:#60a5fa;margin:0;">
-            Avisar
-          </label>
-        </div>` : ''}
-      </div>
-
-      <div style="padding:8px;border-radius:4px;background:#222;border:1px solid #333;">
-        <span style="font-size:10px;font-weight:600;color:#a0aec0;display:block;margin-bottom:6px;">${Icons.crosshair} Posição do texto:</span>
-        <div style="display:flex;gap:4px;">
-          <button onclick="App.setNarrativePosition('top')" style="flex:1;padding:6px 8px;border-radius:4px;border:1px solid ${(project.narrativePosition || 'bottom') === 'top' ? 'var(--accent, #14b8a6)' : '#4a5568'};background:${(project.narrativePosition || 'bottom') === 'top' ? 'rgba(20,184,166,0.15)' : 'transparent'};color:${(project.narrativePosition || 'bottom') === 'top' ? 'var(--accent, #14b8a6)' : '#a0aec0'};font-size:10px;cursor:pointer;font-weight:${(project.narrativePosition || 'bottom') === 'top' ? '600' : '400'};" title="Texto no topo da página">${Icons.arrowUp} Topo</button>
-          <button onclick="App.setNarrativePosition('bottom')" style="flex:1;padding:6px 8px;border-radius:4px;border:1px solid ${(project.narrativePosition || 'bottom') === 'bottom' ? 'var(--accent, #14b8a6)' : '#4a5568'};background:${(project.narrativePosition || 'bottom') === 'bottom' ? 'rgba(20,184,166,0.15)' : 'transparent'};color:${(project.narrativePosition || 'bottom') === 'bottom' ? 'var(--accent, #14b8a6)' : '#a0aec0'};font-size:10px;cursor:pointer;font-weight:${(project.narrativePosition || 'bottom') === 'bottom' ? '600' : '400'};" title="Texto embaixo da página">${Icons.arrowDown} Embaixo</button>
-          <button onclick="App.setNarrativePosition('overlay')" style="flex:1;padding:6px 8px;border-radius:4px;border:1px solid ${(project.narrativePosition || 'bottom') === 'overlay' ? 'var(--accent, #14b8a6)' : '#4a5568'};background:${(project.narrativePosition || 'bottom') === 'overlay' ? 'rgba(20,184,166,0.15)' : 'transparent'};color:${(project.narrativePosition || 'bottom') === 'overlay' ? 'var(--accent, #14b8a6)' : '#a0aec0'};font-size:10px;cursor:pointer;font-weight:${(project.narrativePosition || 'bottom') === 'overlay' ? '600' : '400'};" title="Texto sobreposto centralizado">${Icons.target} Centro</button>
-        </div>
-      </div>
-
-      <div style="padding:8px;border-radius:4px;background:#1a1a2e;border:1px solid ${(project.narrativeDisplay || 'single') === 'dual' ? '#00d4ff44' : '#333'};">
-        <span style="font-size:10px;font-weight:600;color:#00d4ff;display:block;margin-bottom:6px;">🌐 Dual Track (Bilíngue)</span>
-        <div style="display:flex;gap:4px;margin-bottom:6px;">
-          <button onclick="App.setNarrativeDisplay('single')" style="flex:1;padding:5px 6px;border-radius:4px;border:1px solid ${(project.narrativeDisplay || 'single') === 'single' ? '#00d4ff' : '#4a5568'};background:${(project.narrativeDisplay || 'single') === 'single' ? 'rgba(0,212,255,0.15)' : 'transparent'};color:${(project.narrativeDisplay || 'single') === 'single' ? '#00d4ff' : '#a0aec0'};font-size:10px;cursor:pointer;font-weight:${(project.narrativeDisplay || 'single') === 'single' ? '600' : '400'};">1 Idioma</button>
-          <button onclick="App.setNarrativeDisplay('dual')" style="flex:1;padding:5px 6px;border-radius:4px;border:1px solid ${(project.narrativeDisplay || 'single') === 'dual' ? '#00d4ff' : '#4a5568'};background:${(project.narrativeDisplay || 'single') === 'dual' ? 'rgba(0,212,255,0.15)' : 'transparent'};color:${(project.narrativeDisplay || 'single') === 'dual' ? '#00d4ff' : '#a0aec0'};font-size:10px;cursor:pointer;font-weight:${(project.narrativeDisplay || 'single') === 'dual' ? '600' : '400'};">PT + EN</button>
-        </div>
-        ${(project.narrativeDisplay || 'single') === 'dual' ? `
-        <div style="display:flex;flex-direction:column;gap:6px;padding-top:6px;border-top:1px solid #333;">
-          <div style="display:flex;gap:4px;">
-            <button onclick="App.setNarrativeOrder('pt-first')" style="flex:1;padding:4px;border-radius:4px;border:1px solid ${(project.narrativeOrder || 'pt-first') === 'pt-first' ? '#00d4ff' : '#4a5568'};background:${(project.narrativeOrder || 'pt-first') === 'pt-first' ? 'rgba(0,212,255,0.1)' : 'transparent'};color:${(project.narrativeOrder || 'pt-first') === 'pt-first' ? '#00d4ff' : '#888'};font-size:9px;cursor:pointer;">PT↑ EN↓</button>
-            <button onclick="App.setNarrativeOrder('en-first')" style="flex:1;padding:4px;border-radius:4px;border:1px solid ${(project.narrativeOrder || 'pt-first') === 'en-first' ? '#00d4ff' : '#4a5568'};background:${(project.narrativeOrder || 'pt-first') === 'en-first' ? 'rgba(0,212,255,0.1)' : 'transparent'};color:${(project.narrativeOrder || 'pt-first') === 'en-first' ? '#00d4ff' : '#888'};font-size:9px;cursor:pointer;">EN↑ PT↓</button>
+          <div style="display:flex;gap:3px;align-items:center;margin-bottom:8px;">
+            <button onclick="App.setNarrativeStyle('bold',!${!!style.bold})" title="Negrito" style="${_btn(!!style.bold)}font-weight:800;">B</button>
+            <button onclick="App.setNarrativeStyle('italic',!${!!style.italic})" title="Italico" style="${_btn(!!style.italic)}font-style:italic;">I</button>
+            <span style="width:1px;height:18px;background:#3a3a3a;margin:0 2px;"></span>
+            <button onclick="App.setNarrativeStyle('align','left')" title="Esquerda" style="${_btn(style.align==='left')}">${_stpAlignSVG('left')}</button>
+            <button onclick="App.setNarrativeStyle('align','center')" title="Centro" style="${_btn(style.align==='center')}">${_stpAlignSVG('center')}</button>
+            <button onclick="App.setNarrativeStyle('align','right')" title="Direita" style="${_btn(style.align==='right')}">${_stpAlignSVG('right')}</button>
+            <button onclick="App.setNarrativeStyle('align','justify')" title="Justificar" style="${_btn(style.align==='justify')}">${_stpAlignSVG('justify')}</button>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+            <label style="display:flex;align-items:center;gap:4px;flex:1;" title="Cor do texto">
+              <input type="color" value="${textColor}" onchange="App.setNarrativeStyle('color', this.value)" style="width:22px;height:22px;border:1px solid #3a3a3a;border-radius:4px;padding:0;cursor:pointer;background:transparent;">
+              <span style="font-size:9px;color:#a0aec0;">Texto</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;flex:1;" title="Cor de fundo">
+              <input type="color" value="${style.bgColor && style.bgColor.startsWith('#') ? style.bgColor : '#000000'}" onchange="App.setNarrativeStyle('bgColor', this.value)" style="width:22px;height:22px;border:1px solid #3a3a3a;border-radius:4px;padding:0;cursor:pointer;background:transparent;">
+              <span style="font-size:9px;color:#a0aec0;">Fundo</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:3px;" title="Opacidade do fundo">
+              <input type="range" min="0" max="100" step="5" value="${Math.round((style.bgOpacity ?? 0.55) * 100)}" oninput="this.nextElementSibling.textContent=this.value+'%'; App.setNarrativeStyle('bgOpacity', this.value/100)" style="width:50px;accent-color:#60a5fa;">
+              <span style="font-size:9px;color:#a0aec0;min-width:26px;text-align:right;">${Math.round((style.bgOpacity ?? 0.55) * 100)}%</span>
+            </label>
           </div>
           <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:9px;color:#a0aec0;white-space:nowrap;">Gap:</span>
-            <input type="range" min="0" max="24" step="2" value="${project.narrativeDualSpacing || 4}" oninput="this.nextElementSibling.textContent=this.value+'px'; App.setNarrativeDualSpacing(this.value)" style="flex:1;accent-color:#00d4ff;">
-            <span style="min-width:24px;font-size:10px;color:#e2e8f0;text-align:right;">${project.narrativeDualSpacing || 4}px</span>
+            <span style="font-size:9px;font-weight:600;color:#a0aec0;width:50px;">${t('narrative.leading')}</span>
+            <input type="range" min="0.8" max="3" step="0.1" value="${style.leading || 1.4}" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1); App.setNarrativeStyle('leading', parseFloat(this.value))" style="flex:1;accent-color:#60a5fa;">
+            <span style="min-width:22px;font-size:10px;color:#e2e8f0;text-align:right;">${Number(style.leading || 1.4).toFixed(1)}</span>
           </div>
-          <button onclick="App.showBulkTranslationModal('en')" style="width:100%;padding:5px 8px;border-radius:4px;border:1px dashed #4a5568;background:transparent;color:#a0aec0;font-size:10px;cursor:pointer;">📋 Importar tradução EN em lote</button>
-          <button onclick="App.showBulkTranslationModal('pt-BR')" style="width:100%;padding:5px 8px;border-radius:4px;border:1px dashed #4a5568;background:transparent;color:#a0aec0;font-size:10px;cursor:pointer;">📋 Importar tradução PT em lote</button>
-          <button onclick="App.validateTranslations()" style="width:100%;padding:5px 8px;border-radius:4px;border:1px solid #4a5568;background:transparent;color:#a0aec0;font-size:10px;cursor:pointer;">✅ Verificar traduções</button>
-        </div>` : ''}
+        </div>
       </div>
 
-      <button onclick="App.applyNarrativeToAll()" style="width:100%;height:32px;border-radius:4px;border:none;background:#3182ce;color:#fff;font-size:11px;font-weight:600;cursor:pointer;">
-        Aplicar a todas as páginas
-      </button>
-
-      <div style="padding:8px;border-radius:4px;background:#222;border:1px solid #333;">
-        <span style="font-size:10px;font-weight:600;color:#a0aec0;display:block;margin-bottom:4px;">Status</span>
-        <div style="font-size:11px;color:#ccc;">Altura: <strong>${preview.height}px</strong> · Fonte: <strong>${fontPreview}</strong></div>
-        <div style="font-size:11px;font-weight:600;color:${preview.statusColor};margin-top:2px;">${preview.statusLabel}</div>
+      <!-- SECTION 2: Advanced Layout (collapsed by default) -->
+      <div class="narr-section" data-narr-section="advancedLayout">
+        <div class="narr-section-header" onclick="App.toggleNarrSection('advancedLayout')">
+          <span class="narr-toggle-icon">${_icon('advancedLayout')}</span>
+          <span class="narr-section-title">${t('sidebar.advancedLayout')}</span>
+          <span class="narr-section-count">3</span>
+        </div>
+        <div class="narr-section-content ${_expanded('advancedLayout')}">
+          <div style="display:flex;gap:6px;align-items:end;margin-bottom:8px;">
+            <label style="flex:1;display:flex;flex-direction:column;gap:3px;">
+              <span style="font-size:9px;font-weight:600;color:#a0aec0;">Altura</span>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <input type="number" min="40" max="420" step="10" value="${activePage.narrativeHeight || 120}" ${settings.heightLocked ? 'disabled' : ''} onchange="App.setNarrativeHeight(parseInt(this.value,10))" style="flex:1;height:26px;padding:0 4px;border-radius:4px;border:1px solid #3a3a3a;background:${settings.heightLocked ? '#222' : '#2a2a2a'};color:#fff;font-size:10px;outline:none;opacity:${settings.heightLocked ? '0.5' : '1'};">
+                <span style="font-size:9px;color:#666;">px</span>
+                <button onclick="App.setNarrativeLock('height')" title="${settings.heightLocked ? 'Destravar' : 'Travar'}" style="width:24px;height:24px;border-radius:4px;border:1px solid ${settings.heightLocked ? '#3182ce' : '#4a5568'};background:${settings.heightLocked ? '#3182ce' : 'transparent'};color:${settings.heightLocked ? '#fff' : '#a0aec0'};cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;">${settings.heightLocked ? Icons.lock : Icons.unlock}</button>
+              </div>
+            </label>
+          </div>
+          <div style="padding:6px;border-radius:4px;background:#1a1a1a;border:1px solid #333;">
+            <span style="font-size:9px;font-weight:600;color:#a0aec0;display:block;margin-bottom:5px;">Se o texto nao couber:</span>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <label style="display:flex;align-items:center;gap:5px;font-size:10px;color:#ccc;cursor:pointer;">
+                <input type="radio" name="narr-overflow-${panelMode}" value="shrink" ${settings.overflow === 'shrink' ? 'checked' : ''} onchange="if(this.checked) App.setNarrativeAutoFit(this.value)" style="accent-color:#60a5fa;margin:0;">
+                <span>${Icons.arrowDown} Diminuir fonte</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:10px;color:#ccc;cursor:pointer;">
+                <input type="radio" name="narr-overflow-${panelMode}" value="truncate" ${settings.overflow === 'truncate' ? 'checked' : ''} onchange="if(this.checked) App.setNarrativeAutoFit(this.value)" style="accent-color:#60a5fa;margin:0;">
+                <span>${Icons.scissors} Cortar...</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:10px;color:#ccc;cursor:pointer;">
+                <input type="radio" name="narr-overflow-${panelMode}" value="warn" ${settings.overflow === 'warn' ? 'checked' : ''} onchange="if(this.checked) App.setNarrativeAutoFit(this.value)" style="accent-color:#60a5fa;margin:0;">
+                <span>${Icons.alert} So avisar</span>
+              </label>
+            </div>
+            ${settings.overflow === 'shrink' ? `<div style="display:flex;align-items:center;gap:5px;margin-top:5px;padding-top:5px;border-top:1px solid #333;">
+              <span style="font-size:9px;color:#a0aec0;">Min:</span>
+              <input type="number" min="8" max="100" step="1" value="${settings.minFontSize || 12}" onchange="App.setNarrativeMinFont(parseInt(this.value,10))" style="width:40px;height:22px;padding:0 3px;border-radius:4px;border:1px solid #3a3a3a;background:#2a2a2a;color:#fff;font-size:10px;outline:none;text-align:center;">
+              <span style="font-size:9px;color:#666;">px</span>
+            </div>` : ''}
+          </div>
+          <button onclick="App.applyNarrativeToAll()" style="width:100%;margin-top:8px;height:28px;border-radius:4px;border:none;background:#3182ce;color:#fff;font-size:10px;font-weight:600;cursor:pointer;">
+            Aplicar a todas as paginas
+          </button>
+        </div>
       </div>
+
+      <!-- SECTION 3: Position & Safe Zones (expanded by default) -->
+      <div class="narr-section" data-narr-section="position">
+        <div class="narr-section-header" onclick="App.toggleNarrSection('position')">
+          <span class="narr-toggle-icon">${_icon('position')}</span>
+          <span class="narr-section-title">${t('sidebar.positionSafeZones')}</span>
+          ${_isVert && _textPos === 'top' ? '<span class="narr-section-badge safe">Safe</span>' : ''}
+          ${_isVert && _textPos === 'bottom' ? '<span class="narr-section-badge" style="background:rgba(239,68,68,0.15);color:#ef4444;">Unsafe</span>' : ''}
+        </div>
+        <div class="narr-section-content ${_expanded('position')}">
+          <div style="display:flex;gap:4px;margin-bottom:6px;">
+            ${_posBtn('top', t('safeZones.top'), _topDesc, false)}
+            ${_posBtn('middle', t('safeZones.middle'), _midDesc, false)}
+            ${_posBtn('bottom', t('safeZones.bottom'), _botDesc, _unsafeBot)}
+          </div>
+          ${_isVert && _textPos === 'bottom' ? `<div style="padding:5px;border-radius:4px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);font-size:8px;color:#fca5a5;line-height:1.3;margin-bottom:6px;">${t('safeZones.unsafeWarning')}</div>` : ''}
+          ${_isVert && _textPos === 'top' ? `<div style="font-size:8px;color:#22c55e;text-align:center;margin-bottom:6px;">${t('safeZones.safeIndicator')}</div>` : ''}
+          <button onclick="App.applyTextPositionToAll('${_textPos}')" style="width:100%;padding:4px;border-radius:3px;border:1px dashed #4a5568;background:transparent;color:#a0aec0;font-size:9px;cursor:pointer;">${t('safeZones.applyToAll')}</button>
+        </div>
+      </div>
+
+      <!-- SECTION 4: Bilingual Subtitles (collapsed by default) -->
+      <div class="narr-section" data-narr-section="bilingual">
+        <div class="narr-section-header" onclick="App.toggleNarrSection('bilingual')">
+          <span class="narr-toggle-icon">${_icon('bilingual')}</span>
+          <span class="narr-section-title">${t('sidebar.bilingualSubtitles')}</span>
+          ${isDual ? '<span class="narr-section-badge dual">PT+EN</span>' : ''}
+        </div>
+        <div class="narr-section-content ${_expanded('bilingual')}">
+          <span style="font-size:8px;color:#666;display:block;margin-bottom:6px;">${t('narrative.dualTrackHint')}</span>
+          <div style="display:flex;gap:4px;margin-bottom:6px;">
+            <button onclick="App.setNarrativeDisplay('single')" style="flex:1;padding:5px 6px;border-radius:4px;border:1px solid ${!isDual ? '#00d4ff' : '#4a5568'};background:${!isDual ? 'rgba(0,212,255,0.15)' : 'transparent'};color:${!isDual ? '#00d4ff' : '#a0aec0'};font-size:10px;cursor:pointer;font-weight:${!isDual ? '600' : '400'};">1 Idioma</button>
+            <button onclick="App.setNarrativeDisplay('dual')" style="flex:1;padding:5px 6px;border-radius:4px;border:1px solid ${isDual ? '#00d4ff' : '#4a5568'};background:${isDual ? 'rgba(0,212,255,0.15)' : 'transparent'};color:${isDual ? '#00d4ff' : '#a0aec0'};font-size:10px;cursor:pointer;font-weight:${isDual ? '600' : '400'};">PT + EN</button>
+          </div>
+          ${isDual ? `
+          <div style="display:flex;flex-direction:column;gap:5px;padding-top:6px;border-top:1px solid #333;">
+            <div style="display:flex;gap:4px;">
+              <button onclick="App.setNarrativeOrder('pt-first')" style="flex:1;padding:4px;border-radius:4px;border:1px solid ${(project.narrativeOrder || 'pt-first') === 'pt-first' ? '#00d4ff' : '#4a5568'};background:${(project.narrativeOrder || 'pt-first') === 'pt-first' ? 'rgba(0,212,255,0.1)' : 'transparent'};color:${(project.narrativeOrder || 'pt-first') === 'pt-first' ? '#00d4ff' : '#888'};font-size:9px;cursor:pointer;">PT EN</button>
+              <button onclick="App.setNarrativeOrder('en-first')" style="flex:1;padding:4px;border-radius:4px;border:1px solid ${(project.narrativeOrder || 'pt-first') === 'en-first' ? '#00d4ff' : '#4a5568'};background:${(project.narrativeOrder || 'pt-first') === 'en-first' ? 'rgba(0,212,255,0.1)' : 'transparent'};color:${(project.narrativeOrder || 'pt-first') === 'en-first' ? '#00d4ff' : '#888'};font-size:9px;cursor:pointer;">EN PT</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="font-size:9px;color:#a0aec0;white-space:nowrap;">Gap:</span>
+              <input type="range" min="0" max="24" step="2" value="${project.narrativeDualSpacing || 4}" oninput="this.nextElementSibling.textContent=this.value+'px'; App.setNarrativeDualSpacing(this.value)" style="flex:1;accent-color:#00d4ff;">
+              <span style="min-width:24px;font-size:9px;color:#e2e8f0;text-align:right;">${project.narrativeDualSpacing || 4}px</span>
+            </div>
+            <button onclick="App.showBulkTranslationModal('en')" style="width:100%;padding:4px 6px;border-radius:4px;border:1px dashed #4a5568;background:transparent;color:#a0aec0;font-size:9px;cursor:pointer;">Importar EN em lote</button>
+            <button onclick="App.showBulkTranslationModal('pt-BR')" style="width:100%;padding:4px 6px;border-radius:4px;border:1px dashed #4a5568;background:transparent;color:#a0aec0;font-size:9px;cursor:pointer;">Importar PT em lote</button>
+            <button onclick="App.validateTranslations()" style="width:100%;padding:4px 6px;border-radius:4px;border:1px solid #4a5568;background:transparent;color:#a0aec0;font-size:9px;cursor:pointer;">Verificar traducoes</button>
+          </div>` : ''}
+        </div>
+      </div>
+
     </div>
   `;
 }
@@ -4133,7 +4490,7 @@ function drawAudioSplitWaveform() {
     if (isIgnored) {
       ctx.fillStyle = isSel ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.08)';
     } else {
-      ctx.fillStyle = isSel ? 'rgba(20,184,166,0.12)' : (i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.008)');
+      ctx.fillStyle = isSel ? 'rgba(107,114,128,0.12)' : (i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.008)');
     }
     ctx.fillRect(x1, 0, x2 - x1, h);
     
@@ -4172,7 +4529,7 @@ function drawAudioSplitWaveform() {
   ctx.stroke();
 
   // --- RMS layer (lighter, wider — perceived loudness) ---
-  ctx.fillStyle = 'rgba(20,184,166,0.25)';
+  ctx.fillStyle = 'rgba(107,114,128,0.25)';
   waveform.forEach((peak, i) => {
     const rms = peak * 0.6; // approximate RMS as 60% of peak
     const barH = Math.max(1, rms * h * 0.85);
@@ -4183,9 +4540,9 @@ function drawAudioSplitWaveform() {
   // --- Peak layer (brighter, sharper) ---
   const gradient = ctx.createLinearGradient(0, centerY - h * 0.42, 0, centerY + h * 0.42);
   gradient.addColorStop(0, 'rgba(94,234,212,0.95)');
-  gradient.addColorStop(0.4, 'rgba(20,184,166,0.85)');
+  gradient.addColorStop(0.4, 'rgba(107,114,128,0.85)');
   gradient.addColorStop(0.5, 'rgba(13,148,136,0.7)');
-  gradient.addColorStop(0.6, 'rgba(20,184,166,0.85)');
+  gradient.addColorStop(0.6, 'rgba(107,114,128,0.85)');
   gradient.addColorStop(1, 'rgba(94,234,212,0.95)');
 
   ctx.fillStyle = gradient;
@@ -4576,7 +4933,7 @@ function drawBulkAudioWaveform() {
   const duration = buffer.duration;
 
   // Draw segment backgrounds
-  const colors = ['rgba(99,102,241,0.15)', 'rgba(139,92,246,0.15)', 'rgba(245,158,11,0.15)', 'rgba(239,68,68,0.15)', 'rgba(34,197,94,0.15)'];
+  const colors = ['rgba(99,102,241,0.15)', 'rgba(107,114,128,0.15)', 'rgba(245,158,11,0.15)', 'rgba(239,68,68,0.15)', 'rgba(34,197,94,0.15)'];
   segments.forEach((seg, i) => {
     const x1 = (seg.start / duration) * w;
     const x2 = (seg.end / duration) * w;

@@ -9,8 +9,14 @@ const i18n = {
   fallbackLocale: 'en',
   translations: {},
   isReady: false,
+  _readyPromise: null,
+  _readyResolve: null,
   
   async init() {
+    // Create promise for other modules to wait on
+    this._readyPromise = new Promise(resolve => {
+      this._readyResolve = resolve;
+    });
     
     // Detect browser language
     const browserLang = navigator.language || navigator.userLanguage;
@@ -32,8 +38,17 @@ const i18n = {
     // Mark ready BEFORE updating meta (so t() works)
     this.isReady = true;
     
+    // Resolve promise so waiting modules can proceed
+    if (this._readyResolve) this._readyResolve();
+    
     // Update SEO meta tags
     this.updateMetaTags();
+  },
+  
+  // Wait for i18n to be ready (for other modules)
+  async ready() {
+    if (this.isReady) return;
+    if (this._readyPromise) await this._readyPromise;
   },
   
   async loadLocale(locale) {
@@ -220,6 +235,34 @@ const i18n = {
     
     const excalidrawSaveBtn = document.getElementById('excalidraw-save-btn');
     if (excalidrawSaveBtn) excalidrawSaveBtn.textContent = this.t('excalidraw.save');
+    
+    // Floating Text Toolbar
+    const fttFont = document.getElementById('ftt-label-font');
+    if (fttFont) fttFont.textContent = this.t('floatingToolbar.font');
+    
+    const fttSize = document.getElementById('ftt-label-size');
+    if (fttSize) fttSize.textContent = this.t('floatingToolbar.size');
+    
+    const fttBold = document.getElementById('ftt-btn-bold');
+    if (fttBold) fttBold.title = this.t('tooltip.bold');
+    
+    const fttItalic = document.getElementById('ftt-btn-italic');
+    if (fttItalic) fttItalic.title = this.t('tooltip.italic');
+    
+    const fttUnderline = document.getElementById('ftt-btn-underline');
+    if (fttUnderline) fttUnderline.title = this.t('tooltip.underline');
+    
+    const fttAlignLeft = document.getElementById('ftt-btn-align-left');
+    if (fttAlignLeft) fttAlignLeft.title = this.t('tooltip.alignLeft');
+    
+    const fttAlignCenter = document.getElementById('ftt-btn-align-center');
+    if (fttAlignCenter) fttAlignCenter.title = this.t('tooltip.alignCenter');
+    
+    const fttAlignRight = document.getElementById('ftt-btn-align-right');
+    if (fttAlignRight) fttAlignRight.title = this.t('tooltip.alignRight');
+    
+    const fttAlignJustify = document.getElementById('ftt-btn-align-justify');
+    if (fttAlignJustify) fttAlignJustify.title = this.t('tooltip.justify');
   }
 };
 
@@ -227,9 +270,5 @@ const i18n = {
 window.t = (key, params) => i18n.t(key, params);
 window.i18n = i18n;
 
-// Initialize on DOM ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => i18n.init());
-} else {
-  i18n.init();
-}
+// Initialize immediately (before other scripts)
+i18n.init();

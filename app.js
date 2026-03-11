@@ -364,6 +364,7 @@ const Icons = {
   folder: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
   keyboard: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="8" y1="12" x2="8.01" y2="12"/><line x1="12" y1="12" x2="12.01" y2="12"/><line x1="16" y1="12" x2="16.01" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg>`,
   crosshair: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`,
+  pencil: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,
 };
 
 // Replace VIDEO_FORMATS icons with actual SVG when available
@@ -598,6 +599,13 @@ const Store = {
       if (page.narrativeStyle) {
         if (!page.narrativeStyle.size || page.narrativeStyle.size < 40) {
           page.narrativeStyle.size = 48; // New default
+          changed = true;
+        }
+        // Migrate: add safe zone position if missing
+        if (!page.narrativeStyle.position) {
+          page.narrativeStyle.position = typeof SafeZones !== 'undefined' && project.videoFormat
+            ? SafeZones.defaultPosition(project.videoFormat)
+            : 'top';
           changed = true;
         }
       }
@@ -2579,8 +2587,68 @@ function createVideoProject(name, videoFormat = 'vertical') {
   project.pages[0].layoutId = defaultLayout;
   return project;
 }
+
+// ── Safe Zone System (2026 platform specs) ──
+const SafeZones = {
+  // Platform-specific safe areas for each video format
+  get(formatId) {
+    const zones = {
+      'vertical': {
+        canvas: { width: 1080, height: 1920 },
+        safe: { x: 90, y: 260, width: 900, height: 1400 },
+        textDefault: 'top'
+      },
+      'widescreen': {
+        canvas: { width: 1920, height: 1080 },
+        safe: { x: 120, y: 100, width: 1680, height: 880 },
+        textDefault: 'bottom'
+      },
+      'square': {
+        canvas: { width: 1080, height: 1080 },
+        safe: { x: 70, y: 70, width: 940, height: 940 },
+        textDefault: 'middle'
+      },
+      'portrait': {
+        canvas: { width: 1440, height: 1080 },
+        safe: { x: 100, y: 80, width: 1240, height: 920 },
+        textDefault: 'bottom'
+      }
+    };
+    return zones[formatId] || zones['vertical'];
+  },
+
+  // Calculate text rendering box within safe area
+  textPosition(formatId, position) {
+    const zone = this.get(formatId);
+    const s = zone.safe;
+    const pos = position || zone.textDefault;
+
+    if (pos === 'top') {
+      return { x: s.x, y: s.y + 60, maxWidth: s.width, maxHeight: Math.round(s.height * 0.3) };
+    } else if (pos === 'middle') {
+      const h = Math.round(s.height * 0.25);
+      return { x: s.x, y: s.y + Math.round((s.height - h) / 2), maxWidth: s.width, maxHeight: h };
+    } else {
+      return { x: s.x, y: s.y + s.height - Math.round(s.height * 0.25), maxWidth: s.width, maxHeight: Math.round(s.height * 0.25) };
+    }
+  },
+
+  // Get default text position for a format
+  defaultPosition(formatId) {
+    return this.get(formatId).textDefault;
+  },
+
+  // Check if position is unsafe for a given format
+  isUnsafe(formatId, position) {
+    if (formatId === 'vertical' && position === 'bottom') return true;
+    return false;
+  }
+};
+window.SafeZones = SafeZones;
+
 function createPage(order, videoFormat = null) {
   const layoutId = videoFormat ? getDefaultVideoLayout(videoFormat) : null;
+  const textPosition = videoFormat ? SafeZones.defaultPosition(videoFormat) : 'top';
   return { 
     id: genId(), 
     order, 
@@ -2591,6 +2659,7 @@ function createPage(order, videoFormat = null) {
     narrativeSegmentId: null, // Reference to segment in continuous-track mode
     recordatorios: [], 
     narrativeStyle: { 
+      position: textPosition, // 'top' | 'middle' | 'bottom' — safe zone aware
       align: 'justify', 
       font: 'serif', 
       size: 48, 

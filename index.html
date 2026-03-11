@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Create professional animated videos from your images. Ken Burns effects, narration, transitions. No subscription. 100% offline.">
   <meta name="theme-color" content="#0a0e17">
   <meta name="mobile-web-app-capable" content="yes">
@@ -36,7 +36,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Bangers&family=Comic+Neue:ital,wght@0,400;0,700;1,400&family=Patrick+Hand&family=Kalam:wght@300;400;700&family=Roboto+Condensed:wght@300;400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@400;700;900&family=Fredoka+One&family=Bebas+Neue&family=Black+Han+Sans&family=Anton&family=Archivo+Black&family=Koulen&family=Syne:wght@400;600;700;800&family=Lilita+One&family=Righteous&family=Boogaloo&family=Permanent+Marker&family=JetBrains+Mono:wght@400;500;600&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="styles-v3.css?v=24">
+  <link rel="stylesheet" href="styles-v3.css?v=34">
 </head>
 
 <body>
@@ -45,7 +45,7 @@
   <!-- Floating Text Toolbar -->
   <div id="floating-text-toolbar" class="ftt">
     <div class="ftt-field">
-      <span class="ftt-field-label">Font</span>
+      <span class="ftt-field-label" id="ftt-label-font">Font</span>
       <select class="ftt-font" data-ft="font" onchange="App.ftSetFont(this.value)">
         <option value="serif">Serif</option>
         <option value="sans">Sans</option>
@@ -57,7 +57,7 @@
     </div>
 
     <div class="ftt-field ftt-field-size">
-      <span class="ftt-field-label">Size</span>
+      <span class="ftt-field-label" id="ftt-label-size">Size</span>
       <div class="ftt-size-row">
         <input type="range" class="ftt-size-slider" data-ft="size-slider" min="12" max="250" step="1" value="24"
                oninput="App.ftSyncSizeFromSlider(this.value)" title="Font size">
@@ -70,13 +70,13 @@
     </div>
 
     <div class="ftt-action-row">
-      <button class="ftt-btn" data-ft="bold" onclick="App.ftToggleBold()" title="Bold (Ctrl+B)"><b>B</b></button>
-      <button class="ftt-btn" data-ft="italic" onclick="App.ftToggleItalic()" title="Italic (Ctrl+I)"><i>I</i></button>
-      <button class="ftt-btn" data-ft="underline" onclick="App.ftToggleUnderline()" title="Underline (Ctrl+U)"><u>U</u></button>
-      <button class="ftt-btn" data-ft-align="left" onclick="App.ftSetAlign('left')" title="Align left"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="1" width="14" height="2" rx="1"/><rect x="0" y="5" width="10" height="2" rx="1"/><rect x="0" y="9" width="12" height="2" rx="1"/></svg></button>
-      <button class="ftt-btn" data-ft-align="center" onclick="App.ftSetAlign('center')" title="Center"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="1" width="14" height="2" rx="1"/><rect x="2" y="5" width="10" height="2" rx="1"/><rect x="1" y="9" width="12" height="2" rx="1"/></svg></button>
-      <button class="ftt-btn" data-ft-align="right" onclick="App.ftSetAlign('right')" title="Align right"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="1" width="14" height="2" rx="1"/><rect x="4" y="5" width="10" height="2" rx="1"/><rect x="2" y="9" width="12" height="2" rx="1"/></svg></button>
-      <button class="ftt-btn" data-ft-align="justify" onclick="App.ftSetAlign('justify')" title="Justify"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="1" width="14" height="2" rx="1"/><rect x="0" y="5" width="14" height="2" rx="1"/><rect x="0" y="9" width="14" height="2" rx="1"/></svg></button>
+      <button class="ftt-btn" data-ft="bold" onclick="App.ftToggleBold()" id="ftt-btn-bold" title="Bold (Ctrl+B)"><b>B</b></button>
+      <button class="ftt-btn" data-ft="italic" onclick="App.ftToggleItalic()" id="ftt-btn-italic" title="Italic (Ctrl+I)"><i>I</i></button>
+      <button class="ftt-btn" data-ft="underline" onclick="App.ftToggleUnderline()" id="ftt-btn-underline" title="Underline (Ctrl+U)"><u>U</u></button>
+      <button class="ftt-btn" data-ft-align="left" onclick="App.ftSetAlign('left')" id="ftt-btn-align-left" title="Align left"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="1" width="14" height="2" rx="1"/><rect x="0" y="5" width="10" height="2" rx="1"/><rect x="0" y="9" width="12" height="2" rx="1"/></svg></button>
+      <button class="ftt-btn" data-ft-align="center" onclick="App.ftSetAlign('center')" id="ftt-btn-align-center" title="Center"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="1" width="14" height="2" rx="1"/><rect x="2" y="5" width="10" height="2" rx="1"/><rect x="1" y="9" width="12" height="2" rx="1"/></svg></button>
+      <button class="ftt-btn" data-ft-align="right" onclick="App.ftSetAlign('right')" id="ftt-btn-align-right" title="Align right"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="1" width="14" height="2" rx="1"/><rect x="4" y="5" width="10" height="2" rx="1"/><rect x="2" y="9" width="12" height="2" rx="1"/></svg></button>
+      <button class="ftt-btn" data-ft-align="justify" onclick="App.ftSetAlign('justify')" id="ftt-btn-align-justify" title="Justify"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="1" width="14" height="2" rx="1"/><rect x="0" y="5" width="14" height="2" rx="1"/><rect x="0" y="9" width="14" height="2" rx="1"/></svg></button>
     </div>
   </div>
 
@@ -176,15 +176,15 @@
   <script src="vendor/react.production.min.js"></script>
   <script src="vendor/react-dom.production.min.js"></script>
   <script src="vendor/excalidraw.production.min.js"></script>
-  <script src="i18n.js?v=3"></script>
+  <script src="i18n.js?v=5"></script>
   <script src="layouts.js?v=4"></script>
   <script src="layouts-video.js?v=7"></script>
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=12"></script>
   <script src="thumbnail-generator.js?v=1"></script>
-  <script src="video-exporter.js?v=10"></script>
-  <script src="ui.js?v=25"></script>
-  <script src="onboarding.js?v=7"></script>
-  <script src="controller.js?v=22"></script>
+  <script src="video-exporter.js?v=11"></script>
+  <script src="ui.js?v=37"></script>
+  <script src="onboarding.js?v=8"></script>
+  <script src="controller.js?v=31"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW registration failed:', err));

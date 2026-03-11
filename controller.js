@@ -6,6 +6,11 @@
 const App = {
     
     async init() {
+        // Wait for i18n to load translations before rendering UI
+        if (window.i18n && window.i18n.ready) {
+            await window.i18n.ready();
+        }
+        
         await Store.loadProjects();
         
         // Initialize Onboarding
@@ -91,11 +96,14 @@ const App = {
 
         const view = Store.get('view');
         if (view === 'dashboard') {
+            this.hideFloatingTextToolbar();
             app.innerHTML = renderDashboard();
             renderProjectsList();
         } else if (view === 'format-selector') {
+            this.hideFloatingTextToolbar();
             app.innerHTML = renderFormatSelector();
         } else if (view === 'export') {
+            this.hideFloatingTextToolbar();
             app.innerHTML = renderExportPage();
             requestAnimationFrame(() => this._updateAssetSummary());
         } else {
@@ -121,6 +129,8 @@ const App = {
         await db.projects.put(p);
         await Store.loadProjects();
         Store.set({ view: 'editor', currentProject: p, activePageIndex: 0, selectedElement: null, selectedSlot: -1, undoStack: [], redoStack: [] });
+        // Auto-fit canvas to viewport after render (critical for mobile)
+        requestAnimationFrame(() => { requestAnimationFrame(() => { this.zoomFit(); }); });
     },
     
     showFormatSelector() {
@@ -513,8 +523,7 @@ const App = {
     },
     async openExportPage() {
         this._blurActive();
-        Store.set({ view: 'export', currentProject: null, selectedElement: null, selectedSlot: -1 });
-        Store.loadProjects();
+        Store.set({ view: 'export', selectedElement: null, selectedSlot: -1 });
     },
     goHome() { 
         this._blurActive();
@@ -1168,30 +1177,38 @@ const App = {
     },
 
     // ── Images ──
+    _uploadDebounce: null,
     triggerImageUpload(slot) {
-        this._pendingSlot = slot !== undefined ? slot : -1;
-        const input = document.getElementById('file-input-persistent');
-        if (!input) {
-            console.error('file-input-persistent não encontrado');
-            Toast.show(t('toast.fileInputNotFound'), 'error');
-            return;
+        // Debounce to prevent multiple rapid clicks
+        if (this._uploadDebounce) {
+            clearTimeout(this._uploadDebounce);
         }
         
-        // Garantir que o evento onchange esteja configurado
-        input.onchange = (e) => this.handleFileUpload(e);
-        
-        // Limpar valor apenas se necessário (pode causar problemas em alguns browsers)
-        if (input.value) {
+        this._uploadDebounce = setTimeout(() => {
+            this._pendingSlot = slot !== undefined ? slot : -1;
+            const input = document.getElementById('file-input-persistent');
+            if (!input) {
+                console.error('file-input-persistent não encontrado');
+                Toast.show(t('toast.fileInputNotFound'), 'error');
+                return;
+            }
+            
+            // Remove old event listener and add new one
+            input.onchange = null;
+            input.onchange = (e) => this.handleFileUpload(e);
+            
+            // Reset value to allow same file selection
             input.value = '';
-        }
-        
-        try {
-            input.click();
-        } catch (e) {
-            console.error('Erro ao clicar no input:', e);
-            // Tentar método alternativo
-            this._triggerImageUploadAlternative();
-        }
+            
+            try {
+                input.click();
+            } catch (e) {
+                console.error('Erro ao clicar no input:', e);
+                this._triggerImageUploadAlternative();
+            }
+            
+            this._uploadDebounce = null;
+        }, 100);
     },
 
     _triggerImageUploadAlternative() {
@@ -1205,9 +1222,9 @@ const App = {
     },
     handleFileUpload(e) {
         Array.from(e.target.files || []).forEach(f => {
-            if (!f.type.startsWith('image/')) { Toast.show('Apenas imagens são aceitas (JPG, PNG, GIF, WebP)', 'error'); return; }
-            if (f.size > 50 * 1024 * 1024) { Toast.show('Imagem excede limite seguro do navegador (50MB)', 'warning'); return; }
-            Toast.show('Otimizando imagem...', 'info', 1500);
+            if (!f.type.startsWith('image/')) { Toast.show(t('toast.onlyImages'), 'error'); return; }
+            if (f.size > 50 * 1024 * 1024) { Toast.show(t('toast.imageTooLarge'), 'warning'); return; }
+            Toast.show(t('toast.optimizingImage'), 'info', 1500);
             const r = new FileReader();
             r.onload = () => {
                 if (this._coverImageMode) {
@@ -1375,7 +1392,7 @@ const App = {
         p.pages.push(newPage);
         Store.set({ currentProject: p, activePageIndex: p.pages.length - 1, selectedSlot: 0 });
         Store.save();
-        Toast.show('Nova página criada com a imagem');
+        Toast.show(t('toast.newPageCreated'));
         this._pendingOverflowSrc = null;
         renderCanvas(); renderLeftPanel();
     },
@@ -1386,7 +1403,7 @@ const App = {
         Store.pushUndo();
         const targetPage = p.pages[pageIdx];
         const emptySlot = PanelHelper.findFirstEmpty(targetPage);
-        if (emptySlot < 0) { Toast.show('Página sem slots vazios', 'error'); return; }
+        if (emptySlot < 0) { Toast.show(t('toast.noEmptySlots'), 'error'); return; }
         if (!targetPage.images) targetPage.images = [];
         while (targetPage.images.length <= emptySlot) targetPage.images.push(null);
         targetPage.images[emptySlot] = { id: genId(), src: this._pendingOverflowSrc, filters: { brightness: 100, contrast: 100 } };
@@ -1426,7 +1443,7 @@ const App = {
         this._replaceTargetMode = true;
         this._replaceTargetSrc = this._pendingOverflowSrc;
         this._pendingOverflowSrc = null;
-        Toast.show('Clique no painel que quer substituir', 'info', 4000);
+        Toast.show(t('toast.clickPanelToReplace'), 'info', 4000);
         renderCanvas();
     },
     
@@ -1530,7 +1547,7 @@ const App = {
         Store.pushUndo();
         page.images[slot].transform = { scale: 1, x: 0, y: 0 };
         Store.set({ currentProject: p }); Store.save();
-        Toast.show('Imagem ajustada');
+        Toast.show(t('toast.imageAdjusted'));
         renderCanvas();
     },
     
@@ -1581,7 +1598,7 @@ const App = {
         });
         
         renderCanvas(); // Re-render with zoom applied
-        Toast.show('🖼️ ARRASTE para posicionar • SCROLL = zoom • ESC = sair', 3000);
+        Toast.show(t('toast.dragToPosition'), 3000);
         renderRightPanel();
     },
     
@@ -1647,7 +1664,7 @@ const App = {
                 a.download = `pagina-${String(idx + 1).padStart(3, '0')}.png`;
                 a.click();
                 URL.revokeObjectURL(a.href);
-                Toast.show('PNG salvo!', 'success');
+                Toast.show(t('toast.pngSaved'), 'success');
             }, 'image/png');
         } catch (err) { Toast.show('Erro: ' + err.message, 'error'); }
         if (ft) ft.style.display = '';
@@ -1705,7 +1722,7 @@ const App = {
         Store.set({ currentProject: p, selectedSlot: backup.slot });
         Store.save();
         renderCanvas(); renderRightPanel();
-        Toast.show('Imagem restaurada', 'success');
+        Toast.show(t('toast.imageRestored'), 'success');
     },
     toggleImageFit(slot) {
         const p = Store.get('currentProject'), page = Store.getActivePage();
@@ -1738,7 +1755,7 @@ const App = {
         }
         Library.remove(p, libId);
         Store.set({ currentProject: p }); Store.save();
-        Toast.show('Imagem removida da biblioteca');
+        Toast.show(t('toast.imageRemovedFromLibrary'));
         renderRightPanel();
     },
     _confirmRemoveFromLibrary(libId) {
@@ -1746,7 +1763,7 @@ const App = {
         if (!p) return;
         Library.remove(p, libId);
         Store.set({ currentProject: p }); Store.save();
-        Toast.show('Imagem removida da biblioteca');
+        Toast.show(t('toast.imageRemovedFromLibrary'));
         renderRightPanel();
     },
     selectSlot(i) { 
@@ -1906,7 +1923,7 @@ const App = {
         Store.pushUndo();
         page.images[slot].transform = { scale: 1, x: 0, y: 0 };
         Store.set({ currentProject: p }); Store.save();
-        Toast.show('Imagem resetada');
+        Toast.show(t('toast.imageReset'));
     },
     fitImageCover(slot) {
         const p = Store.get('currentProject'), page = Store.getActivePage();
@@ -1915,7 +1932,7 @@ const App = {
         // Set scale to 1 and center - object-fit:cover handles the rest
         page.images[slot].transform = { scale: 1, x: 0, y: 0 };
         Store.set({ currentProject: p }); Store.save();
-        Toast.show('Imagem ajustada');
+        Toast.show(t('toast.imageAdjusted'));
     },
     centerImage(slot) {
         const p = Store.get('currentProject'), page = Store.getActivePage();
@@ -1926,7 +1943,7 @@ const App = {
         img.transform.x = 0;
         img.transform.y = 0;
         Store.set({ currentProject: p }); Store.save();
-        Toast.show('Imagem centralizada');
+        Toast.show(t('toast.imageCentered'));
     },
 
     // ── Layout ──
@@ -2033,7 +2050,7 @@ const App = {
         delete page.panelOverrides;
         Store.set({ currentProject: p }); Store.save();
         renderCanvas();
-        Toast.show('Layout resetado ao template original');
+        Toast.show(t('toast.layoutReset'));
     },
 
     // ══════════════════════════════════════════════════════════════
@@ -2133,7 +2150,7 @@ const App = {
         document.querySelectorAll('.le-preset-btn').forEach(btn => {
             const isSel = btn.dataset.preset === key;
             btn.style.borderColor = isSel ? 'var(--accent)' : 'var(--border)';
-            btn.style.background = isSel ? 'rgba(20,184,166,0.12)' : 'var(--surface2)';
+            btn.style.background = isSel ? 'rgba(107,114,128,0.12)' : 'var(--surface2)';
             btn.dataset.selected = isSel ? '1' : '';
         });
         // Enable start button
@@ -2244,7 +2261,7 @@ const App = {
     layoutEditorAddPanel() {
         this._lePushUndo();
         const panels = [...Store.get('layoutEditorPanels')];
-        if (panels.length >= 9) { Toast.show('Maximo 9 paineis'); return; }
+        if (panels.length >= 9) { Toast.show(t('toast.maxPanels')); return; }
         const newId = Math.max(0, ...panels.map(p => p.id)) + 1;
         const _d = getProjectDims();
         panels.push({ id: newId, x: Math.round(_d.contentW * 0.34), y: Math.round(_d.contentH * 0.38), w: Math.round(_d.contentW * 0.32), h: Math.round(_d.contentH * 0.24), order: panels.length + 1 });
@@ -2254,7 +2271,7 @@ const App = {
 
     layoutEditorDeletePanel(index) {
         const panels = [...Store.get('layoutEditorPanels')];
-        if (panels.length <= 1) { Toast.show('Minimo 1 painel'); return; }
+        if (panels.length <= 1) { Toast.show(t('toast.minPanels')); return; }
         this._lePushUndo();
         panels.splice(index, 1);
         panels.forEach((p, i) => p.order = i + 1);
@@ -2271,9 +2288,9 @@ const App = {
     layoutEditorSplitH(index) {
         const panels = [...Store.get('layoutEditorPanels')];
         if (index < 0 || index >= panels.length) return;
-        if (panels.length >= 9) { Toast.show('Maximo 9 paineis'); return; }
+        if (panels.length >= 9) { Toast.show(t('toast.maxPanels')); return; }
         const p = panels[index];
-        if (p.h < 120) { Toast.show('Painel muito pequeno para dividir'); return; }
+        if (p.h < 120) { Toast.show(t('toast.panelTooSmall')); return; }
         this._lePushUndo();
         const G = 12;
         const halfH = Math.floor((p.h - G) / 2);
@@ -2289,9 +2306,9 @@ const App = {
     layoutEditorSplitV(index) {
         const panels = [...Store.get('layoutEditorPanels')];
         if (index < 0 || index >= panels.length) return;
-        if (panels.length >= 9) { Toast.show('Maximo 9 paineis'); return; }
+        if (panels.length >= 9) { Toast.show(t('toast.maxPanels')); return; }
         const p = panels[index];
-        if (p.w < 160) { Toast.show('Painel muito pequeno para dividir'); return; }
+        if (p.w < 160) { Toast.show(t('toast.panelTooSmall')); return; }
         this._lePushUndo();
         const G = 12;
         const halfW = Math.floor((p.w - G) / 2);
@@ -2307,7 +2324,7 @@ const App = {
     layoutEditorDuplicate(index) {
         const panels = [...Store.get('layoutEditorPanels')];
         if (index < 0 || index >= panels.length) return;
-        if (panels.length >= 9) { Toast.show('Maximo 9 paineis'); return; }
+        if (panels.length >= 9) { Toast.show(t('toast.maxPanels')); return; }
         this._lePushUndo();
         const p = panels[index];
         const newId = Math.max(0, ...panels.map(q => q.id)) + 1;
@@ -2593,14 +2610,14 @@ const App = {
         p.customLayouts = p.customLayouts.filter(c => c.id !== layoutId);
         if (p.favoriteLayoutId === layoutId) p.favoriteLayoutId = null;
         Store.set({ currentProject: p }); Store.save(); App._refreshLeftPanel();
-        Toast.show('Layout deletado');
+        Toast.show(t('toast.layoutDeleted'));
     },
 
     setFavoriteLayout(layoutId) {
         const p = Store.get('currentProject');
         if (!p) return;
-        if (p.favoriteLayoutId === layoutId) { p.favoriteLayoutId = null; Toast.show('Layout padrao removido'); }
-        else { p.favoriteLayoutId = layoutId; Toast.show('Layout definido como padrao'); }
+        if (p.favoriteLayoutId === layoutId) { p.favoriteLayoutId = null; Toast.show(t('toast.defaultLayoutRemoved')); }
+        else { p.favoriteLayoutId = layoutId; Toast.show(t('toast.defaultLayoutSet')); }
         Store.set({ currentProject: p }); Store.save(); this._refreshLeftPanel();
     },
 
@@ -2621,7 +2638,7 @@ const App = {
         const [moved] = page.images.splice(fromIndex, 1);
         page.images.splice(toIndex, 0, moved);
         Store.set({ currentProject: p, selectedSlot: toIndex }); Store.save();
-        Toast.show('Imagem reordenada');
+        Toast.show(t('toast.imageReordered'));
     },
 
     // ══════════════════════════════════════════════════════════════
@@ -2658,7 +2675,11 @@ const App = {
         const dim = this._getCanvasDimensions();
         const contentW = dim.w * vp.scale;
         const contentH = dim.h * vp.scale;
-        const margin = 100; // always keep 100px of content visible
+        
+        // Mobile: keep at least 50% of canvas visible; Desktop: 100px margin
+        const margin = this.isMobile() 
+            ? Math.max(contentW * 0.5, contentH * 0.5) 
+            : 100;
 
         // If content is smaller than viewport width, keep it centered
         if (contentW <= rect.width) {
@@ -2730,8 +2751,16 @@ const App = {
         const vp = this._viewport;
         const r = area.getBoundingClientRect();
         const dim = this._getCanvasDimensions();
-        const fitW = (r.width - 64) / dim.w, fitH = (r.height - 64) / dim.h;
-        vp.scale = Math.min(fitW, fitH, 1);
+        const mobile = this.isMobile();
+        const pad = mobile ? 16 : 64;
+        const fitW = (r.width - pad) / dim.w, fitH = (r.height - pad) / dim.h;
+        if (mobile) {
+            // Mobile: always fit width so each format fills screen width and looks distinct
+            // Vertical = tall, Widescreen = short/wide, Square = square, Portrait = medium
+            vp.scale = Math.min(fitW, 1);
+        } else {
+            vp.scale = Math.min(fitW, fitH, 1);
+        }
         this._centerViewport();
         this._applyViewportTransform();
         this._updateZoomDisplay();
@@ -3476,6 +3505,12 @@ const App = {
     startBalloonPlacement(type = 'speech') {
         if (this._placementMode) this.cancelPlacement();
         this._placementMode = { type };
+        
+        // FIX: Close mobile drawer so user can click on canvas
+        if (this.isMobile()) {
+            this.closeMobileSidebar();
+        }
+        
         const area = document.getElementById('canvas-area');
         if (area) area.classList.add('placement-active');
         // Highlight the active balloon button
@@ -3520,7 +3555,7 @@ const App = {
     addBalloonAtPosition(type, x, y) {
         const p = Store.get('currentProject'), page = Store.getActivePage(); if (!p || !page) return;
         if (!page.texts) page.texts = [];
-        if (page.texts.length >= 30) { Toast.show('Máximo de 30 balões por página atingido.', 2500); return; }
+        if (page.texts.length >= 30) { Toast.show(t('toast.maxBalloonsReached'), 2500); return; }
         Store.pushUndo();
         const typeDefaults = {
             speech: { fontSize: 15, font: 'comic', direction: 's' },
@@ -3546,7 +3581,7 @@ const App = {
         const newIndex = page.texts.length - 1;
         Store.set({ currentProject: p, selectedElement: { type: 'balloon', index: newIndex } });
         Store.save();
-        Toast.show('Balão posicionado!');
+        Toast.show(t('toast.balloonPositioned'));
         renderCanvas(); renderRightPanel();
         this._focusBalloonText(newIndex);
     },
@@ -3559,14 +3594,14 @@ const App = {
         const BLOCKED_IN_MATERIA = ['thought', 'shout', 'sfx'];
         if (isMateria && BLOCKED_IN_MATERIA.includes(type)) {
             const labels = { thought: 'Pensamento', shout: 'Grito', sfx: 'SFX/Onomatopeia' };
-            Toast.show(`"${labels[type] || type}" não se aplica a páginas de Matéria. Use Fala, Sussurro ou Recordatório.`, 3500);
+            Toast.show(t('toast.balloonNotForMateria', { type: labels[type] || type }), 3500);
             return;
         }
         
         // Stress guard: max 30 balloons per page
         if (!page.texts) page.texts = [];
         if (page.texts.length >= 30) {
-            Toast.show('Máximo de 30 balões por página atingido.', 2500);
+            Toast.show(t('toast.maxBalloonsReached'), 2500);
             return;
         }
         
@@ -3580,10 +3615,23 @@ const App = {
             sfx: { fontSize: 42, font: 'comic', direction: 'center' }
         };
         const def = typeDefaults[type] || typeDefaults.speech;
+        // Smart positioning: distribute balloons across canvas based on existing count
+        const existingCount = page.texts.length;
+        const canvasW = p.width || 1080;
+        const canvasH = p.height || 1920;
+        const cols = 3;
+        const rows = Math.ceil(30 / cols);
+        const cellW = canvasW / cols;
+        const cellH = canvasH / rows;
+        const col = existingCount % cols;
+        const row = Math.floor(existingCount / cols) % rows;
+        const baseX = col * cellW + cellW * 0.3 + Math.random() * cellW * 0.4;
+        const baseY = row * cellH + cellH * 0.3 + Math.random() * cellH * 0.4;
+        
         const draft = {
             type,
-            x: 100 + Math.random() * 150,
-            y: 100 + Math.random() * 150,
+            x: baseX,
+            y: baseY,
             w: type === 'narration' ? 220 : (type === 'sfx' ? 120 : 120),
             h: type === 'narration' ? 60 : (type === 'shout' ? 80 : 70),
             text: type === 'sfx' ? 'BOOM!' : '',
@@ -3610,7 +3658,7 @@ const App = {
         if (type === 'narration') this._autoSnapNarrationToPanel(newIndex);
         Store.set({ currentProject: p, selectedElement: { type: 'balloon', index: newIndex } }); 
         Store.save();
-        Toast.show('Balão adicionado');
+        Toast.show(t('toast.balloonAdded'));
         renderCanvas();
         renderRightPanel();
         
@@ -3799,7 +3847,7 @@ const App = {
         });
         Store.set({ currentProject: p });
         Store.save();
-        Toast.show('Sticker adicionado');
+        Toast.show(t('toast.stickerAdded'));
         renderCanvas(); renderRightPanel();
     },
     uploadSticker() {
@@ -3845,11 +3893,11 @@ const App = {
         const validExts = ['mp3', 'wav', 'ogg'];
         
         if (!validTypes.includes(file.type) && !validExts.includes(ext)) {
-            Toast.show('Formato inválido. Use MP3, WAV ou OGG.', 'error');
+            Toast.show(t('toast.invalidAudioFormat'), 'error');
             return false;
         }
         if (file.size > 15 * 1024 * 1024) { 
-             Toast.show('Áudio muito grande. Máximo: 15MB', 'warning');
+             Toast.show(t('toast.audioTooLarge'), 'warning');
              return false;
         }
         return true;
@@ -3867,7 +3915,7 @@ const App = {
                 const p = Store.get('currentProject');
                 if (!p) return;
                 AudioManager.setBackgroundMusic(p, ev.target.result);
-                Toast.show('Música de fundo carregada', 'success');
+                Toast.show(t('toast.bgMusicLoaded'), 'success');
                 renderRightPanel();
             };
             reader.readAsDataURL(file);
@@ -3893,7 +3941,7 @@ const App = {
         AudioManager.stopAudio('background');
         p.videoAudio.background.file = null;
         Store.save();
-        Toast.show('Música removida');
+        Toast.show(t('toast.musicRemoved'));
         renderRightPanel();
     },
     
@@ -3926,7 +3974,7 @@ const App = {
                 if (!p || !page) return;
                 AudioManager.setPageNarration(p, page.id, ev.target.result);
                 await AudioManager.updateNarrationDuration(p, page.id);
-                Toast.show('Narração carregada', 'success');
+                Toast.show(t('toast.narrationLoaded'), 'success');
                 renderRightPanel();
             };
             reader.readAsDataURL(file);
@@ -3956,7 +4004,7 @@ const App = {
         // Reset duration to default when audio removed
         page.duration = 4;
         page.durationLocked = false;
-        Toast.show('Narração removida — duração volta a 4s');
+        Toast.show(t('toast.narrationRemoved'));
         Store.save();
         renderRightPanel();
         renderTimeline();
@@ -4052,6 +4100,12 @@ const App = {
     _excalidrawAPI: null,
     _excalidrawRoot: null,
 
+    openExcalidraw() {
+        this._blurActive();
+        if (this.isMobile()) this._closeMobileSidebar();
+        this.openExcalidrawModal();
+    },
+
     openExcalidrawModal() {
         const modal = document.getElementById('excalidraw-modal');
         if (!modal) return;
@@ -4117,7 +4171,7 @@ const App = {
             y: 0,
             width: width,
             height: height,
-            strokeColor: '#14b8a6',
+            strokeColor: '#6b7280',
             backgroundColor: 'transparent',
             fillStyle: 'hachure',
             strokeWidth: 2,
@@ -4195,11 +4249,11 @@ const App = {
             this.insertLibraryImage(dataURL);
             
             this.closeExcalidrawModal();
-            Toast.show('Arte salva na página!', 'success');
+            Toast.show(t('toast.artSaved'), 'success');
             
         } catch (err) {
             console.error("Excalidraw export error:", err);
-            Toast.show('Erro ao salvar arte.', 'error');
+            Toast.show(t('toast.artSaveError'), 'error');
         }
     },
     
@@ -4563,7 +4617,7 @@ const App = {
         if (!page) return;
         // Block manual edit if audio locks duration
         if (page.durationLocked) {
-            Toast.show('Duração bloqueada pelo áudio', 'warning');
+            Toast.show(t('toast.durationLockedByAudio'), 'warning');
             return;
         }
         page.duration = Math.max(2, Math.min(10, Math.round(duration * 2) / 2)); // 2-10s, step 0.5
@@ -4578,7 +4632,7 @@ const App = {
         if (!p || !p.pages[pageIdx]) return;
         const page = p.pages[pageIdx];
         if (page.durationLocked) {
-            Toast.show('Duração bloqueada pelo áudio', 'warning');
+            Toast.show(t('toast.durationLockedByAudio'), 'warning');
             return;
         }
         const current = page.duration || 4;
@@ -4633,10 +4687,10 @@ const App = {
         const page = p.pages[pageIdx];
         if (page.kenBurns && page.kenBurns !== 'none' && page.kenBurns !== 'static') {
             page.kenBurns = 'none';
-            Toast.show('Ken Burns desativado', 'info');
+            Toast.show(t('toast.kenBurnsDisabled'), 'info');
         } else {
             page.kenBurns = 'zoom-in';
-            Toast.show('Ken Burns: Zoom In', 'success');
+            Toast.show(t('toast.kenBurnsZoomIn'), 'success');
         }
         Store.save();
         renderTimeline();
@@ -4651,7 +4705,7 @@ const App = {
     addSlideFromLibrary() {
         const page = Store.getActivePage();
         if (!page || page.layoutId !== 'slideshow') {
-            Toast.show('Selecione uma página com layout Slideshow', 'warning');
+            Toast.show(t('toast.selectSlideshowPage'), 'warning');
             return;
         }
         
@@ -4659,7 +4713,7 @@ const App = {
         const library = proj.library || [];
         
         if (library.length === 0) {
-            Toast.show('Biblioteca vazia. Adicione imagens primeiro.', 'warning');
+            Toast.show(t('toast.libraryEmpty'), 'warning');
             return;
         }
         
@@ -4703,7 +4757,7 @@ const App = {
         Store.save();
         renderRightPanel();
         renderCanvas();
-        Toast.show('Slide adicionado', 'success');
+        Toast.show(t('toast.slideAdded'), 'success');
     },
 
     // Remove slide by index
@@ -4715,7 +4769,7 @@ const App = {
         
         // Prevent deleting last slide
         if (page.slides.length <= 1) {
-            Toast.show('Mínimo de 1 slide necessário', 'warning');
+            Toast.show(t('toast.minOneSlide'), 'warning');
             return;
         }
         
@@ -4729,7 +4783,7 @@ const App = {
         Store.save();
         renderRightPanel();
         renderCanvas();
-        Toast.show('Slide removido', 'info');
+        Toast.show(t('toast.slideRemoved'), 'info');
     },
 
     // Update slide duration
@@ -4776,7 +4830,7 @@ const App = {
         if (!page || page.layoutId !== 'slideshow' || !page.slides) return;
         
         if (page.slides.length === 0) {
-            Toast.show('Adicione slides primeiro', 'warning');
+            Toast.show(t('toast.addSlidesFirst'), 'warning');
             return;
         }
         
@@ -5357,7 +5411,7 @@ const App = {
             const file = e.target.files[0];
             if (!file) return;
             
-            Toast.show('Carregando áudio...', 'info', 2000);
+            Toast.show(t('toast.loadingAudio'), 'info', 2000);
             
             const reader = new FileReader();
             reader.onload = async (ev) => {
@@ -5372,7 +5426,7 @@ const App = {
                     Toast.show(`Áudio carregado: ${info.duration.toFixed(1)}s`, 'success');
                     this._refreshAudioSplitPanel();
                 } else {
-                    Toast.show('Erro ao carregar áudio', 'error');
+                    Toast.show(t('toast.audioLoadError'), 'error');
                 }
             };
             reader.readAsDataURL(file);
@@ -5384,13 +5438,13 @@ const App = {
         const proj = Store.get('currentProject');
         const pageCount = proj?.pages?.length || 1;
         AudioSplitter.buildEqualBoundaries(pageCount);
-        Toast.show('Divisões equalizadas', 'info', 1500);
+        Toast.show(t('toast.divisionsEqualized'), 'info', 1500);
         this._refreshAudioSplitPanel();
     },
     
     undoAudioSplit() {
         if (AudioSplitter.undo()) {
-            Toast.show('Desfazer', 'info', 1000);
+            Toast.show(t('toast.undone'), 'info', 1000);
             this._refreshAudioSplitPanel();
         }
     },
@@ -5480,7 +5534,7 @@ const App = {
         const proj = Store.get('currentProject');
         if (!proj) return;
         
-        Toast.show('Processando áudio...', 'info', 3000);
+        Toast.show(t('toast.processingAudio'), 'info', 3000);
         
         const result = await AudioSplitter.applyToProject(proj);
         
@@ -5969,7 +6023,7 @@ const App = {
         page.texts.push(newBalloon);
         Store.set({ currentProject: p, selectedElement: { type: 'balloon', index: page.texts.length - 1 } });
         Store.save();
-        Toast.show('Balão duplicado');
+        Toast.show(t('toast.balloonDuplicated'));
     },
     deleteBalloon(index) {
         const p = Store.get('currentProject'), page = Store.getActivePage();
@@ -5986,7 +6040,7 @@ const App = {
         const isMateria = page?.type === 'materia' || page?.isMateria === true;
         if (isMateria && ['thought', 'shout', 'sfx'].includes(type)) {
             const labels = { thought: 'Pensamento', shout: 'Grito', sfx: 'SFX/Onomatopeia' };
-            Toast.show(`"${labels[type] || type}" não se aplica a páginas de Matéria.`, 2500);
+            Toast.show(t('toast.balloonNotForMateria', { type: labels[type] || type }), 2500);
             return;
         }
         
@@ -6468,7 +6522,7 @@ const App = {
         };
         this._balloonPresets.push(preset);
         localStorage.setItem('balloonPresets', JSON.stringify(this._balloonPresets));
-        Toast.show('Preset salvo');
+        Toast.show(t('toast.presetSaved'));
         renderRightPanel();
     },
     applyBalloonPreset(index, presetIdx) {
@@ -6488,7 +6542,7 @@ const App = {
     deleteBalloonPreset(presetIdx) {
         this._balloonPresets.splice(presetIdx, 1);
         localStorage.setItem('balloonPresets', JSON.stringify(this._balloonPresets));
-        Toast.show('Preset removido');
+        Toast.show(t('toast.presetRemoved'));
         renderRightPanel();
     },
     // ── Bleed/Safe Zone ──
@@ -6508,6 +6562,44 @@ const App = {
         page.showTextBelow = !page.showTextBelow; 
         if (page.showTextBelow && !page.narrativeHeight) page.narrativeHeight = 120;
         Store.set({ currentProject: p }); Store.save(); 
+    },
+    setTextPosition(position) {
+        const p = Store.get('currentProject'), page = Store.getActivePage();
+        if (!p || !page) return;
+        const fmt = p.videoFormat || 'vertical';
+        // Warn if unsafe
+        if (typeof SafeZones !== 'undefined' && SafeZones.isUnsafe(fmt, position)) {
+            const msg = i18n.getLocale() === 'pt-BR'
+                ? 'Posicao inferior em videos verticais sera coberta pela interface do TikTok, Reels e Shorts.\n\nSeu texto pode ficar invisivel.\n\nRecomendado: usar posicao "Topo".\n\nUsar posicao inferior mesmo assim?'
+                : 'Bottom position on vertical videos will be covered by TikTok, Reels, and Shorts UI elements.\n\nYour text may not be visible.\n\nRecommended: use "Top" position.\n\nUse bottom position anyway?';
+            if (!confirm(msg)) return;
+        }
+        Store.pushUndo();
+        if (!page.narrativeStyle) page.narrativeStyle = {};
+        page.narrativeStyle.position = position;
+        Store.set({ currentProject: p }); Store.save();
+        renderRightPanel();
+        renderCanvas();
+    },
+    applyTextPositionToAll(position) {
+        const p = Store.get('currentProject');
+        if (!p) return;
+        const fmt = p.videoFormat || 'vertical';
+        if (typeof SafeZones !== 'undefined' && SafeZones.isUnsafe(fmt, position)) {
+            const msg = i18n.getLocale() === 'pt-BR'
+                ? 'Posicao inferior em videos verticais sera coberta pela interface do TikTok/Reels/Shorts.\n\nAplicar a todas as paginas mesmo assim?'
+                : 'Bottom position on vertical videos will be covered by TikTok/Reels/Shorts UI.\n\nApply to all pages anyway?';
+            if (!confirm(msg)) return;
+        }
+        Store.pushUndo();
+        p.pages.forEach(pg => {
+            if (!pg.narrativeStyle) pg.narrativeStyle = {};
+            pg.narrativeStyle.position = position;
+        });
+        Store.set({ currentProject: p }); Store.save();
+        if (typeof Toast !== 'undefined') Toast.show(t('toast.presetApplied', { name: position }), 'success');
+        renderRightPanel();
+        renderCanvas();
     },
      _narrativeSaveTimeout: null,
     _narrativeMeasureEl: null,
@@ -6819,7 +6911,7 @@ const App = {
         Store.set({ currentProject: p });
         Store.save();
         renderRightPanel();
-        Toast.show('Segmento removido', 'info');
+        Toast.show(t('toast.segmentRemoved'), 'info');
     },
     autoSplitNarrativeSegments(pagesPerSegment = 3) {
         const p = Store.get('currentProject');
@@ -6844,7 +6936,7 @@ const App = {
                 : `${gaps.slice(0, 5).map(g => g + 1).join(', ')}... (+${gaps.length - 5})`;
             Toast.show(`Warning: Pages without segment: ${gapStr}`, 'warning', 4000);
         } else {
-            Toast.show('All pages have segments', 'success');
+            Toast.show(t('toast.allPagesHaveSegments'), 'success');
         }
         return gaps;
     },
@@ -6858,7 +6950,7 @@ const App = {
             missing.forEach(m => byLang[m.lang]++);
             Toast.show(`Warning: Missing translations: PT-BR(${byLang['pt-BR']}) EN(${byLang['en']})`, 'warning', 4000);
         } else {
-            Toast.show('All translations complete', 'success');
+            Toast.show(t('toast.allTranslationsComplete'), 'success');
         }
         return missing;
     },
@@ -6912,7 +7004,7 @@ const App = {
         const p = Store.get('currentProject');
         if (!p) return;
         const lines = bulkText.split(/\n\n+/).map(l => l.trim()).filter(Boolean);
-        if (lines.length === 0) { Toast.show('Nenhum texto encontrado', 'warning'); return; }
+        if (lines.length === 0) { Toast.show(t('toast.noTextFound'), 'warning'); return; }
         const count = Math.min(lines.length, p.pages.length);
         Store.pushUndo();
         for (let i = 0; i < count; i++) {
@@ -6983,7 +7075,7 @@ const App = {
         const p = Store.get('currentProject'), page = Store.getActivePage();
         if (!p || !page) return;
         if (this._ensureNarrativeSettings(p).heightLocked) {
-            Toast.show('Altura travada. Destrave para editar manualmente.', 'info');
+            Toast.show(t('toast.heightLocked'), 'info');
             return;
         }
         const zoom = Store.get('zoom') || 1;
@@ -7087,7 +7179,7 @@ const App = {
                 p.pages.forEach(pg => { pg.narrativeHeight = h; pg.showTextBelow = h > 0; });
                 Toast.show(`Altura travada em ${h}px`, 'success');
             } else {
-                Toast.show('Altura destravada', 'info');
+                Toast.show(t('toast.heightUnlocked'), 'info');
             }
         } else if (type === 'fontSize') {
             const nextLocked = locked == null ? !settings.fontSizeLocked : !!locked;
@@ -7100,7 +7192,7 @@ const App = {
                 });
                 Toast.show(`Fonte travada em ${size}px`, 'success');
             } else {
-                Toast.show('Fonte destravada', 'info');
+                Toast.show(t('toast.fontUnlocked'), 'info');
             }
         }
         
@@ -7165,12 +7257,32 @@ const App = {
     },
     toggleSidebarSection(section) {
         const collapsed = Store.get('sidebarCollapsed') || {};
-        // Default stickers to collapsed (true), others to expanded (false)
-        const defaultState = (section === 'stickers');
+        // Advanced sections start collapsed by default to reduce first-load noise
+        const defaultCollapsedSections = new Set(['stickers', 'leftMateria', 'visualEffects', 'layers', 'audio', 'shortcuts']);
+        const defaultState = defaultCollapsedSections.has(section);
         const current = collapsed[section] !== undefined ? collapsed[section] : defaultState;
         collapsed[section] = !current;
         Store.set({ sidebarCollapsed: collapsed });
         renderRightPanel();
+    },
+    toggleNarrSection(section) {
+        // Accordion toggle for narrative controls subsections
+        const narrAccordion = Store.get('narrAccordion') || { basicText: true, advancedLayout: false, position: true, bilingual: false };
+        narrAccordion[section] = !narrAccordion[section];
+        Store.set({ narrAccordion });
+        // Save to localStorage for persistence
+        try { localStorage.setItem('hqm_narr_accordion', JSON.stringify(narrAccordion)); } catch(e) {}
+        renderRightPanel();
+    },
+    restoreNarrAccordion() {
+        // Restore accordion states from localStorage on app init
+        try {
+            const saved = localStorage.getItem('hqm_narr_accordion');
+            if (saved) {
+                const states = JSON.parse(saved);
+                Store.set({ narrAccordion: { basicText: true, advancedLayout: false, position: true, bilingual: false, ...states } });
+            }
+        } catch(e) {}
     },
     toggleVariations(collapse) {
         const collapsed = Store.get('sidebarCollapsed') || {};
@@ -7187,13 +7299,13 @@ const App = {
         // Matéria context guard
         const isMateria = page?.type === 'materia' || page?.isMateria === true;
         if (isMateria) {
-            Toast.show('"SFX/Onomatopeia" não se aplica a páginas de Matéria.', 3500);
+            Toast.show(t('toast.sfxNotForMateria'), 3500);
             return;
         }
         
         if (!page.texts) page.texts = [];
         if (page.texts.length >= 30) {
-            Toast.show('Máximo de 30 balões por página atingido.', 2500);
+            Toast.show(t('toast.maxBalloonsReached'), 2500);
             return;
         }
         
@@ -7214,7 +7326,7 @@ const App = {
         page.texts.push(sfx);
         Store.set({ currentProject: p, selectedElement: { type: 'balloon', index: page.texts.length - 1 } }); 
         Store.save();
-        Toast.show('SFX adicionado');
+        Toast.show(t('toast.sfxAdded'));
         renderCanvas();
         renderRightPanel();
     },
@@ -7250,6 +7362,70 @@ const App = {
     
     // ── Mobile Sidebar Toggle ──
     isMobile() { return window.innerWidth <= 768; },
+    
+    _openMobileSidebar() {
+        const sidebar = document.querySelector('.right-panel');
+        const backdrop = document.querySelector('.mobile-backdrop');
+        if (!sidebar || !backdrop) return;
+        sidebar.classList.add('mobile-open');
+        backdrop.classList.add('visible');
+    },
+    
+    scrollMobileDrawerTo(targetId) {
+        if (!targetId) return;
+        const content = document.getElementById('right-panel-content');
+        if (!content) return;
+        content.scrollTop = 0;
+        const target = content.querySelector('#' + targetId);
+        if (target && typeof target.scrollIntoView === 'function') {
+            requestAnimationFrame(() => {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        }
+    },
+    
+    openMobileWorkflow(step) {
+        if (!this.isMobile()) return;
+        const page = Store.getActivePage();
+        const selectedEl = Store.get('selectedElement');
+        
+        if (step === 'preview') {
+            this.closeMobileSidebar();
+            this.toggleFullscreenPreview();
+            return;
+        }
+        if (step === 'export') {
+            this.closeMobileSidebar();
+            this.openExportPage();
+            return;
+        }
+        
+        let drawerContent = 'properties';
+        let anchorId = '';
+        
+        if (step === 'media') {
+            drawerContent = 'tools';
+            anchorId = 'mobile-anchor-pages';
+        } else if (step === 'text') {
+            const hasSelectedBalloon = selectedEl && selectedEl.type === 'balloon';
+            if (hasSelectedBalloon || page?.showTextBelow) {
+                drawerContent = 'properties';
+                anchorId = hasSelectedBalloon ? 'mobile-anchor-selected-text' : 'mobile-anchor-narrative';
+            } else {
+                drawerContent = 'tools';
+                anchorId = 'mobile-anchor-texttools';
+            }
+        } else if (step === 'timing') {
+            drawerContent = 'properties';
+            anchorId = 'mobile-anchor-duration';
+        }
+        
+        Store.set({ mobileWorkflowStep: step, mobileDrawerContent: drawerContent });
+        requestAnimationFrame(() => {
+            this._openMobileSidebar();
+            requestAnimationFrame(() => this.scrollMobileDrawerTo(anchorId));
+        });
+    },
     
     toggleMobileSidebar() {
         const sidebar = document.querySelector('.right-panel');
@@ -7455,7 +7631,7 @@ const App = {
         }
         page.texts.push(clone);
         Store.set({ currentProject: p, selectedElement: { type: 'text', id: clone.id } }); Store.save();
-        Toast.show('Balão duplicado');
+        Toast.show(t('toast.balloonDuplicated'));
     },
     // Paste from clipboard to selected slot or next empty
     pasteFromClipboard() {
@@ -8479,10 +8655,12 @@ const App = {
         btns.forEach(b => {
             const isActive = b.dataset.val === q;
             b.style.borderColor = isActive ? 'var(--accent)' : 'var(--border)';
-            b.style.background = isActive ? 'rgba(20,184,166,0.1)' : 'var(--bg-surface)';
+            b.style.background = isActive ? 'rgba(107,114,128,0.1)' : 'var(--bg-surface)';
             b.style.color = isActive ? 'var(--accent)' : 'var(--text-2)';
             b.style.fontWeight = isActive ? '600' : '400';
         });
+        this._updateExportButtonLabel();
+        if (Store.get('view') === 'export') this.render();
     },
     _setExportFps(fps) {
         this._videoFps = fps;
@@ -8490,10 +8668,12 @@ const App = {
         btns.forEach(b => {
             const isActive = b.dataset.val === String(fps);
             b.style.borderColor = isActive ? 'var(--accent)' : 'var(--border)';
-            b.style.background = isActive ? 'rgba(20,184,166,0.1)' : 'var(--bg-surface)';
+            b.style.background = isActive ? 'rgba(107,114,128,0.1)' : 'var(--bg-surface)';
             b.style.color = isActive ? 'var(--accent)' : 'var(--text-2)';
             b.style.fontWeight = isActive ? '600' : '400';
         });
+        this._updateExportButtonLabel();
+        if (Store.get('view') === 'export') this.render();
     },
     _setExportLanguage(lang) {
         Store.set({ exportLanguage: lang });
@@ -8501,10 +8681,21 @@ const App = {
         btns.forEach(b => {
             const isActive = b.dataset.val === lang;
             b.style.borderColor = isActive ? 'var(--accent)' : 'var(--border)';
-            b.style.background = isActive ? 'rgba(20,184,166,0.1)' : 'var(--bg-surface)';
+            b.style.background = isActive ? 'rgba(107,114,128,0.1)' : 'var(--bg-surface)';
             b.style.color = isActive ? 'var(--accent)' : 'var(--text-2)';
             b.style.fontWeight = isActive ? '600' : '400';
         });
+        this._updateExportButtonLabel();
+        if (Store.get('view') === 'export') this.render();
+    },
+    _updateExportButtonLabel() {
+        const exportBtn = document.getElementById('export-video-btn');
+        if (!exportBtn) return;
+        const fmt = this._exportFormat || 'auto';
+        const exportLang = Store.get('exportLanguage') || 'pt-BR';
+        const label = fmt === 'mp4' ? 'MP4' : fmt === 'webm' ? 'WebM' : 'Auto';
+        const langLabel = exportLang === 'both' ? t('export.both') : exportLang === 'en' ? t('export.english') : t('export.portuguese');
+        exportBtn.textContent = `🎬 ${t('export.exportVideo')} · ${langLabel} · ${label}`;
     },
     validateProjectBeforeExport() {
         const p = Store.get('currentProject');
@@ -8654,7 +8845,14 @@ const App = {
         Toast.show(`${proj.pages.length} páginas exportadas como PNG`, 'success');
     },
     openExportPage() {
+        if (!['auto', 'mp4', 'webm'].includes(this._exportFormat)) {
+            this._exportFormat = 'auto';
+        }
+        if (!Store.get('exportLanguage')) {
+            Store.setSilent({ exportLanguage: 'pt-BR' });
+        }
         Store.set({ view: 'export' });
+        requestAnimationFrame(() => this._updateExportButtonLabel());
     },
 
     _setExportFormat(fmt) {
@@ -8663,16 +8861,12 @@ const App = {
         btns.forEach(b => {
             const isActive = b.dataset.val === fmt;
             b.style.borderColor = isActive ? 'var(--accent)' : 'var(--border)';
-            b.style.background = isActive ? 'rgba(20,184,166,0.1)' : 'var(--bg-surface)';
+            b.style.background = isActive ? 'rgba(107,114,128,0.1)' : 'var(--bg-surface)';
             b.style.color = isActive ? 'var(--accent)' : 'var(--text-2)';
             b.style.fontWeight = isActive ? '600' : '400';
         });
-        // Update button label
-        const exportBtn = document.getElementById('export-video-btn');
-        if (exportBtn) {
-            const label = fmt === 'mp4' ? 'MP4' : fmt === 'webm' ? 'WebM' : 'Vídeo';
-            exportBtn.textContent = `🎬 Exportar ${label}`;
-        }
+        this._updateExportButtonLabel();
+        if (Store.get('view') === 'export') this.render();
     },
     async _doExportVideo() {
         const btn = document.getElementById('video-export-btn');
@@ -8795,29 +8989,49 @@ const App = {
         const overlay = document.createElement('div');
         overlay.id = 'fullscreen-preview';
         overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#111;display:flex;align-items:center;justify-content:center;cursor:pointer;';
-        overlay.onclick = () => overlay.remove();
+        overlay.tabIndex = 0;
+        const closePreview = () => overlay.remove();
+        overlay.onclick = () => closePreview();
+        overlay.onkeydown = (event) => {
+            const key = (event.key || '').toLowerCase();
+            if (key === 'escape' || key === 'f') {
+                event.preventDefault();
+                closePreview();
+            }
+        };
         const clone = el.cloneNode(true);
         clone.style.transform = 'none';
         clone.style.position = 'relative';
         clone.style.left = 'auto';
         clone.style.top = 'auto';
-        // Scale to fit viewport
         const vw = window.innerWidth * 0.9, vh = window.innerHeight * 0.9;
         const pw = el.offsetWidth, ph = el.offsetHeight;
         const s = Math.min(vw / pw, vh / ph);
         clone.style.transform = `scale(${s})`;
         clone.style.transformOrigin = 'center center';
-        // Remove float tools from clone
         const ft = clone.querySelector('.canvas-float-tools');
         if (ft) ft.remove();
-        // Hide order numbers and hint overlays in preview
         clone.querySelectorAll('[style*="pointer-events:none"]').forEach(e => { if (e.textContent.match(/^\d+$/)) e.style.display = 'none'; });
+        const frame = document.createElement('div');
+        frame.className = 'fullscreen-preview-frame';
+        frame.onclick = (event) => event.stopPropagation();
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'fullscreen-preview-close';
+        closeBtn.textContent = typeof t === 'function' ? t('common.close') : 'Close';
+        closeBtn.onclick = (event) => {
+            event.stopPropagation();
+            closePreview();
+        };
         const hint = document.createElement('div');
         hint.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);color:#888;font-size:12px;pointer-events:none;';
-        hint.textContent = 'Clique ou pressione F para sair • ← → para navegar';
-        overlay.appendChild(clone);
-        overlay.appendChild(hint);
+        hint.textContent = this.isMobile() ? '' : 'Clique ou pressione F para sair • ← → para navegar';
+        frame.appendChild(closeBtn);
+        frame.appendChild(clone);
+        overlay.appendChild(frame);
+        if (hint.textContent) overlay.appendChild(hint);
         document.body.appendChild(overlay);
+        overlay.focus();
     },
     async doExport() {
         const p = Store.get('currentProject'); if (!p) return;
@@ -9888,7 +10102,7 @@ const App = {
             const info = await BulkAudioImporter.loadAudio(dataUrl);
             if (!info) {
                 if (infoEl) infoEl.textContent = 'Erro ao carregar áudio.';
-                Toast.show('Erro ao carregar áudio', 'error');
+                Toast.show(t('toast.audioLoadError'), 'error');
                 return;
             }
 

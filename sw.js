@@ -1,17 +1,17 @@
 // HQ Movie — Service Worker (Cache-First)
-const CACHE_NAME = 'hq-movie-v73-prod';
+const CACHE_NAME = 'hq-movie-v96-code-audit';
 const ASSETS = [
     '/',
     '/index.html',
-    '/styles-v3.css?v=24',
-    '/i18n.js?v=3',
+    '/styles-v3.css?v=34',
+    '/i18n.js?v=5',
     '/layouts.js?v=4',
     '/layouts-video.js?v=7',
-    '/app.js?v=10',
-    '/video-exporter.js?v=10',
-    '/ui.js?v=25',
-    '/onboarding.js?v=7',
-    '/controller.js?v=22',
+    '/app.js?v=12',
+    '/video-exporter.js?v=11',
+    '/ui.js?v=37',
+    '/onboarding.js?v=8',
+    '/controller.js?v=31',
     '/manifest.json',
     '/locales/en.json',
     '/locales/pt-BR.json',
