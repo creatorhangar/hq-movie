@@ -1286,13 +1286,20 @@ body {
 }
 
 .panel-slot.empty {
-  border: 1px dashed var(--border3);
+  border: 2px dashed rgba(255,255,255,0.25);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   gap: 8px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,0.03),
+    rgba(255,255,255,0.03) 10px,
+    rgba(255,255,255,0.06) 10px,
+    rgba(255,255,255,0.06) 20px
+  );
 }
 
 .panel-slot.empty:hover {
@@ -2356,96 +2363,95 @@ body {
   box-shadow: 1px 2px 5px rgba(0,0,0,0.15);
 }
 
-/* Speech curved tail — box-shadow + border-radius technique (exemplos.css)
-   FINO: 40×22px, fill -14px, stroke 1.5px */
+/* Speech curved tail — box-shadow technique (refined) */
 .balloon-css.speech::before {
   content: '';
   position: absolute;
-  width: 40px;
-  height: 22px;
+  width: 36px;
+  height: 20px;
 }
 .balloon-css.speech::after { content: none; }
 
 /* ── S (bottom center) ── */
 .balloon-css.speech[data-tail="s"]::before {
-  bottom: -20px; left: 50%; transform: translateX(-60%);
+  bottom: -18px; left: 50%; transform: translateX(-55%);
   border-radius: 0 0 100%;
   box-shadow:
-    -1.5px -1.5px 0 0 var(--b-stroke, #1a1a1a) inset,
-    -14px 0 0 0 var(--b-bg, #ffffff) inset,
-    -15.5px -1.5px 0 0 var(--b-stroke, #1a1a1a) inset;
+    -2px -2px 0 0 var(--b-stroke, #1a1a1a) inset,
+    -12px 0 0 0 var(--b-bg, #ffffff) inset,
+    -14px -2px 0 0 var(--b-stroke, #1a1a1a) inset;
 }
 
 /* ── SW (bottom left) ── */
 .balloon-css.speech[data-tail="sw"]::before {
-  bottom: -20px; left: 10px;
+  bottom: -18px; left: 12px;
   border-radius: 0 0 100%;
   box-shadow:
-    -1.5px -1.5px 0 0 var(--b-stroke, #1a1a1a) inset,
-    -14px 0 0 0 var(--b-bg, #ffffff) inset,
-    -15.5px -1.5px 0 0 var(--b-stroke, #1a1a1a) inset;
+    -2px -2px 0 0 var(--b-stroke, #1a1a1a) inset,
+    -12px 0 0 0 var(--b-bg, #ffffff) inset,
+    -14px -2px 0 0 var(--b-stroke, #1a1a1a) inset;
 }
 
 /* ── SE (bottom right) ── */
 .balloon-css.speech[data-tail="se"]::before {
-  bottom: -20px; right: 10px; left: auto;
+  bottom: -18px; right: 12px; left: auto;
   border-radius: 0 0 0 100%;
   box-shadow:
-    1.5px -1.5px 0 0 var(--b-stroke, #1a1a1a) inset,
-    14px 0 0 0 var(--b-bg, #ffffff) inset,
-    15.5px -1.5px 0 0 var(--b-stroke, #1a1a1a) inset;
+    2px -2px 0 0 var(--b-stroke, #1a1a1a) inset,
+    12px 0 0 0 var(--b-bg, #ffffff) inset,
+    14px -2px 0 0 var(--b-stroke, #1a1a1a) inset;
 }
 
 /* ── N (top center) ── */
 .balloon-css.speech[data-tail="n"]::before {
-  top: -20px; bottom: auto; left: 50%; transform: translateX(-60%);
+  top: -18px; bottom: auto; left: 50%; transform: translateX(-55%);
   border-radius: 0 100% 0 0;
   box-shadow:
-    -1.5px 1.5px 0 0 var(--b-stroke, #1a1a1a) inset,
-    -14px 0 0 0 var(--b-bg, #ffffff) inset,
-    -15.5px 1.5px 0 0 var(--b-stroke, #1a1a1a) inset;
+    -2px 2px 0 0 var(--b-stroke, #1a1a1a) inset,
+    -12px 0 0 0 var(--b-bg, #ffffff) inset,
+    -14px 2px 0 0 var(--b-stroke, #1a1a1a) inset;
 }
 
 /* ── NW (top left) ── */
 .balloon-css.speech[data-tail="nw"]::before {
-  top: -20px; bottom: auto; left: 10px;
+  top: -18px; bottom: auto; left: 12px;
   border-radius: 0 100% 0 0;
   box-shadow:
-    -1.5px 1.5px 0 0 var(--b-stroke, #1a1a1a) inset,
-    -14px 0 0 0 var(--b-bg, #ffffff) inset,
-    -15.5px 1.5px 0 0 var(--b-stroke, #1a1a1a) inset;
+    -2px 2px 0 0 var(--b-stroke, #1a1a1a) inset,
+    -12px 0 0 0 var(--b-bg, #ffffff) inset,
+    -14px 2px 0 0 var(--b-stroke, #1a1a1a) inset;
 }
 
 /* ── NE (top right) ── */
 .balloon-css.speech[data-tail="ne"]::before {
-  top: -20px; bottom: auto; right: 10px; left: auto;
+  top: -18px; bottom: auto; right: 12px; left: auto;
   border-radius: 100% 0 0 0;
   box-shadow:
-    1.5px 1.5px 0 0 var(--b-stroke, #1a1a1a) inset,
-    14px 0 0 0 var(--b-bg, #ffffff) inset,
-    15.5px 1.5px 0 0 var(--b-stroke, #1a1a1a) inset;
+    2px 2px 0 0 var(--b-stroke, #1a1a1a) inset,
+    12px 0 0 0 var(--b-bg, #ffffff) inset,
+    14px 2px 0 0 var(--b-stroke, #1a1a1a) inset;
 }
 
 /* ── W (left middle) ── */
 .balloon-css.speech[data-tail="w"]::before {
-  width: 22px; height: 40px;
-  top: 50%; left: -20px; bottom: auto; transform: translateY(-50%);
+  width: 20px; height: 36px;
+  top: 50%; left: -18px; bottom: auto; transform: translateY(-55%);
   border-radius: 0 0 0 100%;
   box-shadow:
-    1.5px -1.5px 0 0 var(--b-stroke, #1a1a1a) inset,
-    0 -14px 0 0 var(--b-bg, #ffffff) inset,
-    1.5px -15.5px 0 0 var(--b-stroke, #1a1a1a) inset;
+    2px -2px 0 0 var(--b-stroke, #1a1a1a) inset,
+    0 -12px 0 0 var(--b-bg, #ffffff) inset,
+    2px -14px 0 0 var(--b-stroke, #1a1a1a) inset;
 }
 
 /* ── E (right middle) ── */
 .balloon-css.speech[data-tail="e"]::before {
-  width: 22px; height: 40px;
-  top: 50%; right: -20px; left: auto; bottom: auto; transform: translateY(-50%);
+  width: 20px; height: 36px;
+  top: 50%; right: -18px; left: auto; bottom: auto; transform: translateY(-55%);
   border-radius: 0 0 100% 0;
   box-shadow:
-    -1.5px -1.5px 0 0 var(--b-stroke, #1a1a1a) inset,
-    0 -14px 0 0 var(--b-bg, #ffffff) inset,
-    -1.5px -15.5px 0 0 var(--b-stroke, #1a1a1a) inset;
+    -2px -2px 0 0 var(--b-stroke, #1a1a1a) inset,
+    0 -12px 0 0 var(--b-bg, #ffffff) inset,
+    -2px -14px 0 0 var(--b-stroke, #1a1a1a) inset;
 }
 
 /* ── No tail ── */

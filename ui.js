@@ -4128,7 +4128,7 @@ function renderBalloons(page) {
       <div class="balloon-text-css"
         contenteditable="false"
         data-balloon-index="${i}"
-        data-placeholder="${isSfx ? '' : 'Clique 2x para editar...'}"
+        data-placeholder="${isSfx ? '' : '...'}"
         onblur="App.saveBalloonTextCss(${i}, this.innerText)"
         onkeydown="event.stopImmediatePropagation();"
         oninput="${isShout ? 'App._updateShoutSvgLive('+i+')' : ''}"
