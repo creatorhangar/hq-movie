@@ -48,7 +48,7 @@ function renderExportPage() {
   const vf = proj.videoFormat ? VIDEO_FORMATS[proj.videoFormat] : null;
   const fmtName = vf ? vf.name : 'A4';
   const fmtRes = vf ? `${vf.width}×${vf.height}` : '794×1123';
-  const totalDuration = pages.reduce((s, p) => s + (p.duration || 4), 0);
+  const totalDuration = pages.reduce((s, p) => s + (p.duration || 2.5), 0);
   const durStr = `${Math.floor(totalDuration / 60).toString().padStart(2,'0')}:${(totalDuration % 60).toString().padStart(2,'0')}`;
   const exportLang = Store.get('exportLanguage') || 'pt-BR';
   const exportFormatRaw = (typeof App !== 'undefined' && App._exportFormat) ? App._exportFormat : 'auto';
@@ -135,7 +135,7 @@ function renderExportPage() {
         <div style="width:180px;height:${vf ? Math.round(180 / (vf.width/vf.height)) : 240}px;border-radius:8px;overflow:hidden;border:2px solid var(--border);position:relative;">
           ${thumb}
           <div style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;">Pg ${i+1}</div>
-          <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);color:var(--accent);font-size:10px;padding:2px 6px;border-radius:10px;">${pg.duration || 4}s ${kb}</div>
+          <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);color:var(--accent);font-size:10px;padding:2px 6px;border-radius:10px;">${pg.duration || 2.5}s ${kb}</div>
         </div>
         <div style="text-align:center;margin-top:4px;font-size:10px;color:var(--text-3);">${tr}${i < pages.length - 1 ? ' →' : ''}</div>
       </div>`;
@@ -385,43 +385,38 @@ function renderDashboard() {
           </button>
         </div>
 
-        <details style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:0 18px;overflow:hidden;">
-          <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:18px 0;font-size:13px;font-weight:700;color:var(--text-1);">
-            <span>${t('dashboard.advancedToggle')}</span>
-            <span style="font-size:11px;color:var(--text-3);font-weight:600;">${t('dashboard.advancedDescription')}</span>
-          </summary>
-          <div style="padding:0 0 18px;display:grid;gap:18px;">
-            <div style="display:flex;gap:12px;flex-wrap:wrap;">
-              <button class="btn btn-ghost" onclick="App.showBulkAudioModal()" style="display:flex;align-items:center;gap:8px;background:#4b5563;color:#fff;border:none;font-weight:600;">${Icons.music} ${t('dashboard.createFromAudio')}</button>
-              <button class="btn btn-ghost" onclick="App.createDemoProject()" style="display:flex;align-items:center;gap:8px;">${Icons.palette} ${t('dashboard.createDemo')}</button>
-            </div>
-            <div>
-              <div style="font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">${t('dashboard.templatesTitle')}</div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;max-width:900px;">
-                <button type="button" class="template-card" aria-label="${t('templates.motionComic')}" onclick="App.createFromTemplate('motion-comic')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left; width:100%;">
-                  <div style="font-size:24px; margin-bottom:8px;">${Icons.shield}</div>
-                  <div style="font-weight:600; color:var(--text-1);">${t('templates.motionComic')}</div>
-                  <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.motionComicDescription')}</div>
-                </button>
-                <button type="button" class="template-card" aria-label="${t('templates.podcast')}" onclick="App.createFromTemplate('podcast')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left; width:100%;">
-                  <div style="font-size:24px; margin-bottom:8px;">${Icons.radio}</div>
-                  <div style="font-weight:600; color:var(--text-1);">${t('templates.podcast')}</div>
-                  <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.podcastDescription')}</div>
-                </button>
-                <button type="button" class="template-card" aria-label="${t('templates.tutorial')}" onclick="App.createFromTemplate('tutorial')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left; width:100%;">
-                  <div style="font-size:24px; margin-bottom:8px;">${Icons.bookOpen}</div>
-                  <div style="font-weight:600; color:var(--text-1);">${t('templates.tutorial')}</div>
-                  <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.tutorialDescription')}</div>
-                </button>
-                <button type="button" class="template-card" aria-label="${t('templates.story')}" onclick="App.createFromTemplate('story')" style="background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; text-align:left; width:100%;">
-                  <div style="font-size:24px; margin-bottom:8px;">${Icons.smartphone}</div>
-                  <div style="font-weight:600; color:var(--text-1);">${t('templates.story')}</div>
-                  <div style="font-size:11px; color:var(--text-3); margin-top:4px;">${t('templates.storyDescription')}</div>
-                </button>
-              </div>
+        <!-- Templates direto (sem clique extra) -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <span style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;">${t('dashboard.templatesTitle')}</span>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost btn-sm" onclick="App.showBulkAudioModal()" style="display:flex;align-items:center;gap:4px;font-size:10px;">${Icons.music} Áudio</button>
+              <button class="btn btn-ghost btn-sm" onclick="App.createDemoProject()" style="display:flex;align-items:center;gap:4px;font-size:10px;">${Icons.palette} Demo</button>
             </div>
           </div>
-        </details>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+            <button type="button" class="template-card" onclick="App.createFromTemplate('motion-comic')" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px 10px;cursor:pointer;text-align:center;">
+              <div style="font-size:20px;margin-bottom:4px;">${Icons.shield}</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text);">${t('templates.motionComic')}</div>
+              <div style="font-size:9px;color:var(--text3);margin-top:2px;">4 pgs · 2×2</div>
+            </button>
+            <button type="button" class="template-card" onclick="App.createFromTemplate('podcast')" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px 10px;cursor:pointer;text-align:center;">
+              <div style="font-size:20px;margin-bottom:4px;">${Icons.radio}</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text);">${t('templates.podcast')}</div>
+              <div style="font-size:9px;color:var(--text3);margin-top:2px;">8 pgs · Full</div>
+            </button>
+            <button type="button" class="template-card" onclick="App.createFromTemplate('tutorial')" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px 10px;cursor:pointer;text-align:center;">
+              <div style="font-size:20px;margin-bottom:4px;">${Icons.bookOpen}</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text);">${t('templates.tutorial')}</div>
+              <div style="font-size:9px;color:var(--text3);margin-top:2px;">6 pgs · Text</div>
+            </button>
+            <button type="button" class="template-card" onclick="App.createFromTemplate('story')" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px 10px;cursor:pointer;text-align:center;">
+              <div style="font-size:20px;margin-bottom:4px;">${Icons.smartphone}</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text);">${t('templates.story')}</div>
+              <div style="font-size:9px;color:var(--text3);margin-top:2px;">5 pgs · 9:16</div>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="dashboard-projects" id="projects-section"></div>
@@ -1994,10 +1989,12 @@ function renderCanvas() {
             <button onmousedown="event.stopPropagation()" onclick="event.stopPropagation();App.triggerImageUpload(${i})" title="Upload imagem" style="background:transparent;color:#fff;border:none;padding:2px 8px;font-size:11px;cursor:pointer;font-weight:600;">${Icons.upload} Upload</button>
             <button onmousedown="event.stopPropagation()" onclick="event.stopPropagation();App.pasteFromClipboard()" title="Colar (Ctrl+V)" style="background:transparent;color:#fff;border:none;padding:2px 8px;font-size:11px;cursor:pointer;">${Icons.copy} Colar</button>
           </div>` : ''}
-          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-            <span style="color:${emptySelected ? 'var(--accent)' : '#aaa'};font-size:28px;font-weight:300;">+</span>
-            <span style="color:${emptySelected ? 'var(--accent)' : '#bbb'};font-size:9px;">Quadro ${i + 1}</span>
-            <span style="font-size:8px;color:${emptySelected ? 'var(--accent)' : '#999'};margin-top:2px;">2x clique = upload</span>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;">
+            <div class="slot-add-icon" style="width:48px;height:48px;border:2px dashed ${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.35)'};border-radius:50%;display:flex;align-items:center;justify-content:center;">
+              <span style="color:${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.5)'};font-size:28px;font-weight:300;">+</span>
+            </div>
+            <span class="slot-label" style="color:${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.6)'};font-size:12px;font-weight:600;">Quadro ${i + 1}</span>
+            <span style="font-size:10px;color:${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.4)'};">Clique duplo ou arraste</span>
           </div>
         </div>`;
     }).join('');
@@ -2963,25 +2960,32 @@ function renderRightPanel() {
       ` : ''}
     </div>`;
 
-  // ── SLIDESHOW MODE ──
-  const isSlideshow = page.layoutId === 'slideshow';
-  if (isSlideshow) {
-    const slides = page.slides || [];
-    const totalDuration = page.duration || 4;
+  // ── SLIDES MODE (Universal - works on ANY page) ──
+  const slides = page.slides || [];
+  const hasSlides = slides.length > 0;
+  const totalDuration = page.duration || 2.5;
+  const slidesCollapsed = collapsed.slideshow;
+  
+  // Always show slides section - either with slides or with "Enable" button
+  {
     const usedTime = slides.reduce((sum, s) => sum + (s.duration || 0), 0);
     const remainingTime = totalDuration - usedTime;
     const slideshowCollapsed = collapsed.slideshow;
     
     html += `
-      <div style="margin-bottom:6px;border:2px solid var(--accent);border-radius:6px;padding:6px;background:rgba(107,114,128,0.05);">
+      <div style="margin-bottom:6px;border:2px solid var(--accent);border-radius:6px;padding:6px;background:rgba(20,184,166,0.08);">
         <div onclick="App.toggleSidebarSection('slideshow')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
-          <span style="font-size:11px;font-weight:700;color:var(--accent);flex:1;">🎬 SLIDESHOW (${slides.length} slides)</span>
+          <span style="font-size:11px;font-weight:700;color:var(--accent);flex:1;">📷 FOTOS EM SEQUÊNCIA (${slides.length})</span>
           <span style="font-size:10px;color:var(--accent);">${slideshowCollapsed ? '+' : '-'}</span>
         </div>
         ${!slideshowCollapsed ? `
+          <!-- Explicação visual clara -->
+          <div style="background:rgba(20,184,166,0.15);border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:var(--accent);line-height:1.4;">
+            <strong>Uma página, várias fotos:</strong> cada foto aparece por um tempo antes de trocar para a próxima.
+          </div>
           <!-- Progress Info -->
           <div class="slideshow-progress-info">
-            <span class="slideshow-progress-label">Página: ${totalDuration}s · Slides: ${slides.length}</span>
+            <span class="slideshow-progress-label">Tempo total: ${totalDuration}s · Fotos: ${slides.length}</span>
             <span class="slideshow-progress-value ${usedTime > totalDuration ? 'error' : usedTime < totalDuration ? 'warning' : ''}">
               ${usedTime.toFixed(1)}s ${usedTime < totalDuration ? '(-' + remainingTime.toFixed(1) + 's)' : usedTime > totalDuration ? '(+' + (usedTime - totalDuration).toFixed(1) + 's)' : '✓'}
             </span>
@@ -2991,7 +2995,7 @@ function renderRightPanel() {
           ${slides.length > 0 ? `
             <div class="slideshow-timeline-bar">
               ${slides.map((s, idx) => {
-                const pct = ((s.duration || 4) / totalDuration) * 100;
+                const pct = ((s.duration || 2.5) / totalDuration) * 100;
                 return `<div class="slideshow-timeline-segment" style="width:${pct}%;" title="Slide ${idx + 1}: ${s.duration}s"></div>`;
               }).join('')}
             </div>
@@ -3012,7 +3016,7 @@ function renderRightPanel() {
                      ondragend="App.handleSlideDragEnd(event)"
                      tabindex="0"
                      role="listitem"
-                     aria-label="Slide ${i + 1}, duração ${slide.duration || 4} segundos"
+                     aria-label="Slide ${i + 1}, duração ${slide.duration || 2.5} segundos"
                      data-slide-index="${i}">
                   <!-- Drag Handle -->
                   <div class="slideshow-drag-handle" title="Arrastar para reordenar">
@@ -3031,14 +3035,14 @@ function renderRightPanel() {
                     <div style="position:relative;flex-shrink:0;">
                       <img src="${slide.image}" class="slideshow-slide-thumb">
                       <div class="slideshow-number-badge">#${i + 1}</div>
-                      <div class="slideshow-duration-badge">${(slide.duration || 4).toFixed(1)}s</div>
+                      <div class="slideshow-duration-badge">${(slide.duration || 2.5).toFixed(1)}s</div>
                     </div>
                     
                     <!-- Controls -->
                     <div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0;">
                       <div style="display:flex;gap:4px;align-items:center;">
                         <span style="font-size:9px;color:var(--text3);white-space:nowrap;">Tempo:</span>
-                        <input type="number" value="${slide.duration || 4}" min="0.5" step="0.5" 
+                        <input type="number" value="${slide.duration || 2.5}" min="0.5" step="0.5" 
                                onchange="App.updateSlideDuration(${i}, parseFloat(this.value))" 
                                class="slideshow-control-input">
                         <span style="font-size:9px;color:var(--text3);">s</span>
@@ -3066,15 +3070,16 @@ function renderRightPanel() {
           <!-- Actions -->
           <div style="display:flex;gap:4px;margin-bottom:4px;">
             <button onclick="App.addSlideFromLibrary()" 
-                    style="flex:1;padding:6px;border-radius:4px;border:1px dashed var(--accent);background:rgba(107,114,128,0.06);color:var(--accent);font-size:10px;cursor:pointer;font-weight:600;">+ Adicionar Slide</button>
-            <button onclick="App.divideSlidesEqually()" title="Dividir tempo igualmente entre slides" 
-                    style="padding:6px 8px;border-radius:4px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-size:10px;cursor:pointer;font-weight:600;">⚡ Dividir Igual</button>
+                    style="flex:1;padding:8px;border-radius:4px;border:1px dashed var(--accent);background:rgba(20,184,166,0.1);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">+ Adicionar Foto</button>
+            <button onclick="App.divideSlidesEqually()" title="Dividir tempo igualmente entre fotos" 
+                    style="padding:8px 10px;border-radius:4px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">⚡ Dividir</button>
           </div>
           
           ${slides.length === 0 ? `
-            <div style="padding:12px;text-align:center;background:var(--surface2);border-radius:4px;border:1px dashed var(--border);">
-              <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Nenhum slide adicionado</div>
-              <div style="font-size:9px;color:var(--text3);line-height:1.4;">Clique em "+ Adicionar Slide" para começar</div>
+            <div style="padding:12px;text-align:center;background:var(--surface2);border-radius:4px;border:1px dashed var(--accent);">
+              <div style="font-size:11px;color:var(--accent);margin-bottom:6px;font-weight:600;">📷 Ativar sequência de fotos</div>
+              <div style="font-size:10px;color:var(--text2);line-height:1.4;margin-bottom:10px;">Várias fotos na mesma página, cada uma com seu tempo de exibição</div>
+              <button onclick="App.enableSlidesMode()" style="padding:10px 20px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600;">📷 Converter para sequência</button>
             </div>
           ` : ''}
         ` : ''}
@@ -3364,7 +3369,7 @@ function renderRightPanel() {
   const videoAudio = proj.videoAudio || { background: { file: null, volume: 0.6, loop: true }, pages: [] };
   const bgMusic = videoAudio.background;
   const pageNarration = AudioManager.getPageNarration(proj, page.id);
-  const pageDuration = page.duration || 4;
+  const pageDuration = page.duration || 2.5;
   const isPlayingBg = AudioManager.isPlaying('background');
   const isPlayingNarration = AudioManager.isPlaying('narration-' + page.id);
   
@@ -3478,10 +3483,10 @@ function renderRightPanel() {
             <span style="font-size:12px;font-weight:700;color:var(--accent);">${Icons.mic} ${pageDuration}s</span>
             <span style="font-size:9px;color:var(--text3);opacity:0.7;">bloqueada pelo áudio</span>
           ` : `
-            <input type="number" value="${pageDuration}" min="2" max="10" step="0.5"
+            <input type="number" value="${pageDuration}" min="0.5" max="15" step="0.5"
               onchange="App.setPageDuration(parseFloat(this.value))"
               style="width:60px;padding:6px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;text-align:center;">
-            <span style="font-size:10px;color:var(--text3);">segundos (2-10)</span>
+            <span style="font-size:10px;color:var(--text3);">segundos (0.5-15)</span>
           `}
         </div>
       ` : ''}
@@ -4207,7 +4212,7 @@ function renderTimeline() {
   let totalDuration = 0;
   let currentTime = 0;
   const pageTimes = pages.map((pg, i) => {
-    const dur = pg.duration || 4;
+    const dur = pg.duration || 2.5;
     const start = totalDuration;
     totalDuration += dur;
     if (isPlaying && i < playingPageIdx) currentTime += dur;
@@ -4245,7 +4250,7 @@ function renderTimeline() {
     </div>
     <div class="timeline-tracks">
       ${pages.map((pg, i) => {
-        const dur = pg.duration || 4;
+        const dur = pg.duration || 2.5;
         const widthPx = Math.max(60, dur * 18);
         const isActive = i === activeIdx;
         const isPlayingNow = isPlaying && i === playingPageIdx;

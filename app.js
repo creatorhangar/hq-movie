@@ -2567,7 +2567,7 @@ function createProject(name, videoFormat = 'vertical') {
       pages: [] // [{ pageId, narration: { 'pt-BR': {file, volume, duration}, 'en': {...} } }]
     },
     timeline: {
-      defaultDuration: 4, // seconds per page without audio
+      defaultDuration: 2.5, // seconds per page without audio (optimized for reels/shorts)
       transition: 'fade', // 'fade' | 'slide' | 'cut'
       transitionDuration: 0.5
     },
@@ -2669,7 +2669,7 @@ function createPage(order, videoFormat = null) {
       textColor: '#ffffff'
     }, 
     materiaZones: {}, 
-    duration: 4,
+    duration: 2.5, // Default 2.5s (dynamic for TikTok/Reels)
     // Slideshow mode: multiple images in temporal sequence
     slides: [], // [{ id, image, duration, kenBurns, transition, transitionDuration, panX, panY, zoom }]
     kenBurns: 'zoom-in', // Default Ken Burns for non-slideshow layouts

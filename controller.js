@@ -167,7 +167,7 @@ const App = {
                 texts: [],
                 showTextBelow: templateId === 'tutorial', // Tutorial shows text below by default
                 narrative: '',
-                duration: 4
+                duration: 2.5
             });
         }
         
@@ -376,7 +376,7 @@ const App = {
             migrated = true; 
         }
         if (!p.timeline) { 
-            p.timeline = { defaultDuration: 4, transition: 'fade', transitionDuration: 0.5 }; 
+            p.timeline = { defaultDuration: 2.5, transition: 'fade', transitionDuration: 0.5 }; 
             migrated = true; 
         }
         // Migration: clean old page-level effects system, init per-image effect fields
@@ -411,7 +411,7 @@ const App = {
                 if (page.narrativeStyle && page.narrativeStyle.bgOpacity === 1 && !page.narrativeStyle.bgColor) { page.narrativeStyle.bgOpacity = 0.55; migrated = true; }
                 if (!page.materiaZones) { page.materiaZones = {}; migrated = true; }
                 // Migration: HQ Movie page duration and Ken Burns
-                if (page.duration === undefined) { page.duration = 4; migrated = true; }
+                if (page.duration === undefined) { page.duration = 2.5; migrated = true; }
                 if (page.durationLocked === undefined) { page.durationLocked = false; migrated = true; }
                 if (!page.kenBurns) { page.kenBurns = 'zoom-in'; migrated = true; }
                 if (!page.transition) { page.transition = 'fade'; migrated = true; }
@@ -4002,7 +4002,7 @@ const App = {
         AudioManager.stopAudio('narration-' + page.id);
         AudioManager.removePageNarration(p, page.id);
         // Reset duration to default when audio removed
-        page.duration = 4;
+        page.duration = 2.5;
         page.durationLocked = false;
         Toast.show(t('toast.narrationRemoved'));
         Store.save();
@@ -4102,7 +4102,7 @@ const App = {
 
     openExcalidraw() {
         this._blurActive();
-        if (this.isMobile()) this._closeMobileSidebar();
+        if (this.isMobile()) this.closeMobileSidebar();
         this.openExcalidrawModal();
     },
 
@@ -4620,7 +4620,7 @@ const App = {
             Toast.show(t('toast.durationLockedByAudio'), 'warning');
             return;
         }
-        page.duration = Math.max(2, Math.min(10, Math.round(duration * 2) / 2)); // 2-10s, step 0.5
+        page.duration = Math.max(0.5, Math.min(15, Math.round(duration * 2) / 2)); // 0.5-15s, step 0.5
         Store.save();
         renderRightPanel();
         renderTimeline();
@@ -4635,12 +4635,12 @@ const App = {
             Toast.show(t('toast.durationLockedByAudio'), 'warning');
             return;
         }
-        const current = page.duration || 4;
-        const input = prompt(`Duração da página ${pageIdx + 1} (2-10 segundos):`, current);
+        const current = page.duration || 2.5;
+        const input = prompt(`Duração da página ${pageIdx + 1} (0.5-15 segundos):`, current);
         if (input === null) return;
         const val = parseFloat(input);
         if (isNaN(val)) return;
-        page.duration = Math.max(2, Math.min(10, Math.round(val * 2) / 2));
+        page.duration = Math.max(0.5, Math.min(15, Math.round(val * 2) / 2));
         Store.save();
         renderTimeline();
         renderRightPanel();
@@ -4653,12 +4653,12 @@ const App = {
         const page = p.pages[pageIdx];
         if (page.durationLocked) return;
         const badge = event.target;
-        const current = page.duration || 4;
+        const current = page.duration || 2.5;
         const input = document.createElement('input');
         input.type = 'number';
         input.className = 'tl-dur-inline-input';
         input.value = current;
-        input.min = 2; input.max = 10; input.step = 0.5;
+        input.min = 0.5; input.max = 15; input.step = 0.5;
         badge.style.display = 'none';
         badge.parentElement.appendChild(input);
         input.focus();
@@ -4666,7 +4666,7 @@ const App = {
         const finish = () => {
             const val = parseFloat(input.value);
             if (!isNaN(val)) {
-                page.duration = Math.max(2, Math.min(10, Math.round(val * 2) / 2));
+                page.duration = Math.max(0.5, Math.min(15, Math.round(val * 2) / 2));
                 Store.save();
             }
             input.remove();
@@ -4698,16 +4698,48 @@ const App = {
     },
 
     /* ═══════════════════════════════════════════════════════════════
-       SLIDESHOW MODE - Multiple Images per Page
+       SLIDESHOW MODE - Multiple Images per Page (Universal)
+       Works on ANY page, not just slideshow layout
        ═══════════════════════════════════════════════════════════════ */
+
+    // Check if page has slides enabled
+    hasSlidesEnabled(page) {
+        return page && page.slides && page.slides.length > 0;
+    },
+
+    // Enable slides mode on any page
+    enableSlidesMode() {
+        const page = Store.getActivePage();
+        if (!page) return;
+        
+        if (!page.slides) page.slides = [];
+        
+        // Convert existing images to slides if any
+        if (page.images && page.images.length > 0 && page.slides.length === 0) {
+            const equalDuration = (page.duration || 2.5) / page.images.length;
+            page.slides = page.images.map((img, i) => ({
+                id: genId(),
+                image: img.src,
+                duration: Math.max(0.5, equalDuration),
+                kenBurns: page.kenBurns || 'zoom-in',
+                transition: i === 0 ? 'cut' : 'crossfade',
+                transitionDuration: 0.3,
+                panX: img.panX || 0,
+                panY: img.panY || 0,
+                zoom: img.zoom || 1.0
+            }));
+            Toast.show('Imagens convertidas para slides!', 'success');
+        }
+        
+        Store.save();
+        renderRightPanel();
+        renderCanvas();
+    },
 
     // Add slide from library (prompts user to select)
     addSlideFromLibrary() {
         const page = Store.getActivePage();
-        if (!page || page.layoutId !== 'slideshow') {
-            Toast.show(t('toast.selectSlideshowPage'), 'warning');
-            return;
-        }
+        if (!page) return;
         
         const proj = Store.get('currentProject');
         const library = proj.library || [];
@@ -4722,24 +4754,25 @@ const App = {
         this.addSlide(firstImage.src);
     },
 
-    // Add slide with image
+    // Add slide with image (works on ANY page)
     addSlide(imageSrc, duration = null) {
         const page = Store.getActivePage();
-        if (!page || page.layoutId !== 'slideshow') return;
+        if (!page) return;
         
         if (!page.slides) page.slides = [];
         
-        // Calculate auto duration
+        // Calculate auto duration - divide remaining time equally
         const usedTime = page.slides.reduce((sum, s) => sum + (s.duration || 0), 0);
-        const remainingTime = (page.duration || 4) - usedTime;
+        const remainingTime = (page.duration || 2.5) - usedTime;
+        const autoDuration = Math.max(0.5, Math.min(remainingTime, 2)); // 0.5-2s per slide
         
         const newSlide = {
             id: genId(),
             image: imageSrc,
-            duration: duration || Math.max(2, remainingTime),
-            kenBurns: 'zoom-in',
+            duration: duration || autoDuration,
+            kenBurns: page.kenBurns || 'zoom-in',
             transition: page.slides.length === 0 ? 'cut' : 'crossfade',
-            transitionDuration: 0.5,
+            transitionDuration: 0.3,
             panX: 0,
             panY: 0,
             zoom: 1.0
@@ -4760,10 +4793,10 @@ const App = {
         Toast.show(t('toast.slideAdded'), 'success');
     },
 
-    // Remove slide by index
+    // Remove slide by index (works on ANY page)
     removeSlide(index) {
         const page = Store.getActivePage();
-        if (!page || page.layoutId !== 'slideshow' || !page.slides) return;
+        if (!page || !page.slides) return;
         
         if (index < 0 || index >= page.slides.length) return;
         
@@ -4786,10 +4819,10 @@ const App = {
         Toast.show(t('toast.slideRemoved'), 'info');
     },
 
-    // Update slide duration
+    // Update slide duration (works on ANY page)
     updateSlideDuration(index, duration) {
         const page = Store.getActivePage();
-        if (!page || page.layoutId !== 'slideshow' || !page.slides) return;
+        if (!page || !page.slides) return;
         
         if (index < 0 || index >= page.slides.length) return;
         
@@ -4799,10 +4832,10 @@ const App = {
         renderRightPanel();
     },
 
-    // Update slide Ken Burns effect
+    // Update slide Ken Burns effect (works on ANY page)
     updateSlideKenBurns(index, preset) {
         const page = Store.getActivePage();
-        if (!page || page.layoutId !== 'slideshow' || !page.slides) return;
+        if (!page || !page.slides) return;
         
         if (index < 0 || index >= page.slides.length) return;
         
@@ -4812,10 +4845,10 @@ const App = {
         renderCanvas();
     },
 
-    // Update slide transition
+    // Update slide transition (works on ANY page)
     updateSlideTransition(index, transition) {
         const page = Store.getActivePage();
-        if (!page || page.layoutId !== 'slideshow' || !page.slides) return;
+        if (!page || !page.slides) return;
         
         if (index < 0 || index >= page.slides.length) return;
         
@@ -4824,10 +4857,10 @@ const App = {
         Store.save();
     },
 
-    // Divide slides equally
+    // Divide slides equally (works on ANY page)
     divideSlidesEqually() {
         const page = Store.getActivePage();
-        if (!page || page.layoutId !== 'slideshow' || !page.slides) return;
+        if (!page || !page.slides) return;
         
         if (page.slides.length === 0) {
             Toast.show(t('toast.addSlidesFirst'), 'warning');
@@ -5023,10 +5056,10 @@ const App = {
         }
     },
 
-    // Reorder slides
+    // Reorder slides (works on ANY page)
     reorderSlides(fromIndex, toIndex) {
         const page = Store.getActivePage();
-        if (!page || page.layoutId !== 'slideshow' || !page.slides) return;
+        if (!page || !page.slides) return;
         
         if (fromIndex < 0 || fromIndex >= page.slides.length) return;
         if (toIndex < 0 || toIndex >= page.slides.length) return;

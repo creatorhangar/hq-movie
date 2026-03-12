@@ -13,7 +13,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
-.windsurf/
 
 # Generated
 generated-videos/

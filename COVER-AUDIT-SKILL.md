@@ -1,4 +1,4 @@
-# 🎬 SKILL: Auditoria de Capa para TikTok/Reels
+# UX/UI Audit Skill - HQ Movie: Auditoria de Capa para TikTok/Reels
 
 ## Objetivo
 Validar e otimizar capas de vídeo para máximo engajamento em TikTok, Reels e Stories.

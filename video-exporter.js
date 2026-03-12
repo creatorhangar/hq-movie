@@ -528,8 +528,8 @@ class VideoExporter {
     }
 
     async renderPage(page, durationSeconds, pageIndex = 0) {
-        // Check if this is a slideshow page
-        if (page.layoutId === 'slideshow' && page.slides && page.slides.length > 0) {
+        // Check if page has slides (universal - works on ANY page, not just slideshow layout)
+        if (page.slides && page.slides.length > 0) {
             return await this.renderSlideshowPage(page, durationSeconds, pageIndex);
         }
         

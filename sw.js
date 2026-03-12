@@ -1,5 +1,5 @@
 // HQ Movie — Service Worker (Cache-First)
-const CACHE_NAME = 'hq-movie-v96-code-audit';
+const CACHE_NAME = 'hq-movie-v97-design-tokens';
 const ASSETS = [
     '/',
     '/index.html',
