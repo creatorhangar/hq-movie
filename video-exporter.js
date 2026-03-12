@@ -991,9 +991,14 @@ class VideoExporter {
             else if (style.align === 'right') tx = this._logicalWidth - padding;
             
             const ty = textY + i * lineHeight;
-            // Stroke (outline) for readability
-            this.ctx.strokeStyle = '#000000';
-            this.ctx.lineWidth = strokeWidth;
+            // Stroke (outline) - use user settings if strokeEnabled, else default
+            const userStrokeEnabled = style.strokeEnabled;
+            const userStrokeColor = style.strokeColor || '#000000';
+            const userStrokeWidth = style.strokeWidth || 3;
+            const effectiveStrokeWidth = userStrokeEnabled ? (userStrokeWidth * scaleFactor) : strokeWidth;
+            
+            this.ctx.strokeStyle = userStrokeEnabled ? userStrokeColor : '#000000';
+            this.ctx.lineWidth = effectiveStrokeWidth;
             this.ctx.lineJoin = 'round';
             this.ctx.strokeText(line, tx, ty);
             // Fill with actual text color
@@ -1081,13 +1086,20 @@ class VideoExporter {
         const combinedH = topBlockH + dualSpacing + botBlockH;
         const startY = y + (trackHeight - combinedH) / 2;
 
+        // User stroke settings
+        const userStrokeEnabled = style.strokeEnabled;
+        const userStrokeColor = style.strokeColor || '#000000';
+        const userStrokeWidth = style.strokeWidth || 3;
+        const effectiveStrokeWidth = userStrokeEnabled ? (userStrokeWidth * scaleFactor) : strokeWidth;
+        const effectiveStrokeColor = userStrokeEnabled ? userStrokeColor : '#000000';
+
         // Draw top language block (full opacity)
         this.ctx.globalAlpha = 1.0;
         topLines.forEach((line, i) => {
             const ty = startY + i * lineHeight + lineHeight / 2;
             this.ctx.font = `bold ${fontSize}px ${fontFamily}`;
-            this.ctx.strokeStyle = '#000000';
-            this.ctx.lineWidth = strokeWidth;
+            this.ctx.strokeStyle = effectiveStrokeColor;
+            this.ctx.lineWidth = effectiveStrokeWidth;
             this.ctx.lineJoin = 'round';
             this.ctx.strokeText(line, cx, ty);
             this.ctx.fillStyle = textColor;
@@ -1099,8 +1111,8 @@ class VideoExporter {
         botLines.forEach((line, i) => {
             const ty = startY + topBlockH + dualSpacing + i * lineHeight + lineHeight / 2;
             this.ctx.font = `bold ${fontSize}px ${fontFamily}`;
-            this.ctx.strokeStyle = '#000000';
-            this.ctx.lineWidth = strokeWidth;
+            this.ctx.strokeStyle = effectiveStrokeColor;
+            this.ctx.lineWidth = effectiveStrokeWidth;
             this.ctx.lineJoin = 'round';
             this.ctx.strokeText(line, cx, ty);
             this.ctx.fillStyle = textColor;

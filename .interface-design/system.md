@@ -5,7 +5,7 @@ Comic/Video Editor for Social Media Content Creation
 ## Direction
 
 **Personality:** Professional Studio + Creative Playfulness
-**Foundation:** Cool (slate/gray base with teal accents)
+**Foundation:** Professional Gray (neutral base with strategic teal brand accents)
 **Depth:** Hybrid — Borders-primary with contextual shadows for elevation
 
 ## Intent
@@ -63,7 +63,7 @@ Scale: 4, 8, 12, 16, 20, 24, 32
 --text4: #52525b;  /* Faint */
 ```
 
-#### Accent (Professional Gray-Blue)
+#### Accent (Gray - Primary Interactive)
 ```css
 --accent: #6b7280;
 --accent-hover: #9ca3af;
@@ -71,22 +71,45 @@ Scale: 4, 8, 12, 16, 20, 24, 32
 --accent-glow: rgba(107, 114, 128, 0.15);
 ```
 
+#### Brand Teal (Strategic Accent)
+```css
+--brand-teal: #14b8a6;
+--brand-teal-hover: #2dd4bf;
+--brand-teal-muted: #0d9488;
+--brand-teal-glow: rgba(20, 184, 166, 0.15);
+--brand-teal-light: #5eead4;
+```
+
+**Usage:**
+- Default buttons/borders: Gray (--accent)
+- Hover on key actions: Teal (--brand-teal)
+- Focus states: Teal (accessibility)
+- Selected/active states: Teal glow
+- Primary CTAs: Teal background
+
 #### Semantic
 ```css
---success: #6b7280;
+--success: #22c55e;
 --error: #ef4444;
 --warning: #f59e0b;
 ```
 
+#### Base Colors
+```css
+--white: #ffffff;
+--black: #000000;
+```
+
 ### Radius
-Scale: 4px, 6px, 8px, 10px, 12px (technical, slightly rounded)
+Scale: 4px, 6px, 8px (professional, angular design)
 
 ```css
 --r-sm: 4px;   /* Inputs, small buttons */
---r-md: 6px;   /* Buttons */
---r-lg: 8px;   /* Cards, panels */
---r-4xl: 10px; /* Large cards */
---r-6xl: 12px; /* Modals */
+--r-md: 4px;   /* Buttons (reduced) */
+--r-lg: 6px;   /* Cards, panels (reduced) */
+--r-xl: 6px;   /* Large elements (reduced) */
+--r-4xl: 8px;  /* Timeline pages (reduced) */
+--r-6xl: 8px;  /* Modals (reduced) */
 --r-full: 50%; /* Circles */
 ```
 
@@ -180,9 +203,10 @@ Scale: 4px, 6px, 8px, 10px, 12px (technical, slightly rounded)
 |----------|-----------|------|
 | Borders-primary depth | Dark UI needs borders for definition, shadows less visible | 2026-03-12 |
 | 4px spacing base | Standard for dense tool UI, allows fine control | 2026-03-12 |
-| Gray-blue accent | Professional, neutral, works for creative tool | 2026-03-12 |
+| Gray-first palette | Professional foundation, teal as brand accent | 2026-03-12 |
 | 44px touch targets | Mobile-first, accessibility compliance | 2026-03-12 |
-| Tight radius (4-12px) | Technical feel, not overly friendly | 2026-03-12 |
+| Tight radius (4-8px) | Angular, technical, production-ready aesthetic | 2026-03-12 |
+| Teal strategic use | Brand identity via hover/active/CTA only | 2026-03-12 |
 | Inter font | Readable at small sizes, professional | 2026-03-12 |
 | Opacity-based borders | Consistent on any surface color | 2026-03-12 |
 | Typography scale | 10-24px scale with semantic names for consistency | 2026-03-12 |
@@ -191,6 +215,8 @@ Scale: 4px, 6px, 8px, 10px, 12px (technical, slightly rounded)
 ## Notes
 
 - Glass effects (backdrop-filter) used for overlays
-- Teal accents (#14b8a6) appear in gradients and focus states
+- Gray (#6b7280) is primary interactive color for professional restraint
+- Teal (#14b8a6) used strategically: hover, focus, selected, primary CTAs
 - Comic/story fonts only for actual content, not UI
-- All interactive elements must have visible focus states
+- All interactive elements must have visible focus states (teal for accessibility)
+- Balanced professional design: not sterile, maintains brand personality

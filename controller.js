@@ -112,6 +112,7 @@ const App = {
             renderCanvas();
             renderRightPanel();
             renderTimeline();
+            if (typeof renderPageCarousel === 'function') renderPageCarousel();
             requestAnimationFrame(() => this._initViewportEvents());
         }
     },
@@ -1102,6 +1103,7 @@ const App = {
         
         Store.set({ currentProject: p, activePageIndex: insertIndex, selectedSlot: -1, selectedElement: null });
         Store.save();
+        if (typeof renderPageCarousel === 'function') renderPageCarousel();
     },
     duplicatePage(index) {
         const p = Store.get('currentProject');
@@ -1137,6 +1139,7 @@ const App = {
         Store.set({ activePageIndex: i, coverActive: false, backCoverActive: false, selectedElement: null, selectedSlot: -1 });
         this.resetPan();
         this.resetPasteIndex();
+        if (typeof renderPageCarousel === 'function') renderPageCarousel();
     },
     deletePage(i) {
         const p = Store.get('currentProject');
@@ -1145,6 +1148,7 @@ const App = {
         p.pages.splice(i, 1);
         Store.set({ currentProject: p, activePageIndex: Math.min(Store.get('activePageIndex'), p.pages.length - 1), selectedElement: null, selectedSlot: -1 });
         Store.save();
+        if (typeof renderPageCarousel === 'function') renderPageCarousel();
     },
     pageDragStart(e, i) { e.dataTransfer.setData('text/plain', `page:${i}`); },
     movePageTo(from, to) {
@@ -1477,6 +1481,12 @@ const App = {
         const page = Store.getActivePage();
         const slot = Store.get('selectedSlot');
         
+        // Priority 0: If slides/sequence mode is active, add as slide
+        if (page && page.slides && page.slides.length > 0) {
+            this.addSlide(src);
+            return;
+        }
+        
         // Priority 1: If a panel is selected, insert there
         if (slot >= 0 && page) {
             this._replaceImageInSlot(slot, src);
@@ -1598,7 +1608,8 @@ const App = {
         });
         
         renderCanvas(); // Re-render with zoom applied
-        Toast.show(t('toast.dragToPosition'), 3000);
+        const isMobile = window.innerWidth <= 768;
+        Toast.show(t(isMobile ? 'toast.dragToPositionTouch' : 'toast.dragToPosition'), 3000);
         renderRightPanel();
     },
     
@@ -1895,7 +1906,49 @@ const App = {
         document.addEventListener('mousemove', move);
         document.addEventListener('mouseup', up);
     },
-    
+
+    // Touch equivalent of startImagePan for mobile crop mode
+    startImagePanTouch(e, slot) {
+        if (!this._cropMode.active || this._cropMode.panelIndex !== slot) return;
+        if (e.touches.length !== 1) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const page = Store.getActivePage();
+        if (!page || !page.images[slot]) return;
+
+        const img = page.images[slot];
+        if (!img.transform) img.transform = { scale: 1, x: 0, y: 0 };
+
+        const startX = e.touches[0].clientX, startY = e.touches[0].clientY;
+        const origX = img.transform.x, origY = img.transform.y;
+        const zoom = Store.get('zoom');
+        const scale = img.transform.scale;
+        let dragged = false;
+
+        Store._s.selectedSlot = slot;
+        Store._s.selectedElement = null;
+        renderCanvas();
+
+        const move = (ev) => {
+            if (ev.touches.length !== 1) return;
+            dragged = true;
+            const dx = (ev.touches[0].clientX - startX) / zoom / scale;
+            const dy = (ev.touches[0].clientY - startY) / zoom / scale;
+            img.transform.x = origX + dx;
+            img.transform.y = origY + dy;
+            renderCanvas();
+        };
+
+        const end = () => {
+            document.removeEventListener('touchmove', move);
+            document.removeEventListener('touchend', end);
+            if (dragged) Store.save();
+        };
+
+        document.addEventListener('touchmove', move, { passive: false });
+        document.addEventListener('touchend', end);
+    },
+
     handleImageZoom(e, slot) {
         // Only zoom image inside panel when in crop mode for this slot
         if (!this._cropMode.active || this._cropMode.panelIndex !== slot) return;
@@ -2898,6 +2951,130 @@ const App = {
         area._viewportBound = true;
         // Wheel with passive:false to allow preventDefault
         area.addEventListener('wheel', (e) => this._handleWheel(e), { passive: false });
+
+        // ── Touch events for mobile pan + pinch-to-zoom ──
+        let touchState = { type: null, startX: 0, startY: 0, startVX: 0, startVY: 0, startDist: 0, startScale: 0, centerX: 0, centerY: 0, startTime: 0 };
+
+        area.addEventListener('touchstart', (e) => {
+            const vp = this._viewport;
+            if (e.touches.length === 2) {
+                // Pinch-to-zoom
+                e.preventDefault();
+                const t0 = e.touches[0], t1 = e.touches[1];
+                const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+                const rect = area.getBoundingClientRect();
+                touchState = {
+                    type: 'pinch',
+                    startDist: dist,
+                    startScale: vp.scale,
+                    centerX: ((t0.clientX + t1.clientX) / 2) - rect.left,
+                    centerY: ((t0.clientY + t1.clientY) / 2) - rect.top,
+                    startVX: vp.x,
+                    startVY: vp.y,
+                    startX: 0, startY: 0, startTime: Date.now()
+                };
+            } else if (e.touches.length === 1) {
+                const t = e.target;
+                const isCanvasBg = (t.id === 'canvas-area' || t.id === 'canvas-scroll' || t.classList.contains('bento-frame'));
+                const isPanMode = vp.mode === 'pan';
+                // Check if crop mode touch on a panel
+                if (this._cropMode && this._cropMode.active) {
+                    // Let crop mode handle it via startImagePanTouch
+                    return;
+                }
+                if (isPanMode || isCanvasBg) {
+                    touchState = {
+                        type: 'pan',
+                        startX: e.touches[0].clientX,
+                        startY: e.touches[0].clientY,
+                        startVX: vp.x,
+                        startVY: vp.y,
+                        startDist: 0, startScale: 0, centerX: 0, centerY: 0,
+                        startTime: Date.now()
+                    };
+                    vp.isPanning = true;
+                    this._updatePanCursor();
+                }
+            }
+        }, { passive: false });
+
+        area.addEventListener('touchmove', (e) => {
+            const vp = this._viewport;
+            if (touchState.type === 'pinch' && e.touches.length >= 2) {
+                e.preventDefault();
+                const t0 = e.touches[0], t1 = e.touches[1];
+                const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+                const ratio = dist / touchState.startDist;
+                const newScale = Math.max(vp.MIN_SCALE, Math.min(vp.MAX_SCALE, touchState.startScale * ratio));
+                // Zoom at center point between fingers
+                vp.x = touchState.centerX - (touchState.centerX - touchState.startVX) * (newScale / touchState.startScale);
+                vp.y = touchState.centerY - (touchState.centerY - touchState.startVY) * (newScale / touchState.startScale);
+                vp.scale = newScale;
+                this._clampViewport();
+                this._applyViewportTransform();
+                this._updateZoomDisplay();
+            } else if (touchState.type === 'pan' && e.touches.length === 1) {
+                e.preventDefault();
+                const dx = e.touches[0].clientX - touchState.startX;
+                const dy = e.touches[0].clientY - touchState.startY;
+                vp.x = touchState.startVX + dx;
+                vp.y = touchState.startVY + dy;
+                this._clampViewport();
+                this._applyViewportTransform();
+            }
+        }, { passive: false });
+
+        area.addEventListener('touchend', (e) => {
+            if (touchState.type === 'pan' && e.touches.length === 0) {
+                const vp = this._viewport;
+                vp.isPanning = false;
+                this._updatePanCursor();
+                // ── Swipe page navigation detection ──
+                // Only when NOT in pan mode and swipe is fast + long enough
+                if (vp.mode !== 'pan' && e.changedTouches.length === 1) {
+                    const endX = e.changedTouches[0].clientX;
+                    const dx = endX - touchState.startX;
+                    const elapsed = (Date.now() - touchState.startTime) / 1000; // seconds
+                    const velocity = Math.abs(dx) / Math.max(elapsed, 0.01);
+                    const screenW = window.innerWidth;
+                    if (velocity > 500 && Math.abs(dx) > screenW * 0.3) {
+                        const p = Store.get('currentProject');
+                        const idx = Store.get('activePageIndex');
+                        if (dx > 0 && idx > 0) {
+                            this.setActivePage(idx - 1);
+                            renderCanvas(); renderRightPanel();
+                        } else if (dx < 0 && p && idx < p.pages.length - 1) {
+                            this.setActivePage(idx + 1);
+                            renderCanvas(); renderRightPanel();
+                        }
+                    }
+                }
+                touchState.type = null;
+                return;
+            }
+            if (touchState.type === 'pinch') {
+                const vp = this._viewport;
+                vp.isPanning = false;
+                this._updatePanCursor();
+            }
+            if (e.touches.length === 0) {
+                touchState.type = null;
+            } else if (e.touches.length === 1 && touchState.type === 'pinch') {
+                // Went from pinch to single finger — switch to pan
+                const vp = this._viewport;
+                touchState = {
+                    type: 'pan',
+                    startX: e.touches[0].clientX,
+                    startY: e.touches[0].clientY,
+                    startVX: vp.x,
+                    startVY: vp.y,
+                    startDist: 0, startScale: 0, centerX: 0, centerY: 0,
+                    startTime: Date.now()
+                };
+                vp.isPanning = true;
+            }
+        }, { passive: false });
+
         // Initial fit
         this.zoomFit();
     },
@@ -3343,6 +3520,8 @@ const App = {
         const MIN_H = 60;
         const wrapper = document.querySelector(`[data-balloon-idx="${index}"]`);
         const isShout = balloon.type === 'shout';
+        const isSfx = balloon.type === 'sfx';
+        const origFontSize = balloon.fontSize || (isSfx ? 48 : 14);
         
         Store.pushUndo();
         Store.setSilent({ isResizingBalloon: true });
@@ -3352,21 +3531,33 @@ const App = {
             const dx = (ev.clientX - startX) / zoom;
             const dy = (ev.clientY - startY) / zoom;
             
-            // CSS types: only resize width. Shout: resize both.
+            // CSS types: only resize width. Shout: resize both. SFX: scale font-size.
             if (corner === 'se') {
                 balloon.w = Math.max(MIN_W, origW + dx);
                 if (isShout) balloon.h = Math.max(MIN_H, origH + dy);
+                if (isSfx) {
+                    const scaleFactor = Math.max(MIN_W, origW + dx) / origW;
+                    balloon.fontSize = Math.round(Math.max(12, Math.min(200, origFontSize * scaleFactor)));
+                }
             } else if (corner === 'sw') {
                 const newW = Math.max(MIN_W, origW - dx);
                 balloon.x = origX + (origW - newW);
                 balloon.w = newW;
                 if (isShout) balloon.h = Math.max(MIN_H, origH + dy);
+                if (isSfx) {
+                    const scaleFactor = newW / origW;
+                    balloon.fontSize = Math.round(Math.max(12, Math.min(200, origFontSize * scaleFactor)));
+                }
             } else if (corner === 'ne') {
                 balloon.w = Math.max(MIN_W, origW + dx);
                 if (isShout) {
                     const newH = Math.max(MIN_H, origH - dy);
                     balloon.y = origY + (origH - newH);
                     balloon.h = newH;
+                }
+                if (isSfx) {
+                    const scaleFactor = Math.max(MIN_W, origW + dx) / origW;
+                    balloon.fontSize = Math.round(Math.max(12, Math.min(200, origFontSize * scaleFactor)));
                 }
             } else if (corner === 'nw') {
                 const newW = Math.max(MIN_W, origW - dx);
@@ -3376,6 +3567,10 @@ const App = {
                     const newH = Math.max(MIN_H, origH - dy);
                     balloon.y = origY + (origH - newH);
                     balloon.h = newH;
+                }
+                if (isSfx) {
+                    const scaleFactor = newW / origW;
+                    balloon.fontSize = Math.round(Math.max(12, Math.min(200, origFontSize * scaleFactor)));
                 }
             }
 
@@ -4702,9 +4897,38 @@ const App = {
        Works on ANY page, not just slideshow layout
        ═══════════════════════════════════════════════════════════════ */
 
+    // Active slide index for canvas preview
+    _activeSlidePreview: 0,
+
     // Check if page has slides enabled
     hasSlidesEnabled(page) {
         return page && page.slides && page.slides.length > 0;
+    },
+
+    // Navigate slide preview on canvas
+    prevSlidePreview() {
+        const page = Store.getActivePage();
+        if (!page || !page.slides || page.slides.length <= 1) return;
+        this._activeSlidePreview = (this._activeSlidePreview - 1 + page.slides.length) % page.slides.length;
+        renderCanvas();
+        renderRightPanel();
+    },
+
+    nextSlidePreview() {
+        const page = Store.getActivePage();
+        if (!page || !page.slides || page.slides.length <= 1) return;
+        this._activeSlidePreview = (this._activeSlidePreview + 1) % page.slides.length;
+        renderCanvas();
+        renderRightPanel();
+    },
+
+    setSlidePreview(index) {
+        const page = Store.getActivePage();
+        if (!page || !page.slides) return;
+        if (index < 0 || index >= page.slides.length) return;
+        this._activeSlidePreview = index;
+        renderCanvas();
+        renderRightPanel();
     },
 
     // Enable slides mode on any page
@@ -4736,7 +4960,7 @@ const App = {
         renderCanvas();
     },
 
-    // Add slide from library (prompts user to select)
+    // Open slide picker modal (multi-select from library)
     addSlideFromLibrary() {
         const page = Store.getActivePage();
         if (!page) return;
@@ -4749,9 +4973,94 @@ const App = {
             return;
         }
         
-        // For now, add the first library image (TODO: show picker modal)
-        const firstImage = library[0];
-        this.addSlide(firstImage.src);
+        this.openSlidePicker();
+    },
+
+    // Slide picker modal state
+    _slidePickerSelected: new Set(),
+
+    openSlidePicker() {
+        const proj = Store.get('currentProject');
+        const library = proj.library || [];
+        if (library.length === 0) return;
+
+        this._slidePickerSelected = new Set();
+
+        const overlay = document.createElement('div');
+        overlay.className = 'slide-picker-overlay';
+        overlay.id = 'slide-picker-overlay';
+        overlay.onclick = (e) => { if (e.target === overlay) this.closeSlidePicker(); };
+
+        const grid = library.map((entry, i) => {
+            const escapedSrc = (entry.src || '').replace(/"/g, '&quot;');
+            return `<div class="slide-picker-item" data-picker-idx="${i}" data-picker-src="${escapedSrc}" onclick="App.toggleSlidePickerItem(${i})"><img src="${entry.src}" alt="Foto ${i + 1}"></div>`;
+        }).join('');
+
+        overlay.innerHTML = `
+            <div class="slide-picker-modal">
+                <div class="slide-picker-header">
+                    <span style="font-size:20px;">📷</span>
+                    <h3>Selecionar fotos para sequência</h3>
+                    <button onclick="App.closeSlidePicker()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px;">✕</button>
+                </div>
+                <div class="slide-picker-grid" id="slide-picker-grid">${grid}</div>
+                <div class="slide-picker-footer">
+                    <span id="slide-picker-count" style="flex:1;font-size:11px;color:var(--text3);align-self:center;">0 selecionadas</span>
+                    <button onclick="App.closeSlidePicker()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);">Cancelar</button>
+                    <button onclick="App.confirmSlidePicker()" id="slide-picker-confirm" style="background:var(--accent);border:1px solid var(--accent);color:#fff;">Adicionar 0 fotos</button>
+                </div>
+            </div>`;
+
+        document.body.appendChild(overlay);
+    },
+
+    toggleSlidePickerItem(index) {
+        if (this._slidePickerSelected.has(index)) {
+            this._slidePickerSelected.delete(index);
+        } else {
+            this._slidePickerSelected.add(index);
+        }
+
+        // Update visual state
+        const items = document.querySelectorAll('.slide-picker-item');
+        items.forEach((item, i) => {
+            item.classList.toggle('selected', this._slidePickerSelected.has(i));
+        });
+
+        const count = this._slidePickerSelected.size;
+        const countEl = document.getElementById('slide-picker-count');
+        const confirmEl = document.getElementById('slide-picker-confirm');
+        if (countEl) countEl.textContent = `${count} selecionada${count !== 1 ? 's' : ''}`;
+        if (confirmEl) {
+            confirmEl.textContent = `Adicionar ${count} foto${count !== 1 ? 's' : ''}`;
+            confirmEl.style.opacity = count > 0 ? '1' : '0.5';
+        }
+    },
+
+    confirmSlidePicker() {
+        const proj = Store.get('currentProject');
+        const library = proj.library || [];
+        const selected = [...this._slidePickerSelected].sort((a, b) => a - b);
+
+        if (selected.length === 0) {
+            Toast.show('Selecione ao menos uma foto', 'warning');
+            return;
+        }
+
+        selected.forEach(idx => {
+            if (library[idx]) {
+                this.addSlide(library[idx].src);
+            }
+        });
+
+        this.closeSlidePicker();
+        Toast.show(`${selected.length} foto${selected.length > 1 ? 's adicionadas' : ' adicionada'} à sequência`, 'success');
+    },
+
+    closeSlidePicker() {
+        const overlay = document.getElementById('slide-picker-overlay');
+        if (overlay) overlay.remove();
+        this._slidePickerSelected = new Set();
     },
 
     // Add slide with image (works on ANY page)
@@ -4761,15 +5070,21 @@ const App = {
         
         if (!page.slides) page.slides = [];
         
-        // Calculate auto duration - divide remaining time equally
-        const usedTime = page.slides.reduce((sum, s) => sum + (s.duration || 0), 0);
-        const remainingTime = (page.duration || 2.5) - usedTime;
-        const autoDuration = Math.max(0.5, Math.min(remainingTime, 2)); // 0.5-2s per slide
+        // Auto-expand page duration to fit new slide (min 2s per slide)
+        const MIN_SLIDE_DURATION = 2;
+        const newCount = page.slides.length + 1;
+        const minTotalNeeded = newCount * MIN_SLIDE_DURATION;
+        if ((page.duration || 2.5) < minTotalNeeded) {
+            page.duration = minTotalNeeded;
+        }
+        
+        // Redistribute time equally among all slides (including new one)
+        const equalDuration = Math.round((page.duration / newCount) * 10) / 10;
         
         const newSlide = {
             id: genId(),
             image: imageSrc,
-            duration: duration || autoDuration,
+            duration: duration || equalDuration,
             kenBurns: page.kenBurns || 'zoom-in',
             transition: page.slides.length === 0 ? 'cut' : 'crossfade',
             transitionDuration: 0.3,
@@ -4780,11 +5095,10 @@ const App = {
         
         page.slides.push(newSlide);
         
-        // Auto-adjust if exceeded
-        const total = page.slides.reduce((sum, s) => sum + s.duration, 0);
-        if (total > page.duration) {
-            const lastSlide = page.slides[page.slides.length - 1];
-            lastSlide.duration = Math.max(1, lastSlide.duration - (total - page.duration));
+        // Redistribute all slides equally when no explicit duration given
+        if (!duration) {
+            const eq = Math.round((page.duration / page.slides.length) * 10) / 10;
+            page.slides.forEach(s => { s.duration = eq; });
         }
         
         Store.save();
@@ -7263,7 +7577,7 @@ const App = {
         const p = Store.get('currentProject'), page = Store.getActivePage();
         if (!p || !page) return;
         const settings = this._ensureNarrativeSettings(p);
-        if (!page.narrativeStyle) page.narrativeStyle = { align: 'justify', font: 'serif', size: 48, color: '#ffffff', textColor: '#ffffff', leading: 1.4 };
+        if (!page.narrativeStyle) page.narrativeStyle = { align: 'justify', font: 'serif', size: 48, color: '#ffffff', textColor: '#ffffff', leading: 1.4, strokeEnabled: false, strokeColor: '#000000', strokeWidth: 3 };
         let nextValue = value;
         if (prop === 'size') nextValue = Math.max(12, Math.min(250, parseInt(value, 10) || 48));
         if (prop === 'leading') nextValue = Math.max(0.8, Math.min(3, parseFloat(value) || 1.4));
@@ -7274,6 +7588,27 @@ const App = {
                 if (!pg.narrativeStyle) pg.narrativeStyle = { align: 'justify', font: 'serif', size: 48, leading: 1.4 };
                 pg.narrativeStyle.size = nextValue;
             });
+        }
+        
+        Store.set({ currentProject: p }); Store.save();
+        renderCanvas(); renderRightPanel();
+    },
+    applyNarrativePreset(preset) {
+        const p = Store.get('currentProject'), page = Store.getActivePage();
+        if (!p || !page) return;
+        if (!page.narrativeStyle) page.narrativeStyle = {};
+        
+        if (preset === 'classic') {
+            // Estilo Clássico: amarelo com contorno preto, sem fundo
+            Object.assign(page.narrativeStyle, {
+                color: '#FFD700',
+                strokeEnabled: true,
+                strokeColor: '#000000',
+                strokeWidth: 3,
+                bgOpacity: 0,
+                bold: true
+            });
+            Toast.show('Estilo Clássico aplicado', 'success');
         }
         
         Store.set({ currentProject: p }); Store.save();
@@ -7518,6 +7853,7 @@ const App = {
         Store.pushUndo();
         [p.pages[i], p.pages[ni]] = [p.pages[ni], p.pages[i]];
         Store.set({ currentProject: p, activePageIndex: ni }); Store.save();
+        if (typeof renderPageCarousel === 'function') renderPageCarousel();
         Toast.show(`Página movida`);
     },
 

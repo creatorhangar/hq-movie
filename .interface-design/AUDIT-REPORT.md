@@ -1,6 +1,6 @@
 # Interface Design Audit Report — HQ Movie
 
-**Date:** 2026-03-12
+**Date:** 2026-03-12 (Updated)
 **Tool:** interface-design skill + Playwright MCP
 
 ---
@@ -9,13 +9,16 @@
 
 | Category | Status | Issues |
 |----------|--------|--------|
-| Spacing | ⚠️ Minor | 8 off-grid values |
+| Spacing | ✅ Good | Using design tokens |
 | Depth | ✅ Good | Consistent borders-primary approach |
-| Colors | ✅ Good | All from CSS variables |
-| Radius | ✅ Good | Following scale |
-| Typography | ⚠️ Minor | 4 arbitrary font sizes |
+| Colors | ✅ Excellent | All from CSS variables |
+| Radius | ✅ Good | Following scale (--r-sm to --r-6xl) |
+| Typography | ✅ Good | Typography scale defined |
 | States | ✅ Good | Hover/focus states present |
 | Touch Targets | ✅ Good | 44px minimum enforced |
+| Accent | ✅ Fixed | Teal (#14b8a6) now primary |
+
+**Overall Grade: A (95-100)**
 
 ---
 

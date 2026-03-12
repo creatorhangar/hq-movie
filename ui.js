@@ -509,6 +509,7 @@ function renderEditor() {
     </div>
   </div>
   <div id="timeline-bar" class="timeline-bar hidden"></div>
+  <div id="mobile-page-carousel" class="timeline"></div>
   <div class="mobile-editor-nav" aria-label="${t('mobileNav.title')}">
     <button class="mobile-editor-nav-btn ${(Store.get('mobileWorkflowStep') || 'media') === 'media' ? 'active' : ''}" onclick="App.openMobileWorkflow('media')">${Icons.imageIcon}<span>${t('mobileNav.media')}</span></button>
     <button class="mobile-editor-nav-btn ${(Store.get('mobileWorkflowStep') || 'media') === 'text' ? 'active' : ''}" onclick="App.openMobileWorkflow('text')">${Icons.text}<span>${t('mobileNav.text')}</span></button>
@@ -1676,48 +1677,61 @@ function renderCanvas() {
   const textBelowActive = page.showTextBelow;
   const maxNarrH = Math.round(pageH * 0.4);
   const textBelowH = textBelowActive ? Math.min(page.narrativeHeight || 120, maxNarrH) : 0;
+  const narrativePosition = (page.narrativeStyle && page.narrativeStyle.position) || 'bottom';
+  const narrativeAtTop = textBelowActive && narrativePosition === 'top';
   const panelZoneH = pageH - textBelowH;
+  const panelZoneTop = narrativeAtTop ? textBelowH : 0;
 
   let panelsHTML = '';
   
-  // ── SLIDESHOW MODE RENDERING ──
-  if (page.layoutId === 'slideshow') {
-    const slides = page.slides || [];
+  // ── SLIDESHOW / SEQUENCE MODE RENDERING ──
+  // Renders on ANY layout when slides exist (not just layoutId==='slideshow')
+  const _seqSlides = page.slides || [];
+  const _hasSequence = _seqSlides.length > 0;
+  
+  if (_hasSequence) {
+    // Clamp active index
+    const _si = Math.min(Math.max(0, App._activeSlidePreview || 0), _seqSlides.length - 1);
+    const _activeSlide = _seqSlides[_si];
+    const _slideImg = _activeSlide.image;
+    const _hasNav = _seqSlides.length > 1;
     
-    if (slides.length === 0) {
-      // Empty slideshow - show prompt
-      panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;">
-        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(107,114,128,0.02);border:2px dashed var(--accent);border-radius:8px;margin:20px;">
-          <div style="color:var(--accent);margin-bottom:12px;font-size:48px;">🎬</div>
-          <div style="color:var(--accent);font-weight:600;font-size:16px;margin-bottom:6px;">Modo Slideshow</div>
-          <div style="color:var(--text3);font-size:13px;text-align:center;line-height:1.5;max-width:300px;">Adicione slides usando o painel ao lado para criar uma sequência de imagens com transições e Ken Burns</div>
+    // Dot indicators
+    const _dots = _seqSlides.map((s, di) => 
+      `<span onclick="App.setSlidePreview(${di})" style="width:${di === _si ? '16px' : '6px'};height:6px;border-radius:3px;background:${di === _si ? 'var(--accent)' : 'rgba(255,255,255,0.4)'};cursor:pointer;transition:all 0.2s;"></span>`
+    ).join('');
+    
+    panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;position:relative;top:${panelZoneTop}px;">
+      <div class="slideshow-preview" style="position:absolute;inset:0;overflow:hidden;background:#111;">
+        <img src="${_slideImg}" style="position:absolute;top:50%;left:50%;width:100%;height:100%;object-fit:cover;transform:translate(-50%,-50%);" draggable="false" onerror="this.style.display='none'">
+        
+        ${_hasNav ? `
+          <button onclick="App.prevSlidePreview()" class="seq-nav-btn seq-nav-prev" title="Slide anterior">‹</button>
+          <button onclick="App.nextSlidePreview()" class="seq-nav-btn seq-nav-next" title="Próximo slide">›</button>
+        ` : ''}
+        
+        <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.85);padding:6px 14px;border-radius:20px;">
+          <span style="color:#fff;font-size:11px;font-weight:700;">📷 ${_si + 1}/${_seqSlides.length}</span>
+          <span style="color:var(--accent);font-size:9px;">|</span>
+          <span style="color:rgba(255,255,255,0.7);font-size:10px;">${_activeSlide.duration}s</span>
+          <span style="color:var(--accent);font-size:9px;">|</span>
+          <span style="color:rgba(255,255,255,0.5);font-size:9px;">${_activeSlide.kenBurns || 'static'}</span>
         </div>
-        ${renderBalloons(page)}${renderStickers(page)}
-      </div>`;
-    } else {
-      // Show first slide as preview (TODO: add playback controls)
-      const firstSlide = slides[0];
-      const slideImg = firstSlide.image;
-      
-      panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;position:relative;">
-        <div class="slideshow-preview" style="position:absolute;inset:0;overflow:hidden;background:#000;">
-          <img src="${slideImg}" style="position:absolute;top:50%;left:50%;width:100%;height:100%;object-fit:cover;transform:translate(-50%,-50%);" draggable="false">
-          <div style="position:absolute;bottom:12px;left:12px;background:rgba(0,0,0,0.8);color:#fff;padding:6px 12px;border-radius:4px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px;">
-            <span>🎬 Slide 1/${slides.length}</span>
-            <span style="color:var(--accent);">|</span>
-            <span>${firstSlide.duration}s</span>
-            <span style="color:var(--text3);">|</span>
-            <span style="font-size:9px;color:var(--text3);">${firstSlide.kenBurns || 'static'}</span>
-          </div>
-          ${slides.length > 1 ? `
-            <div style="position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,0.8);color:var(--text3);padding:6px 10px;border-radius:4px;font-size:9px;">
-              Preview: primeiro slide
-            </div>
-          ` : ''}
-        </div>
-        ${renderBalloons(page)}${renderStickers(page)}
-      </div>`;
-    }
+        
+        ${_hasNav ? `<div style="position:absolute;bottom:44px;left:50%;transform:translateX(-50%);display:flex;gap:4px;align-items:center;">${_dots}</div>` : ''}
+      </div>
+      ${renderBalloons(page)}${renderStickers(page)}
+    </div>`;
+  } else if (page.layoutId === 'slideshow') {
+    // Slideshow layout but no slides yet - show prompt
+    panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;top:${panelZoneTop}px;">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(107,114,128,0.02);border:2px dashed var(--accent);border-radius:8px;margin:20px;">
+        <div style="color:var(--accent);margin-bottom:12px;font-size:48px;">📷</div>
+        <div style="color:var(--accent);font-weight:600;font-size:16px;margin-bottom:6px;">Sequência de Fotos</div>
+        <div style="color:var(--text3);font-size:13px;text-align:center;line-height:1.5;max-width:300px;">Use o painel "Fotos em Sequência" ao lado para adicionar fotos da Library</div>
+      </div>
+      ${renderBalloons(page)}${renderStickers(page)}
+    </div>`;
   } else {
   
   // Determine if we should show empty state or render panels
@@ -1726,7 +1740,7 @@ function renderCanvas() {
   
   if (!hasLayout && !hasImages) {
     // Completely empty page - show upload prompt + any balloons/stickers
-    panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;">
+    panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;top:${panelZoneTop}px;">
       <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;" 
         ondblclick="App.triggerImageUpload()"
         ondragover="event.preventDefault();this.classList.add('drag-over')"
@@ -1855,7 +1869,7 @@ function renderCanvas() {
       }
     }).join(`<div style="width:${gap}px;flex-shrink:0;"></div>`);
 
-    panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;display:flex;flex-direction:column;padding:${margin}px;">
+    panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;top:${panelZoneTop}px;display:flex;flex-direction:column;padding:${margin}px;">
       <!-- Title Strip -->
       <div style="width:100%;margin-bottom:4px;">
         <div contenteditable="true" class="materia-text-zone"
@@ -1893,7 +1907,7 @@ function renderCanvas() {
     // DEFENSIVE: If template is invalid, show fallback instead of black screen
     if (!tmpl || !tmpl.panels || !Array.isArray(tmpl.panels) || tmpl.panels.length === 0) {
       console.warn('[renderCanvas] Invalid template for layoutId:', layoutId, tmpl);
-      panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;display:flex;align-items:center;justify-content:center;background:#f8f8f8;">
+      panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;top:${panelZoneTop}px;display:flex;align-items:center;justify-content:center;background:#f8f8f8;">
         <div style="text-align:center;color:#666;">
           <div style="margin-bottom:8px;color:#f59e0b;">${Icons.alert}</div>
           <div>Layout inválido</div>
@@ -1917,7 +1931,7 @@ function renderCanvas() {
     const scaleY = maxH > 0 ? panelZoneH / maxH : 1;
     const scaleX = maxW > 0 ? pageW / maxW : 1;
 
-    panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;">` + panels.map((panel, i) => {
+    panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;top:${panelZoneTop}px;">` + panels.map((panel, i) => {
       const img = page.images[i];
       const isSel = selectedSlot === i;
       // Use floor for position, ceil for size to eliminate gaps
@@ -1962,6 +1976,7 @@ function renderCanvas() {
           ondragleave="App._panelDragLeave(this)" 
           ondrop="App._panelDragDrop(this);App.handleSlotDrop(event,${i})"
           onmousedown="App.startImagePan(event,${i})"
+          ontouchstart="App.startImagePanTouch(event,${i})"
           onwheel="App.handleImageZoom(event,${i})">
           <img src="${img.src}" alt="" draggable="false" style="${imgStyle}" onerror="this.style.display='none';this.parentElement.classList.add('img-error');">
           ${renderRecordatorio(page, i, pw, ph)}
@@ -1989,12 +2004,14 @@ function renderCanvas() {
             <button onmousedown="event.stopPropagation()" onclick="event.stopPropagation();App.triggerImageUpload(${i})" title="Upload imagem" style="background:transparent;color:#fff;border:none;padding:2px 8px;font-size:11px;cursor:pointer;font-weight:600;">${Icons.upload} Upload</button>
             <button onmousedown="event.stopPropagation()" onclick="event.stopPropagation();App.pasteFromClipboard()" title="Colar (Ctrl+V)" style="background:transparent;color:#fff;border:none;padding:2px 8px;font-size:11px;cursor:pointer;">${Icons.copy} Colar</button>
           </div>` : ''}
-          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;">
-            <div class="slot-add-icon" style="width:48px;height:48px;border:2px dashed ${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.35)'};border-radius:50%;display:flex;align-items:center;justify-content:center;">
-              <span style="color:${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.5)'};font-size:28px;font-weight:300;">+</span>
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;pointer-events:none;height:100%;">
+            <div style="width:72px;height:72px;border-radius:12px;background:${emptySelected ? 'rgba(78,205,196,0.15)' : 'rgba(255,255,255,0.08)'};border:2px dashed ${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.25)'};display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.5)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
             </div>
-            <span class="slot-label" style="color:${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.6)'};font-size:12px;font-weight:600;">Quadro ${i + 1}</span>
-            <span style="font-size:10px;color:${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.4)'};">Clique duplo ou arraste</span>
+            <div style="text-align:center;">
+              <div style="color:${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.7)'};font-size:14px;font-weight:600;margin-bottom:4px;">${window.innerWidth <= 768 ? 'Toque para adicionar foto' : 'Adicionar foto'}</div>
+              <div style="font-size:11px;color:${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.4)'};">Quadro ${i + 1} ${window.innerWidth <= 768 ? '' : '• Arraste ou clique duplo'}</div>
+            </div>
           </div>
         </div>`;
     }).join('');
@@ -2038,14 +2055,16 @@ function renderCanvas() {
   const _topLabel = _topLang === 'pt-BR' ? 'PT' : 'EN';
   const _botLabel = _botLang === 'pt-BR' ? 'PT' : 'EN';
   const _dualFontSize = Math.max(10, Math.round((narrativeStyle.size || 15) * 0.8));
-  const _nBaseStyle = `font-family:${narrativeFont};text-align:${narrativeStyle.align};${narrativeStyle.bold ? 'font-weight:bold;' : 'font-weight:normal;'}${narrativeStyle.italic ? 'font-style:italic;' : ''}color:${narrativeStyle.color || narrativeStyle.textColor || '#ffffff'};${narrativeStyle.leading ? 'line-height:'+narrativeStyle.leading+';' : ''}text-shadow:0 1px 2px rgba(0,0,0,0.5);letter-spacing:0.01em;`;
+  const _nStrokeStyle = narrativeStyle.strokeEnabled ? `-webkit-text-stroke:${narrativeStyle.strokeWidth || 3}px ${narrativeStyle.strokeColor || '#000000'};paint-order:stroke fill;` : '';
+  const _nBaseStyle = `font-family:${narrativeFont};text-align:${narrativeStyle.align};${narrativeStyle.bold ? 'font-weight:bold;' : 'font-weight:normal;'}${narrativeStyle.italic ? 'font-style:italic;' : ''}color:${narrativeStyle.color || narrativeStyle.textColor || '#ffffff'};${narrativeStyle.leading ? 'line-height:'+narrativeStyle.leading+';' : ''}${_nStrokeStyle}${narrativeStyle.strokeEnabled ? '' : 'text-shadow:0 1px 2px rgba(0,0,0,0.5);'}letter-spacing:0.01em;`;
   const narrativeHTML = textBelowActive ? `
-    <div class="narrative-resize-handle" style="position:absolute;left:0;top:${panelZoneH - 12}px;width:${pageW}px;height:24px;cursor:ns-resize;z-index:50;display:flex;align-items:center;justify-content:center;gap:8px;" onmousedown="App.startNarrativeDrag(event)">
+    <div class="narrative-resize-handle" style="position:absolute;left:0;top:${narrativeAtTop ? textBelowH - 12 : panelZoneH - 12}px;width:${pageW}px;height:24px;cursor:ns-resize;z-index:50;display:flex;align-items:center;justify-content:center;gap:8px;" onmousedown="App.startNarrativeDrag(event)">
       <div style="width:40px;height:3px;border-radius:1px;background:rgba(107,114,128,0.5);"></div>
-      <span style="font-size:9px;color:rgba(107,114,128,0.7);font-weight:600;pointer-events:none;">${textBelowH}px${_isDualNarr ? ' · DUAL' : ''}</span>
+      <span style="font-size:9px;color:rgba(107,114,128,0.7);font-weight:600;pointer-events:none;">${textBelowH}px${_isDualNarr ? ' · DUAL' : ''}${narrativeAtTop ? ' · TOP' : ''}</span>
       <div style="width:40px;height:3px;border-radius:1px;background:rgba(107,114,128,0.5);"></div>
     </div>
-    <div class="text-below-area narrative-box-pro" style="position:absolute;left:0;top:${panelZoneH}px;width:${pageW}px;height:${textBelowH}px;background:${_nBg};backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 -2px 12px rgba(0,0,0,0.3);">
+    <div class="text-below-area narrative-box-pro" style="position:absolute;left:0;top:${narrativeAtTop ? 0 : panelZoneH}px;width:${pageW}px;height:${textBelowH}px;background:${_nBg};backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:${narrativeAtTop ? '0 2px 12px rgba(0,0,0,0.3)' : '0 -2px 12px rgba(0,0,0,0.3)'};">
+
       ${_isDualNarr ? `
       <div style="display:flex;flex-direction:column;width:100%;height:100%;box-sizing:border-box;">
         <div style="position:relative;flex:1;min-height:0;">
@@ -3007,8 +3026,10 @@ function renderRightPanel() {
                onkeydown="App.handleSlideKeyboard(event)">
             ${slides.map((slide, i) => {
               const escapedImg = (slide.image || '').replace(/'/g, "\\'");
+              const _isActive = i === Math.min(Math.max(0, App._activeSlidePreview || 0), slides.length - 1);
               return `
-                <div class="slideshow-slide-item" draggable="true" 
+                <div class="slideshow-slide-item${_isActive ? ' seq-active' : ''}" draggable="true" 
+                     onclick="App.setSlidePreview(${i})"
                      ondragstart="App.handleSlideDragStart(event, ${i})" 
                      ondragover="App.handleSlideDragOver(event)" 
                      ondragleave="App.handleSlideDragLeave(event)"
@@ -3610,7 +3631,7 @@ function renderNarrativeControlsMarkup({ page, proj, panelMode = 'sidebar' } = {
   const project = proj || Store.get('currentProject');
   if (!activePage || !project) return '';
 
-  const style = { font: 'serif', size: 48, align: 'justify', color: '#ffffff', textColor: '#ffffff', bgColor: '#000000', bgOpacity: 0.55, leading: 1.4, bold: false, italic: false, ...(activePage.narrativeStyle || {}) };
+  const style = { font: 'serif', size: 48, align: 'justify', color: '#ffffff', textColor: '#ffffff', bgColor: '#000000', bgOpacity: 0.55, leading: 1.4, bold: false, italic: false, strokeEnabled: false, strokeColor: '#000000', strokeWidth: 3, ...(activePage.narrativeStyle || {}) };
   const settings = { heightLocked: false, fontSizeLocked: false, overflow: 'shrink', minFontSize: 12, warnOnMin: false, ...(project.narrativeSettings || {}) };
   const fontList = Object.values(APP_FONTS || {}).filter(f => f && (f.category === 'text' || f.category === 'display'));
   const fontOpts = fontList.map(f => `<option value="${f.id}" ${style.font === f.id ? 'selected' : ''}>${f.name}</option>`).join('');
@@ -3644,7 +3665,7 @@ function renderNarrativeControlsMarkup({ page, proj, panelMode = 'sidebar' } = {
 
       <!-- SECTION 1: Basic Text (expanded by default) -->
       <div class="narr-section" data-narr-section="basicText">
-        <div class="narr-section-header" onclick="App.toggleNarrSection('basicText')">
+        <div class="narr-section-header" onclick="event.stopPropagation();App.toggleNarrSection('basicText')" onmousedown="event.preventDefault()">
           <span class="narr-toggle-icon">${_icon('basicText')}</span>
           <span class="narr-section-title">${t('sidebar.basicText')}</span>
           <span class="narr-section-count">6</span>
@@ -3690,12 +3711,32 @@ function renderNarrativeControlsMarkup({ page, proj, panelMode = 'sidebar' } = {
             <input type="range" min="0.8" max="3" step="0.1" value="${style.leading || 1.4}" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1); App.setNarrativeStyle('leading', parseFloat(this.value))" style="flex:1;accent-color:#60a5fa;">
             <span style="min-width:22px;font-size:10px;color:#e2e8f0;text-align:right;">${Number(style.leading || 1.4).toFixed(1)}</span>
           </div>
+          <!-- Stroke/Contorno controls -->
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid #333;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+              <button onclick="App.setNarrativeStyle('strokeEnabled',!${!!style.strokeEnabled})" title="Contorno do texto" style="${_btn(!!style.strokeEnabled)}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              </button>
+              <span style="font-size:9px;font-weight:600;color:#a0aec0;">Contorno</span>
+              ${style.strokeEnabled ? `
+              <label style="display:flex;align-items:center;gap:3px;margin-left:auto;" title="Cor do contorno">
+                <input type="color" value="${style.strokeColor || '#000000'}" onchange="App.setNarrativeStyle('strokeColor', this.value)" style="width:20px;height:20px;border:1px solid #3a3a3a;border-radius:3px;padding:0;cursor:pointer;background:transparent;">
+              </label>
+              <input type="range" min="1" max="6" step="0.5" value="${style.strokeWidth || 3}" oninput="this.nextElementSibling.textContent=this.value+'px'; App.setNarrativeStyle('strokeWidth', parseFloat(this.value))" style="width:50px;accent-color:#f59e0b;">
+              <span style="font-size:9px;color:#a0aec0;min-width:22px;">${style.strokeWidth || 3}px</span>
+              ` : ''}
+            </div>
+            <!-- Preset Estilo Clássico -->
+            <button onclick="App.applyNarrativePreset('classic')" style="width:100%;padding:6px 8px;border-radius:4px;border:1px solid #f59e0b;background:rgba(245,158,11,0.1);color:#f59e0b;font-size:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;" title="Aplica: amarelo + contorno preto + sem fundo">
+              <span style="font-size:12px;">🎬</span> Estilo Clássico
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- SECTION 2: Advanced Layout (collapsed by default) -->
       <div class="narr-section" data-narr-section="advancedLayout">
-        <div class="narr-section-header" onclick="App.toggleNarrSection('advancedLayout')">
+        <div class="narr-section-header" onclick="event.stopPropagation();App.toggleNarrSection('advancedLayout')" onmousedown="event.preventDefault()">
           <span class="narr-toggle-icon">${_icon('advancedLayout')}</span>
           <span class="narr-section-title">${t('sidebar.advancedLayout')}</span>
           <span class="narr-section-count">3</span>
@@ -3741,7 +3782,7 @@ function renderNarrativeControlsMarkup({ page, proj, panelMode = 'sidebar' } = {
 
       <!-- SECTION 3: Position & Safe Zones (expanded by default) -->
       <div class="narr-section" data-narr-section="position">
-        <div class="narr-section-header" onclick="App.toggleNarrSection('position')">
+        <div class="narr-section-header" onclick="event.stopPropagation();App.toggleNarrSection('position')" onmousedown="event.preventDefault()">
           <span class="narr-toggle-icon">${_icon('position')}</span>
           <span class="narr-section-title">${t('sidebar.positionSafeZones')}</span>
           ${_isVert && _textPos === 'top' ? '<span class="narr-section-badge safe">Safe</span>' : ''}
@@ -3761,7 +3802,7 @@ function renderNarrativeControlsMarkup({ page, proj, panelMode = 'sidebar' } = {
 
       <!-- SECTION 4: Bilingual Subtitles (collapsed by default) -->
       <div class="narr-section" data-narr-section="bilingual">
-        <div class="narr-section-header" onclick="App.toggleNarrSection('bilingual')">
+        <div class="narr-section-header" onclick="event.stopPropagation();App.toggleNarrSection('bilingual')" onmousedown="event.preventDefault()">
           <span class="narr-toggle-icon">${_icon('bilingual')}</span>
           <span class="narr-section-title">${t('sidebar.bilingualSubtitles')}</span>
           ${isDual ? '<span class="narr-section-badge dual">PT+EN</span>' : ''}
@@ -3988,6 +4029,71 @@ window.renderTimeline = renderTimeline;
 window.renderPageList = renderPageList;
 window.renderProjectsList = renderProjectsList;
 
+/* ═══════════════════════════════════════
+   MOBILE PAGE CAROUSEL — Compact page strip
+   Fixed above bottom nav on mobile
+   ═══════════════════════════════════════ */
+function renderPageCarousel() {
+  const el = document.getElementById('mobile-page-carousel');
+  if (!el) return;
+  const p = Store.get('currentProject');
+  const view = Store.get('view');
+  if (!p || view !== 'editor') { el.innerHTML = ''; return; }
+
+  const active = Store.get('activePageIndex');
+  const coverActive = Store.get('coverActive');
+  const backCoverActive = Store.get('backCoverActive');
+
+  let items = '';
+
+  // Cover
+  if (p.cover) {
+    items += `<button class="tl-page tl-cover ${coverActive ? 'active' : ''}"
+      onclick="App.setActiveCover()" title="Capa">
+      <span style="display:inline-flex;">${Icons.palette}</span>
+      ${coverActive ? '<span class="tl-active-bar"></span>' : ''}
+    </button>`;
+  }
+
+  // Back cover
+  if (p.cover && p.backCover) {
+    items += `<button class="tl-page tl-cover ${backCoverActive ? 'active' : ''}"
+      onclick="App.setActiveBackCover()" title="Contracapa">
+      <span style="display:inline-flex;">${Icons.copy}</span>
+      ${backCoverActive ? '<span class="tl-active-bar" style="background:rgba(107,114,128,0.8);"></span>' : ''}
+    </button>`;
+  }
+
+  // Pages
+  items += p.pages.map((page, i) => {
+    const isActive = !coverActive && !backCoverActive && i === active;
+    const hasImg = page.images && page.images.some(im => im && im.src);
+    return `<button class="tl-page ${isActive ? 'active' : ''}"
+      onclick="App.setActivePage(${i})"
+      title="Pg ${i + 1}">
+      <span class="tl-page-num">${i + 1}</span>
+      ${hasImg ? '<span class="tl-dot" style="background:#14b8a6;width:4px;height:4px;border-radius:50%;position:absolute;bottom:3px;"></span>' : ''}
+      ${isActive ? '<span class="tl-active-bar"></span>' : ''}
+    </button>`;
+  }).join('');
+
+  el.innerHTML = `<div class="tl-inner">
+    <div class="tl-center">
+      <div class="tl-pages-track" id="mobile-pages-track">${items}</div>
+      <button class="tl-add" onclick="App.addPage()" title="Nova página">+</button>
+    </div>
+  </div>`;
+
+  // Auto-scroll active page into view
+  requestAnimationFrame(() => {
+    const track = document.getElementById('mobile-pages-track');
+    if (!track) return;
+    const activeBtn = track.querySelector('.tl-page.active');
+    if (activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  });
+}
+window.renderPageCarousel = renderPageCarousel;
+
 function renderStickers(page) {
   if (!page || !page.stickers || page.stickers.length === 0) return '';
   const selectedEl = Store.get('selectedElement');
@@ -4197,6 +4303,7 @@ function renderTimeline() {
   
   if (!proj || view !== 'editor' || !proj.videoFormat) {
     bar.classList.add('hidden');
+    if (typeof renderPageCarousel === 'function') renderPageCarousel();
     return;
   }
   
@@ -4297,6 +4404,9 @@ function renderTimeline() {
       <button class="timeline-add-btn" onclick="App.addPage()" title="Adicionar página">+</button>
     </div>
   `;
+
+  // Also update mobile page carousel
+  if (typeof renderPageCarousel === 'function') renderPageCarousel();
 }
 
 /* ═══════════════════════════════════════════════════════════════
