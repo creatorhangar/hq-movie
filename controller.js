@@ -8631,8 +8631,16 @@ const App = {
     },
 
     // ── Panels ──
-    toggleLeft() { Store.set({ leftPanelOpen: !Store.get('leftPanelOpen') }); },
-    toggleRight() { Store.set({ rightPanelOpen: !Store.get('rightPanelOpen') }); },
+    toggleLeft() { 
+        Store.set({ leftPanelOpen: !Store.get('leftPanelOpen') }); 
+        // Re-center canvas after sidebar animation
+        setTimeout(() => this.zoomFit(), 350);
+    },
+    toggleRight() { 
+        Store.set({ rightPanelOpen: !Store.get('rightPanelOpen') }); 
+        // Re-center canvas after sidebar animation
+        setTimeout(() => this.zoomFit(), 350);
+    },
     
     // ── Mobile Sidebar Toggle ──
     isMobile() { return window.innerWidth <= 768; },

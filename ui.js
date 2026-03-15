@@ -2048,12 +2048,11 @@ function renderCanvas() {
           ${replaceOverlay}
         </div>`;
       }
-      // Empty panel - single click selects, double-click opens file picker
+      // Empty panel - single click triggers upload directly (more intuitive UX)
       const emptySelected = selectedSlot === i;
       const emptySelOutline = emptySelected ? 'outline:2.5px solid #4ecdc4;outline-offset:-2px;' : '';
       return `<div class="panel-slot empty ${emptySelected ? 'selected' : ''}" style="left:${px}px;top:${py}px;width:${pw}px;height:${ph}px;${requadro}${emptySelOutline}${clipStyle}box-sizing:border-box;background:repeating-linear-gradient(45deg,transparent,transparent 8px,rgba(0,0,0,0.03) 8px,rgba(0,0,0,0.03) 9px);" 
-        onclick="event.stopPropagation();App.selectSlot(${i})" 
-        ondblclick="event.stopPropagation();App.triggerImageUpload(${i})"
+        onclick="event.stopPropagation();App.selectSlot(${i});App.triggerImageUpload(${i})"
         oncontextmenu="event.preventDefault();event.stopPropagation();App.showContextMenu(event,'empty-panel',${i})"
         ondragover="event.preventDefault();event.dataTransfer.dropEffect='copy'" 
         ondragenter="event.preventDefault();App._panelDragEnter(this)" 
@@ -2069,7 +2068,7 @@ function renderCanvas() {
             </div>
             <div style="text-align:center;">
               <div style="color:${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.7)'};font-size:14px;font-weight:600;margin-bottom:4px;">${window.innerWidth <= 768 ? 'Toque para adicionar foto' : 'Adicionar foto'}</div>
-              <div style="font-size:11px;color:${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.4)'};">Quadro ${i + 1} ${window.innerWidth <= 768 ? '' : '• Arraste ou clique duplo'}</div>
+              <div style="font-size:11px;color:${emptySelected ? 'var(--accent)' : 'rgba(255,255,255,0.4)'};">Quadro ${i + 1} ${window.innerWidth <= 768 ? '' : '• Clique ou arraste'}</div>
             </div>
           </div>
         </div>`;

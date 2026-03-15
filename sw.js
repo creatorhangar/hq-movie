@@ -1,5 +1,5 @@
 // HQ Movie — Service Worker (Cache-First)
-const CACHE_NAME = 'hq-movie-v113-accordion-thumbs';
+const CACHE_NAME = 'hq-movie-v114-canvas-center-fix';
 const ASSETS = [
     '/',
     '/index.html',
@@ -9,9 +9,9 @@ const ASSETS = [
     '/layouts-video.js?v=7',
     '/app.js?v=13',
     '/video-exporter.js?v=14',
-    '/ui.js?v=45',
+    '/ui.js?v=46',
     '/onboarding.js?v=10',
-    '/controller.js?v=36',
+    '/controller.js?v=37',
     '/manifest.json',
     '/locales/en.json',
     '/locales/pt-BR.json',
