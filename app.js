@@ -101,13 +101,13 @@ window.BALLOON_TYPOGRAPHY = {
     textAlign:  'center',
     lineHeight: '1.15',
   },
-  whisper: {
-    fontFamily: "'Kalam', 'Comic Sans MS', cursive",
+  caption: {
+    fontFamily: "'Inter', 'Instrument Sans', sans-serif",
     fontSize:   18,
-    fontWeight: '300',
-    fontStyle:  'italic',
+    fontWeight: '600',
+    fontStyle:  'normal',
     textTransform: 'none',
-    letterSpacing: '0.01em',
+    letterSpacing: '0.02em',
     textAlign:  'center',
     lineHeight: '1.35',
   },
@@ -148,7 +148,7 @@ window.TYPOGRAPHY_DEFAULTS = {
   speech:    { lineHeight: 1.30, letterSpacing: 2  },
   thought:   { lineHeight: 1.30, letterSpacing: 3  },
   shout:     { lineHeight: 1.15, letterSpacing: 5  },
-  whisper:   { lineHeight: 1.35, letterSpacing: 1  },
+  caption:   { lineHeight: 1.40, letterSpacing: 0  },
   narration: { lineHeight: 1.50, letterSpacing: 0  },
   sfx:       { lineHeight: 1.00, letterSpacing: 5  },
 };
@@ -166,9 +166,9 @@ window.BALLOON_BG_CUSTOM_DEFAULT = [
   '#F5F0E8', // papel
   '#E8D5FF', // lilás
   '#FFE0B2', // âmbar
-  '#2D3A4A', // azul noite
-  '#8BC34A', // verde
-  '#FF7043', // laranja
+  '#2A2A2A', // slot vazio 1 (clique para editar)
+  '#2A2A2A', // slot vazio 2 (clique para editar)
+  '#2A2A2A', // slot vazio 3 (clique para editar)
 ];
 window.BALLOON_TEXT_FIXED = [
   '#1C1C1E', // preto
@@ -182,9 +182,9 @@ window.BALLOON_TEXT_CUSTOM_DEFAULT = [
   '#E65100', // laranja escuro
   '#1B5E20', // verde escuro
   '#0D47A1', // azul
-  '#6A1B9A', // roxo vibrante
-  '#BF360C', // terracota
-  '#263238', // cinza escuro
+  '#808080', // slot vazio 1 (clique para editar)
+  '#808080', // slot vazio 2 (clique para editar)
+  '#808080', // slot vazio 3 (clique para editar)
 ];
 
 // Color Presets Manager — persists custom colors in localStorage
@@ -250,7 +250,7 @@ window.BALLOON_SIZE_CONFIG = {
   speech:    { default: 14, min: 10, max: 72  },
   thought:   { default: 14, min: 10, max: 72  },
   shout:     { default: 22, min: 16, max: 72  },
-  whisper:   { default: 12, min: 9,  max: 48  },
+  caption:   { default: 18, min: 12, max: 42  },
   narration: { default: 13, min: 10, max: 48  },
   sfx:       { default: 36, min: 20, max: 120 },
 };
@@ -270,7 +270,7 @@ function _calcBalloonInsets(type, w, h) {
     speech:     { t: 18, b: 18, l: 24, r: 24 },
     thought:    { t: 28, b: 28, l: 34, r: 34 },
     shout:      { t: 45, b: 45, l: 50, r: 50 },
-    whisper:    { t: 16, b: 16, l: 22, r: 22 },
+    caption:    { t: 10, b: 10, l: 20, r: 20 },
     narration:  { t: 8,  b: 8,  l: 10, r: 10 },
     box:        { t: 8,  b: 8,  l: 10, r: 10 },
     sfx:        { t: 5,  b: 5,  l: 5,  r: 5  },
@@ -365,6 +365,15 @@ const Icons = {
   keyboard: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="8" y1="12" x2="8.01" y2="12"/><line x1="12" y1="12" x2="12.01" y2="12"/><line x1="16" y1="12" x2="16.01" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg>`,
   crosshair: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`,
   pencil: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,
+  // Additional icons for sidebar sections
+  sparkles: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>`,
+  images: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 22H4a2 2 0 0 1-2-2V6"/><rect x="6" y="2" width="16" height="16" rx="2"/><circle cx="12" cy="8" r="2"/><path d="m22 14-3.5-3.5a2 2 0 0 0-2.83 0L6 20"/></svg>`,
+  transition: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3v10"/><path d="m12.67 5.5 8.66 5"/><path d="m12.67 10.5 8.66-5"/><rect x="2" y="4" width="8" height="8" rx="1"/><path d="M2 17v4h4"/><path d="M22 17v4h-4"/></svg>`,
+  alignTop: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="6" height="14" rx="1"/><rect x="14" y="6" width="6" height="10" rx="1"/><line x1="2" y1="3" x2="22" y2="3"/></svg>`,
+  alignMiddle: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="6" height="14" rx="1"/><rect x="14" y="7" width="6" height="10" rx="1"/><line x1="2" y1="12" x2="22" y2="12"/></svg>`,
+  alignBottom: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="6" height="14" rx="1"/><rect x="14" y="8" width="6" height="10" rx="1"/><line x1="2" y1="21" x2="22" y2="21"/></svg>`,
+  expand: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21H3V3"/><path d="M21 3v18"/><path d="M3 21V3h18"/></svg>`,
+  style: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`,
 };
 
 // Replace VIDEO_FORMATS icons with actual SVG when available
@@ -584,9 +593,20 @@ const Store = {
     const all = await db.projects.toArray(); 
     // Auto-upgrade legacy typography
     const upgraded = all.map(p => this.upgradeProjectTypography(p));
-    // Save back if changed (optional, but good for persistence)
-    // For now, just load into state
-    this.set({ projects: upgraded.sort((a, b) => b.metadata.updatedAt - a.metadata.updatedAt) }); 
+    // Sort by updated date
+    const sorted = upgraded.sort((a, b) => b.metadata.updatedAt - a.metadata.updatedAt);
+    this.set({ projects: sorted });
+    
+    // Migrate thumbnails for projects that don't have one (async, non-blocking)
+    if (typeof ThumbnailGenerator !== 'undefined') {
+      ThumbnailGenerator.migrateAll(sorted).then(count => {
+        if (count > 0) {
+          console.log(`Generated ${count} missing thumbnails`);
+          // Refresh project list to show new thumbnails
+          this.set({ projects: [...sorted] });
+        }
+      }).catch(() => {});
+    }
   },
   
   // Upgrade legacy small fonts to video-friendly sizes
@@ -2672,6 +2692,13 @@ function createPage(order, videoFormat = null) {
     duration: 2.5, // Default 2.5s (dynamic for TikTok/Reels)
     // Slideshow mode: multiple images in temporal sequence
     slides: [], // [{ id, image, duration, kenBurns, transition, transitionDuration, panX, panY, zoom }]
+    slideshowAudio: { // Audio for slideshow mode
+      file: null,              // dataURL of audio file
+      duration: 0,             // duration in seconds
+      syncMode: 'auto',        // 'auto' | 'loop' | 'distribute' | 'kenburns' | 'manual'
+      perSlideDuration: 4,     // default duration per slide
+      volume: 0.8              // audio volume (0-1)
+    },
     kenBurns: 'zoom-in', // Default Ken Burns for non-slideshow layouts
     transition: 'fade' // Default transition
   };
@@ -2897,7 +2924,7 @@ window.BalloonSVGRenderer = {
       case 'speech':    return this.dialog(w, h, tailDir || 's', o);
       case 'thought':   return this.thought(w, h, tailDir || 'sw', o);
       case 'shout':     return this.shout(w, h, tailDir || 's', o);
-      case 'whisper':   return this.whisper(w, h, tailDir || 's', o);
+      case 'caption':   return this.caption(w, h, o);
       case 'narration': return this.box(w, h, o, opts);
       case 'sfx':       return this.sfx(w, h, o);
       default:          return this.dialog(w, h, tailDir || 's', o);
@@ -3014,39 +3041,27 @@ window.BalloonSVGRenderer = {
       </g></svg>`;
   },
 
-  // ── Whisper ──────────────────────────────────────────────────────────────
-  // Rounded rectangle with dashed border + small dashed triangle tail
-  whisper(w, h, tailDir, o) {
-    const PAD = 28;
-    const R = Math.min(w, h) * 0.15;
-    const sw = o.sw || 2.5;
-    const dir = (!tailDir || tailDir === 'center' || tailDir === 'none') ? null : tailDir;
+  // ── Caption ──────────────────────────────────────────────────────────────
+  // Pill shape - uses customizable colors like other balloons
+  // Visual difference from narration: very rounded corners (pill shape), no tail
+  caption(w, h, o) {
+    const radius = Math.min(h / 2, 24); // Pill shape - very rounded
+    const sw = 1.5;
+    const fillCaption = o.fill || '#1a1a1a';
+    const strokeCaption = o.stroke || '#333';
 
-    const rectPath = `M ${R},0 L ${w - R},0 Q ${w},0 ${w},${R} L ${w},${h - R} Q ${w},${h} ${w - R},${h} L ${R},${h} Q 0,${h} 0,${h - R} L 0,${R} Q 0,0 ${R},0 Z`;
-
-    const TL = Math.min(w, h) * 0.22;
-    const TW = Math.min(w, h) * 0.14;
-    const tailPaths = {
-      s:  `M ${w*0.4},${h} L ${w*0.5},${h+TL} L ${w*0.4+TW*2},${h} Z`,
-      n:  `M ${w*0.4},0 L ${w*0.5},${-TL} L ${w*0.4+TW*2},0 Z`,
-      e:  `M ${w},${h*0.35} L ${w+TL},${h*0.5} L ${w},${h*0.35+TW*2} Z`,
-      w:  `M 0,${h*0.35} L ${-TL},${h*0.5} L 0,${h*0.35+TW*2} Z`,
-      sw: `M ${w*0.2},${h} L ${w*0.05},${h+TL} L ${w*0.2+TW*1.5},${h} Z`,
-      se: `M ${w*0.6},${h} L ${w*0.85},${h+TL} L ${w*0.6+TW*1.5},${h} Z`,
-      nw: `M ${w*0.2},0 L ${w*0.05},${-TL} L ${w*0.2+TW*1.5},0 Z`,
-      ne: `M ${w*0.6},0 L ${w*0.85},${-TL} L ${w*0.6+TW*1.5},0 Z`,
-    };
-
-    const tailPath = dir && tailPaths[dir]
-      ? `<path d="${tailPaths[dir]}" fill="${o.fill}" stroke="${o.stroke}" stroke-width="${sw}" stroke-linejoin="round" stroke-dasharray="5 4"/>`
-      : '';
-
-    const svgW = w + PAD * 2, svgH = h + PAD * 2;
-    return `<svg width="${svgW}" height="${svgH}" viewBox="${-PAD} ${-PAD} ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;position:absolute;left:${-PAD}px;top:${-PAD}px;pointer-events:none;">
+    return `<svg xmlns="http://www.w3.org/2000/svg"
+      width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"
+      style="position:absolute;inset:0;overflow:visible;pointer-events:none">
       ${this._shadow()}
       <g filter="url(#bbShadow)">
-        ${tailPath}
-        <path d="${rectPath}" fill="${o.fill}" stroke="${o.stroke}" stroke-width="${sw}" stroke-dasharray="8 5" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect
+          x="${sw / 2}" y="${sw / 2}"
+          width="${w - sw}" height="${h - sw}"
+          rx="${radius}" ry="${radius}"
+          fill="${fillCaption}"
+          stroke="${strokeCaption}"
+          stroke-width="${sw}"/>
       </g></svg>`;
   },
 

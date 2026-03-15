@@ -154,16 +154,16 @@ const App = {
             'meme': { name: 'Meme Animado', pages: 3, layout: '1p-full', format: 'square' }
         };
         
-        const t = templates[templateId];
-        if (!t) return;
+        const tpl = templates[templateId];
+        if (!tpl) return;
         
-        const p = createVideoProject(t.name, t.format);
+        const p = createVideoProject(tpl.name, tpl.format);
         p.pages = [];
         
-        for (let i = 0; i < t.pages; i++) {
+        for (let i = 0; i < tpl.pages; i++) {
             p.pages.push({
                 id: genId(),
-                layoutId: t.layout,
+                layoutId: tpl.layout,
                 images: [],
                 texts: [],
                 showTextBelow: templateId === 'tutorial', // Tutorial shows text below by default
@@ -175,7 +175,7 @@ const App = {
         await db.projects.put(p);
         await Store.loadProjects();
         Store.set({ view: 'editor', currentProject: p, activePageIndex: 0, selectedElement: null, selectedSlot: -1, undoStack: [], redoStack: [] });
-        Toast.show(t('toast.projectCreated', { name: t.name }), 'success');
+        Toast.show(t('toast.projectCreated', { name: tpl.name }), 'success');
     },
 
     async createDemoProject() {
@@ -635,6 +635,13 @@ const App = {
         Store.save();
         Toast.show(t('toast.coverRemoved'), 'info');
     },
+    setCoverDuration(seconds) {
+        const p = Store.get('currentProject'); if (!p || !p.cover) return;
+        p.cover.duration = Math.max(0.1, Math.min(10, seconds || 0.2));
+        Store.set({ currentProject: p });
+        Store.save();
+        Toast.show(`Duração da capa: ${p.cover.duration}s`);
+    },
 
     // ── Back Cover (Contracapa) ──
     addBackCover() {
@@ -901,25 +908,65 @@ const App = {
         let dragging = false;
         let domNode = null;
         const THRESHOLD = 3;
+        const SNAP_THRESHOLD = 8;
+        
+        // Get canvas dimensions for center guides
+        const dims = getProjectDims(p);
+        const canvasW = dims.canvasW || 714;
+        const canvasH = dims.canvasH || 1010;
+        const centerX = canvasW / 2;
+        const centerY = canvasH / 2;
+        
+        // Create snap guide elements
+        const canvas = document.getElementById('canvas-page');
+        let guideH = null, guideV = null;
+        if (canvas) {
+            guideH = document.createElement('div');
+            guideH.className = 'snap-guide horizontal center';
+            guideH.style.top = centerY + 'px';
+            canvas.appendChild(guideH);
+            
+            guideV = document.createElement('div');
+            guideV.className = 'snap-guide vertical center';
+            guideV.style.left = centerX + 'px';
+            canvas.appendChild(guideV);
+        }
 
         const move = ev => {
             const dx = ev.clientX - sx, dy = ev.clientY - sy;
             if (!dragging) {
                 if (Math.abs(dx) < THRESHOLD && Math.abs(dy) < THRESHOLD) return;
-                // Threshold exceeded — activate drag mode
                 dragging = true;
                 ev.preventDefault();
-                // Find the DOM element to move directly
                 domNode = document.querySelector(`[data-el-id="${elId}"]`)?.parentElement
                     || document.querySelector(`.cover-image-element[onmousedown*="${elId}"]`);
                 if (domNode) domNode.style.willChange = 'left, top';
             }
             if (dragging && domNode) {
-                const newX = ox + dx / zoom;
-                const newY = oy + dy / zoom;
+                let newX = ox + dx / zoom;
+                let newY = oy + dy / zoom;
+                const elW = el.width || 200;
+                const elH = el.height || 50;
+                const elCenterX = newX + elW / 2;
+                const elCenterY = newY + elH / 2;
+                
+                // Snap to center horizontal
+                let snapH = false, snapV = false;
+                if (Math.abs(elCenterX - centerX) < SNAP_THRESHOLD) {
+                    newX = centerX - elW / 2;
+                    snapV = true;
+                }
+                if (Math.abs(elCenterY - centerY) < SNAP_THRESHOLD) {
+                    newY = centerY - elH / 2;
+                    snapH = true;
+                }
+                
+                // Show/hide guides
+                if (guideV) guideV.classList.toggle('visible', snapV);
+                if (guideH) guideH.classList.toggle('visible', snapH);
+                
                 domNode.style.left = Math.round(newX) + 'px';
                 domNode.style.top = Math.round(newY) + 'px';
-                // Store new position in data (not saved yet)
                 el.x = newX;
                 el.y = newY;
             }
@@ -927,6 +974,9 @@ const App = {
         const up = () => {
             document.removeEventListener('mousemove', move);
             document.removeEventListener('mouseup', up);
+            // Remove snap guides
+            if (guideH) guideH.remove();
+            if (guideV) guideV.remove();
             if (dragging) {
                 if (domNode) domNode.style.willChange = '';
                 Store.save();
@@ -967,6 +1017,38 @@ const App = {
             
             el.width = Math.max(20, newW);
             el.height = Math.max(20, newH);
+            renderCanvas();
+        };
+        const up = () => {
+            document.removeEventListener('mousemove', move);
+            document.removeEventListener('mouseup', up);
+            Store.save();
+            renderRightPanel();
+        };
+        document.addEventListener('mousemove', move);
+        document.addEventListener('mouseup', up);
+    },
+    startResizeCoverTextWidth(e, elId, side) {
+        e.preventDefault();
+        e.stopPropagation();
+        const p = Store.get('currentProject');
+        const coverObj = this._getActiveCoverObj(); if (!p || !coverObj) return;
+        const el = coverObj.elements.find(ce => ce.id === elId); if (!el) return;
+        const zoom = Store.get('zoom');
+        const sx = e.clientX;
+        const ow = el.width || 634;
+        const ox = el.x || 0;
+        
+        const move = ev => {
+            const dx = (ev.clientX - sx) / zoom;
+            if (side === 'right') {
+                el.width = Math.max(100, ow + dx);
+            } else {
+                // Left side: adjust both x and width
+                const newW = Math.max(100, ow - dx);
+                el.x = ox + (ow - newW);
+                el.width = newW;
+            }
             renderCanvas();
         };
         const up = () => {
@@ -1182,7 +1264,13 @@ const App = {
 
     // ── Images ──
     _uploadDebounce: null,
+    _fileDialogOpen: false,
+    _sidebarToggleTs: 0,
+    _sidebarToggleRaf: null,
+    _urlPromptOpen: false,
+    _urlPromptTs: 0,
     triggerImageUpload(slot) {
+        if (this._fileDialogOpen) return;
         // Debounce to prevent multiple rapid clicks
         if (this._uploadDebounce) {
             clearTimeout(this._uploadDebounce);
@@ -1199,15 +1287,24 @@ const App = {
             
             // Remove old event listener and add new one
             input.onchange = null;
-            input.onchange = (e) => this.handleFileUpload(e);
+            input.onchange = (e) => {
+                this._fileDialogOpen = false;
+                this.handleFileUpload(e);
+            };
             
             // Reset value to allow same file selection
             input.value = '';
             
             try {
+                this._fileDialogOpen = true;
+                // If user cancels picker, focus returns without onchange
+                window.addEventListener('focus', () => {
+                    setTimeout(() => { this._fileDialogOpen = false; }, 0);
+                }, { once: true });
                 input.click();
             } catch (e) {
                 console.error('Erro ao clicar no input:', e);
+                this._fileDialogOpen = false;
                 this._triggerImageUploadAlternative();
             }
             
@@ -1246,10 +1343,23 @@ const App = {
         e.target.value = '';
     },
     promptImageUrl() {
+        if (this._urlPromptOpen) return;
+        const now = performance.now();
+        if (now - this._urlPromptTs < 300) return;
+        this._urlPromptTs = now;
+        this._urlPromptOpen = true;
         const url = prompt('Cole a URL da imagem (PNG, JPG, GIF, WebP):');
-        if (!url) return;
+        this._urlPromptOpen = false;
+        this._urlPromptTs = performance.now();
         if (!url || !url.trim()) return;
-        this._addImage(url);
+        const cleanUrl = url.trim();
+        const isHttp = /^https?:\/\//i.test(cleanUrl);
+        const isDataImage = /^data:image\//i.test(cleanUrl);
+        if (!isHttp && !isDataImage) {
+            Toast.show('URL inválida. Use http(s) ou data:image', 'warning');
+            return;
+        }
+        this._addImage(cleanUrl);
     },
     _optimizeToWebP(src, callback) {
         const MAX_DIM = 1600;
@@ -2734,23 +2844,14 @@ const App = {
             ? Math.max(contentW * 0.5, contentH * 0.5) 
             : 100;
 
-        // If content is smaller than viewport width, keep it centered
-        if (contentW <= rect.width) {
-            vp.x = (rect.width - contentW) / 2;
-        } else {
-            const minX = -(contentW - margin);
-            const maxX = rect.width - margin;
-            vp.x = Math.max(minX, Math.min(maxX, vp.x));
-        }
+        // Only clamp to bounds, don't force centering during pan
+        const minX = -(contentW - margin);
+        const maxX = rect.width - margin;
+        vp.x = Math.max(minX, Math.min(maxX, vp.x));
 
-        // If content is smaller than viewport height, keep it centered
-        if (contentH <= rect.height) {
-            vp.y = (rect.height - contentH) / 2;
-        } else {
-            const minY = -(contentH - margin);
-            const maxY = rect.height - margin;
-            vp.y = Math.max(minY, Math.min(maxY, vp.y));
-        }
+        const minY = -(contentH - margin);
+        const maxY = rect.height - margin;
+        vp.y = Math.max(minY, Math.min(maxY, vp.y));
     },
 
     _centerViewport() {
@@ -3340,6 +3441,148 @@ const App = {
         renderCanvas();
         renderRightPanel();
     },
+    setNarrationWidth(mode) {
+        const sel = Store.get('selectedElement');
+        if (!sel || sel.type !== 'balloon') return;
+        const page = Store.getActivePage();
+        if (!page || !page.texts[sel.index]) return;
+        const balloon = page.texts[sel.index];
+        if (balloon.type !== 'narration') return;
+        
+        balloon.widthMode = mode;
+        const dims = getProjectDims();
+        
+        if (mode === 'full') {
+            balloon.w = dims.contentW;
+            balloon.x = 0;
+        } else if (mode === 'panel') {
+            const panel = this._findPanelForBalloon(balloon);
+            if (panel) {
+                balloon.w = panel.w;
+                balloon.x = panel.x;
+            }
+        } else {
+            // auto - set reasonable width
+            if (balloon.w === dims.contentW) balloon.w = 220;
+        }
+        
+        Store.save();
+        renderCanvas();
+        renderRightPanel();
+    },
+    // Narration visual presets - creative styles
+    applyNarrationPreset(presetId) {
+        const sel = Store.get('selectedElement');
+        if (!sel || sel.type !== 'balloon') return;
+        const page = Store.getActivePage();
+        if (!page || !page.texts[sel.index]) return;
+        const balloon = page.texts[sel.index];
+        if (balloon.type !== 'narration') return;
+        
+        Store.pushUndo();
+        
+        const presets = {
+            classic: { bgColor: '#fffde7', textColor: '#1a1a1a', font: 'serif', fontSize: 14, borderStyle: 'double' },
+            cinema: { bgColor: '#0a0a0a', textColor: '#ffffff', font: 'sans', fontSize: 16, borderStyle: 'none' },
+            manga: { bgColor: '#ffffff', textColor: '#000000', font: 'sans', fontSize: 13, borderStyle: 'solid' },
+            neon: { bgColor: '#0a0a1a', textColor: '#00ffff', font: 'mono', fontSize: 14, borderStyle: 'glow' },
+            vintage: { bgColor: '#f5deb3', textColor: '#4a3728', font: 'serif', fontSize: 15, borderStyle: 'aged' },
+            horror: { bgColor: '#1a0a0a', textColor: '#ff3333', font: 'marker', fontSize: 16, borderStyle: 'blood' }
+        };
+        
+        const preset = presets[presetId];
+        if (!preset) return;
+        
+        balloon.bgColor = preset.bgColor;
+        balloon.textColor = preset.textColor;
+        balloon.font = preset.font;
+        balloon.fontSize = preset.fontSize;
+        balloon.narrationStyle = presetId;
+        
+        Store.save();
+        renderCanvas();
+        renderRightPanel();
+        Toast.show(`Estilo "${presetId}" aplicado`);
+    },
+    // Toggle full width for narration
+    toggleNarrationFullWidth() {
+        const sel = Store.get('selectedElement');
+        if (!sel || sel.type !== 'balloon') return;
+        const page = Store.getActivePage();
+        if (!page || !page.texts[sel.index]) return;
+        const balloon = page.texts[sel.index];
+        if (balloon.type !== 'narration') return;
+        
+        Store.pushUndo();
+        const dims = getProjectDims();
+        const sideMargin = Math.round(dims.contentW * 0.05);
+        
+        balloon.fullWidth = !balloon.fullWidth;
+        
+        if (balloon.fullWidth) {
+            balloon.x = 0;
+            balloon.w = dims.contentW;
+        } else {
+            balloon.x = sideMargin;
+            balloon.w = dims.contentW - (sideMargin * 2);
+        }
+        
+        Store.save();
+        renderCanvas();
+        renderRightPanel();
+        Toast.show(balloon.fullWidth ? 'Largura total ON' : 'Largura total OFF');
+    },
+    // Narration position presets - simplified to 3 options
+    setNarrationPosition(position) {
+        const sel = Store.get('selectedElement');
+        if (!sel || sel.type !== 'balloon') return;
+        const page = Store.getActivePage();
+        if (!page || !page.texts[sel.index]) return;
+        const balloon = page.texts[sel.index];
+        if (balloon.type !== 'narration') return;
+        
+        Store.pushUndo();
+        const dims = getProjectDims();
+        const safeMargin = Math.round(dims.contentH * 0.08);
+        const sideMargin = Math.round(dims.contentW * 0.05);
+        const isFullWidth = balloon.fullWidth;
+        
+        balloon.positionMode = position;
+        
+        // Set width based on fullWidth toggle
+        if (isFullWidth) {
+            balloon.x = 0;
+            balloon.w = dims.contentW;
+        } else {
+            balloon.x = sideMargin;
+            balloon.w = dims.contentW - (sideMargin * 2);
+        }
+        
+        // Set vertical position
+        switch(position) {
+            case 'top':
+            case 'top-full':
+            case 'top-safe':
+                balloon.y = isFullWidth ? 0 : safeMargin;
+                balloon.positionMode = 'top';
+                break;
+            case 'middle':
+            case 'center':
+                balloon.y = Math.round((dims.contentH - (balloon.h || 60)) / 2);
+                balloon.positionMode = 'middle';
+                break;
+            case 'bottom':
+            case 'bottom-full':
+            case 'bottom-safe':
+                balloon.y = dims.contentH - (balloon.h || 60) - (isFullWidth ? 0 : safeMargin);
+                balloon.positionMode = 'bottom';
+                break;
+        }
+        
+        Store.save();
+        renderCanvas();
+        renderRightPanel();
+    },
     _isColorDark(hex) {
         if (!hex || hex.length < 6) return false;
         const r = parseInt(hex.slice(1, 3), 16);
@@ -3698,6 +3941,12 @@ const App = {
     _placementListener: null,
 
     startBalloonPlacement(type = 'speech') {
+        // Guard: Don't allow balloon placement in cover mode
+        if (Store.get('coverActive') || Store.get('backCoverActive')) {
+            Toast.show('Balões não disponíveis no modo capa', 'warning');
+            return;
+        }
+        
         if (this._placementMode) this.cancelPlacement();
         this._placementMode = { type };
         
@@ -4939,9 +5188,10 @@ const App = {
         if (!page.slides) page.slides = [];
         
         // Convert existing images to slides if any
-        if (page.images && page.images.length > 0 && page.slides.length === 0) {
-            const equalDuration = (page.duration || 2.5) / page.images.length;
-            page.slides = page.images.map((img, i) => ({
+        const validImages = (page.images || []).filter(img => img && img.src);
+        if (validImages.length > 0 && page.slides.length === 0) {
+            const equalDuration = (page.duration || 2.5) / validImages.length;
+            page.slides = validImages.map((img, i) => ({
                 id: genId(),
                 image: img.src,
                 duration: Math.max(0.5, equalDuration),
@@ -4953,11 +5203,217 @@ const App = {
                 zoom: img.zoom || 1.0
             }));
             Toast.show('Imagens convertidas para slides!', 'success');
+            Store.save();
+            renderRightPanel();
+            renderCanvas();
+        } else {
+            // No images to convert - open multi-upload modal
+            this.openPhotoSequenceModal();
+        }
+    },
+    
+    openPhotoSequenceModal() {
+        const library = Store.get('library') || [];
+        const libraryItems = library.map((item, idx) => {
+            return `
+                <div class="library-item" onclick="App.togglePhotoSequenceSelection(${idx})" data-idx="${idx}"
+                    style="position:relative;cursor:pointer;border-radius:6px;overflow:hidden;border:2px solid transparent;transition:all 0.15s;">
+                    <img src="${item.src}" style="width:100%;height:100%;object-fit:cover;" draggable="false">
+                    <div class="selection-badge" style="position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:var(--surface);border:2px solid var(--border);display:none;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);"></div>
+                </div>`;
+        }).join('');
+        
+        const modal = `
+            <div class="modal-overlay" onclick="if(event.target===this)App.closeModal()">
+                <div class="modal-content" style="max-width:800px;max-height:85vh;overflow-y:auto;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid var(--border);">
+                        <h2 style="margin:0;font-size:20px;color:var(--accent);">📷 Criar Sequência de Fotos</h2>
+                        <button onclick="App.closeModal()" style="background:none;border:none;color:var(--text3);font-size:24px;cursor:pointer;padding:0;width:32px;height:32px;">×</button>
+                    </div>
+                    
+                    <div style="margin-bottom:20px;padding:16px;background:rgba(20,184,166,0.1);border-radius:8px;border:1px solid var(--accent);">
+                        <div style="font-size:13px;color:var(--text2);line-height:1.5;">
+                            <strong>Sequência de Fotos:</strong> Várias fotos na mesma página, cada uma aparece por um tempo antes de trocar para a próxima.
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom:20px;">
+                        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:12px;">FAZER UPLOAD DE NOVAS FOTOS</div>
+                        <div onclick="App.triggerPhotoSequenceUpload()" 
+                            style="padding:40px;border-radius:8px;border:2px dashed var(--accent);background:rgba(107,114,128,0.05);cursor:pointer;text-align:center;transition:all 0.15s;"
+                            onmouseenter="this.style.background='rgba(107,114,128,0.15)'"
+                            onmouseleave="this.style.background='rgba(107,114,128,0.05)'">
+                            <div style="font-size:48px;margin-bottom:12px;">📤</div>
+                            <div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:6px;">Clique ou arraste fotos aqui</div>
+                            <div style="font-size:12px;color:var(--text3);">Selecione múltiplas fotos de uma vez</div>
+                        </div>
+                        <input type="file" id="photo-sequence-upload" accept="image/*" multiple style="display:none;" onchange="App.handlePhotoSequenceUpload(event)">
+                    </div>
+                    
+                    ${library.length > 0 ? `
+                    <div style="margin-bottom:20px;">
+                        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:12px;">OU ESCOLHER DA BIBLIOTECA (<span id="selected-count">0</span> selecionadas)</div>
+                        <div id="library-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:300px;overflow-y:auto;padding:8px;background:var(--surface2);border-radius:6px;">
+                            ${libraryItems}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <div style="display:flex;gap:12px;">
+                        <button onclick="App.closeModal()" 
+                            style="flex:1;padding:12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:14px;font-weight:600;cursor:pointer;">
+                            Cancelar
+                        </button>
+                        <button onclick="App.createSequenceFromSelection()" id="create-sequence-btn"
+                            style="flex:2;padding:12px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;opacity:0.5;pointer-events:none;">
+                            Criar Sequência
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        
+        document.body.insertAdjacentHTML('beforeend', modal);
+        this._photoSequenceSelection = [];
+    },
+    
+    togglePhotoSequenceSelection(idx) {
+        if (!this._photoSequenceSelection) this._photoSequenceSelection = [];
+        
+        const index = this._photoSequenceSelection.indexOf(idx);
+        const item = document.querySelector(`.library-item[data-idx="${idx}"]`);
+        const badge = item?.querySelector('.selection-badge');
+        
+        if (index > -1) {
+            // Deselect
+            this._photoSequenceSelection.splice(index, 1);
+            if (item) item.style.borderColor = 'transparent';
+            if (badge) badge.style.display = 'none';
+        } else {
+            // Select
+            this._photoSequenceSelection.push(idx);
+            if (item) item.style.borderColor = 'var(--accent)';
+            if (badge) {
+                badge.style.display = 'flex';
+                badge.textContent = this._photoSequenceSelection.length;
+            }
         }
         
+        // Update all badges with correct numbers
+        this._photoSequenceSelection.forEach((selIdx, pos) => {
+            const selItem = document.querySelector(`.library-item[data-idx="${selIdx}"]`);
+            const selBadge = selItem?.querySelector('.selection-badge');
+            if (selBadge) selBadge.textContent = pos + 1;
+        });
+        
+        // Update counter and button state
+        const counter = document.getElementById('selected-count');
+        const btn = document.getElementById('create-sequence-btn');
+        if (counter) counter.textContent = this._photoSequenceSelection.length;
+        if (btn) {
+            if (this._photoSequenceSelection.length > 0) {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            } else {
+                btn.style.opacity = '0.5';
+                btn.style.pointerEvents = 'none';
+            }
+        }
+    },
+    
+    triggerPhotoSequenceUpload() {
+        document.getElementById('photo-sequence-upload')?.click();
+    },
+    
+    handlePhotoSequenceUpload(event) {
+        const files = Array.from(event.target.files || []);
+        if (files.length === 0) return;
+        
+        const page = Store.getActivePage();
+        if (!page) return;
+        
+        if (!page.slides) page.slides = [];
+        
+        let processed = 0;
+        const totalDuration = page.duration || 2.5;
+        
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const src = e.target.result;
+                
+                // Add to library
+                const library = Store.get('library') || [];
+                library.push({ src, name: file.name, date: Date.now() });
+                Store.setSilent({ library });
+                
+                // Add to slides
+                page.slides.push({
+                    id: genId(),
+                    image: src,
+                    duration: 2.0,
+                    kenBurns: 'zoom-in',
+                    transition: page.slides.length === 0 ? 'cut' : 'crossfade',
+                    transitionDuration: 0.3,
+                    panX: 0,
+                    panY: 0,
+                    zoom: 1.0
+                });
+                
+                processed++;
+                if (processed === files.length) {
+                    // Update page duration to match total slides duration
+                    const totalSlidesDuration = page.slides.reduce((sum, s) => sum + (s.duration || 2), 0);
+                    page.duration = Math.round(totalSlidesDuration * 10) / 10;
+                    
+                    Store.save();
+                    this.closeModal();
+                    Toast.show(`${files.length} foto(s) adicionada(s) à sequência!`, 'success');
+                    renderRightPanel();
+                    renderCanvas();
+                    renderTimeline();
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    },
+    
+    createSequenceFromSelection() {
+        if (!this._photoSequenceSelection || this._photoSequenceSelection.length === 0) return;
+        
+        const page = Store.getActivePage();
+        const library = Store.get('library') || [];
+        if (!page) return;
+        
+        if (!page.slides) page.slides = [];
+        
+        this._photoSequenceSelection.forEach((idx, i) => {
+            const item = library[idx];
+            if (item) {
+                page.slides.push({
+                    id: genId(),
+                    image: item.src,
+                    duration: 2.0,
+                    kenBurns: 'zoom-in',
+                    transition: page.slides.length === 0 && i === 0 ? 'cut' : 'crossfade',
+                    transitionDuration: 0.3,
+                    panX: 0,
+                    panY: 0,
+                    zoom: 1.0
+                });
+            }
+        });
+        
+        // Update page duration to match total slides duration
+        const totalSlidesDuration = page.slides.reduce((sum, s) => sum + (s.duration || 2), 0);
+        page.duration = Math.round(totalSlidesDuration * 10) / 10;
+        
         Store.save();
+        this.closeModal();
+        Toast.show(`${this._photoSequenceSelection.length} foto(s) adicionada(s) à sequência!`, 'success');
+        this._photoSequenceSelection = [];
         renderRightPanel();
         renderCanvas();
+        renderTimeline();
     },
 
     // Open slide picker modal (multi-select from library)
@@ -5101,9 +5557,14 @@ const App = {
             page.slides.forEach(s => { s.duration = eq; });
         }
         
+        // Update page duration to match total slides duration
+        const totalSlidesDuration = page.slides.reduce((sum, s) => sum + (s.duration || 2), 0);
+        page.duration = Math.round(totalSlidesDuration * 10) / 10;
+        
         Store.save();
         renderRightPanel();
         renderCanvas();
+        renderTimeline();
         Toast.show(t('toast.slideAdded'), 'success');
     },
 
@@ -5127,9 +5588,28 @@ const App = {
         
         page.slides.splice(index, 1);
         
+        // Update page duration to match total slides duration
+        const totalSlidesDuration = page.slides.reduce((sum, s) => sum + (s.duration || 2), 0);
+        page.duration = Math.round(totalSlidesDuration * 10) / 10;
+        
+        // Adjust activeSlideIndex if needed
+        const activeIdx = Store.get('activeSlideIndex');
+        if (activeIdx !== null && activeIdx !== undefined) {
+            if (activeIdx >= page.slides.length) {
+                // Was last slide, select new last
+                Store.set({ activeSlideIndex: Math.max(0, page.slides.length - 1) });
+                this._activeSlidePreview = Math.max(0, page.slides.length - 1);
+            } else if (activeIdx > index) {
+                // Shift down if deleted slide was before active
+                Store.set({ activeSlideIndex: activeIdx - 1 });
+                this._activeSlidePreview = activeIdx - 1;
+            }
+        }
+        
         Store.save();
         renderRightPanel();
         renderCanvas();
+        renderTimeline();
         Toast.show(t('toast.slideRemoved'), 'info');
     },
 
@@ -5142,8 +5622,13 @@ const App = {
         
         page.slides[index].duration = Math.max(0.5, duration);
         
+        // Update page duration to match total slides duration
+        const totalSlidesDuration = page.slides.reduce((sum, s) => sum + (s.duration || 2), 0);
+        page.duration = Math.round(totalSlidesDuration * 10) / 10;
+        
         Store.save();
         renderRightPanel();
+        renderTimeline(); // Update timeline to reflect new duration
     },
 
     // Update slide Ken Burns effect (works on ANY page)
@@ -5384,6 +5869,290 @@ const App = {
         Store.save();
         renderRightPanel();
         renderCanvas();
+    },
+
+    /* ═══════════════════════════════════════════════════════════════
+       SLIDESHOW AUDIO - Upload, sync, and preview
+       ═══════════════════════════════════════════════════════════════ */
+
+    uploadSlideshowAudio() {
+        const page = Store.getActivePage();
+        if (!page || !page.slides || page.slides.length === 0) {
+            Toast.show('Add slides first before uploading audio', 'warning');
+            return;
+        }
+
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'audio/mp3,audio/wav,audio/m4a,audio/mpeg,audio/x-m4a';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Validate file size (max 50MB)
+            if (file.size > 50 * 1024 * 1024) {
+                Toast.show('Audio file too large (max 50MB)', 'error');
+                return;
+            }
+
+            // Validate file type
+            const validTypes = ['audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/m4a', 'audio/x-m4a'];
+            if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|m4a)$/i)) {
+                Toast.show('Invalid audio format. Use MP3, WAV, or M4A', 'error');
+                return;
+            }
+
+            Toast.show('Loading audio...', 'info');
+
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                try {
+                    const dataUrl = ev.target.result;
+                    
+                    // Get audio duration
+                    const duration = await AudioManager.getAudioDuration(dataUrl);
+                    
+                    if (!page.slideshowAudio) {
+                        page.slideshowAudio = {
+                            file: null,
+                            duration: 0,
+                            syncMode: 'auto',
+                            perSlideDuration: 4,
+                            volume: 0.8
+                        };
+                    }
+                    
+                    page.slideshowAudio.file = dataUrl;
+                    page.slideshowAudio.duration = duration;
+                    
+                    Store.save();
+                    
+                    Toast.show(`Audio loaded: ${duration.toFixed(1)}s`, 'success');
+                    
+                    // Detect conflicts and show modal if needed
+                    this.checkSlideshowSync();
+                    
+                    renderRightPanel();
+                } catch (err) {
+                    console.error('Audio load error:', err);
+                    Toast.show('Failed to load audio', 'error');
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+        input.click();
+    },
+
+    removeSlideshowAudio() {
+        const page = Store.getActivePage();
+        if (!page || !page.slideshowAudio) return;
+
+        if (!confirm('Remove slideshow audio?')) return;
+
+        page.slideshowAudio.file = null;
+        page.slideshowAudio.duration = 0;
+        
+        // Stop preview if playing
+        if (typeof SlideshowPreview !== 'undefined') {
+            SlideshowPreview.stop();
+        }
+        
+        Store.save();
+        Toast.show('Audio removed', 'info');
+        renderRightPanel();
+    },
+
+    checkSlideshowSync() {
+        const page = Store.getActivePage();
+        if (!page || !page.slides || page.slides.length === 0) return;
+        if (!page.slideshowAudio || !page.slideshowAudio.file) return;
+
+        const conflict = SlideshowAudioSync.detectConflict(page);
+        
+        // Only show modal for warnings (not perfect or info)
+        if (conflict.severity === 'warning') {
+            this.openSlideshowSyncModal(conflict);
+        } else if (conflict.severity === 'error') {
+            // Handle errors immediately
+            if (conflict.type === 'too-many-slides') {
+                Toast.show(`Too many slides (${conflict.slideCount}). Maximum is 50.`, 'error');
+            }
+        } else if (conflict.type === 'perfect') {
+            Toast.show('Audio and slides are perfectly synced', 'success');
+        }
+    },
+
+    openSlideshowSyncModal(conflict) {
+        const page = Store.getActivePage();
+        if (!page) return;
+
+        const isMobile = window.innerWidth < 768;
+        const audioSec = conflict.audioSec || 0;
+        const totalSlideSec = conflict.totalSlideSec || 0;
+        const slideCount = conflict.slideCount || 0;
+        const diff = conflict.diff || 0;
+
+        let title = 'Sync Slideshow + Audio';
+        let description = '';
+        let options = [];
+
+        if (conflict.type === 'audio-longer' || conflict.type === 'audio-much-longer') {
+            title = 'Audio Longer Than Slides';
+            description = `Audio: ${audioSec.toFixed(0)}s | Slides: ${slideCount} (${totalSlideSec.toFixed(0)}s total)<br>Missing: ${diff.toFixed(0)}s`;
+            
+            options = [
+                {
+                    id: 'loop',
+                    label: 'Loop slides (5s each)',
+                    description: 'Photos repeat in cycle',
+                    icon: 'check',
+                    recommended: true
+                },
+                {
+                    id: 'distribute',
+                    label: `Distribute equally (${(audioSec / slideCount).toFixed(1)}s each)`,
+                    description: conflict.type === 'audio-much-longer' ? 'Long time per photo' : 'Simple, each photo once',
+                    icon: 'alert',
+                    recommended: false
+                },
+                {
+                    id: 'kenburns',
+                    label: 'Slow Ken Burns',
+                    description: 'Smooth zoom/movement',
+                    icon: 'check',
+                    recommended: false
+                },
+                {
+                    id: 'manual',
+                    label: 'Adjust manually',
+                    description: '',
+                    icon: '',
+                    recommended: false
+                }
+            ];
+        } else if (conflict.type === 'too-many-slides-short-audio') {
+            title = 'Too Many Slides for Audio';
+            description = `Slides: ${slideCount} | Audio: ${audioSec.toFixed(0)}s<br>Result: ${conflict.avgPerSlide.toFixed(1)}s per slide (too fast)`;
+            
+            options = [
+                {
+                    id: 'cut-slides',
+                    label: `Use only ${Math.floor(audioSec / 3)} slides (3s each)`,
+                    description: 'Select best slides',
+                    icon: 'check',
+                    recommended: true
+                },
+                {
+                    id: 'distribute',
+                    label: `Fast slideshow (${conflict.avgPerSlide.toFixed(1)}s each)`,
+                    description: 'Hype reel style',
+                    icon: 'alert',
+                    recommended: false
+                },
+                {
+                    id: 'manual',
+                    label: 'Adjust manually',
+                    description: '',
+                    icon: '',
+                    recommended: false
+                }
+            ];
+        } else if (conflict.type === 'slides-longer') {
+            title = 'Slides Longer Than Audio';
+            description = `Slides: ${totalSlideSec.toFixed(0)}s | Audio: ${audioSec.toFixed(0)}s<br>Extra: ${diff.toFixed(0)}s`;
+            
+            options = [
+                {
+                    id: 'distribute',
+                    label: `Shorten slides (${(audioSec / slideCount).toFixed(1)}s each)`,
+                    description: 'Fit all slides',
+                    icon: 'check',
+                    recommended: true
+                },
+                {
+                    id: 'manual',
+                    label: 'Adjust manually',
+                    description: '',
+                    icon: '',
+                    recommended: false
+                }
+            ];
+        }
+
+        const modalHtml = `
+            <div class="modal-overlay" id="slideshow-sync-modal" onclick="if(event.target===this)App.closeSlideshowSyncModal()" style="display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);z-index:10000;">
+                <div class="modal-content" style="max-width:${isMobile ? '90vw' : '500px'};max-height:${isMobile ? '90vh' : '80vh'};background:#1a1a1a;border:1px solid #333;border-radius:4px;overflow-y:auto;">
+                    <div class="modal-header" style="padding:16px;border-bottom:1px solid #333;display:flex;align-items:center;justify-content:space-between;">
+                        <span style="font-size:16px;font-weight:600;color:#fff;">${title}</span>
+                        <button onclick="App.closeSlideshowSyncModal()" style="background:none;border:none;color:#9ca3af;font-size:20px;cursor:pointer;padding:0;width:24px;height:24px;">&times;</button>
+                    </div>
+                    <div class="modal-body" style="padding:16px;">
+                        <div style="margin-bottom:16px;font-size:13px;color:#a0a0a0;line-height:1.5;">${description}</div>
+                        ${options.map((opt, i) => `
+                            <label class="sync-option" onclick="this.querySelector('input').checked=true" style="display:flex;align-items:flex-start;gap:12px;padding:12px;margin-bottom:8px;border:1px solid ${opt.recommended ? '#14b8a6' : '#333'};background:${opt.recommended ? 'rgba(20,184,166,0.1)' : 'transparent'};border-radius:4px;cursor:pointer;transition:all 0.15s;" onmouseenter="this.style.borderColor='#14b8a6'" onmouseleave="this.style.borderColor='${opt.recommended ? '#14b8a6' : '#333'}'">
+                                <input type="radio" name="sync-mode" value="${opt.id}" ${i === 0 ? 'checked' : ''} style="margin-top:2px;accent-color:#14b8a6;">
+                                <div style="flex:1;">
+                                    <div style="font-size:14px;font-weight:500;color:#fff;margin-bottom:4px;">${opt.label} ${opt.recommended ? '<span style="color:#10b981;font-size:11px;">RECOMMENDED</span>' : ''}</div>
+                                    ${opt.description ? `<div style="font-size:12px;color:#707070;">${opt.description}</div>` : ''}
+                                </div>
+                            </label>
+                        `).join('')}
+                    </div>
+                    <div class="modal-actions" style="padding:16px;border-top:1px solid #333;display:flex;gap:12px;justify-content:flex-end;">
+                        <button onclick="App.closeSlideshowSyncModal()" style="padding:8px 16px;border-radius:4px;border:1px solid #333;background:transparent;color:#a0a0a0;font-size:13px;cursor:pointer;">Cancel</button>
+                        <button onclick="App.applySlideshowSyncFromModal()" style="padding:8px 16px;border-radius:4px;border:none;background:#14b8a6;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Apply</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    },
+
+    closeSlideshowSyncModal() {
+        const modal = document.getElementById('slideshow-sync-modal');
+        if (modal) modal.remove();
+    },
+
+    applySlideshowSyncFromModal() {
+        const selected = document.querySelector('input[name="sync-mode"]:checked');
+        if (!selected) return;
+
+        const mode = selected.value;
+        const page = Store.getActivePage();
+        if (!page) return;
+
+        const success = SlideshowAudioSync.applySync(page, mode);
+        
+        if (success) {
+            Store.save();
+            Toast.show('Sync applied', 'success');
+            this.closeSlideshowSyncModal();
+            renderRightPanel();
+            renderCanvas();
+        } else {
+            Toast.show('Failed to apply sync', 'error');
+        }
+    },
+
+    toggleSlideshowPreview() {
+        const page = Store.getActivePage();
+        if (!page || !page.slides || page.slides.length === 0) return;
+
+        if (SlideshowPreview.playing) {
+            SlideshowPreview.pause();
+        } else {
+            SlideshowPreview.play(page);
+        }
+        
+        renderRightPanel();
+    },
+
+    seekSlideshowPreview(time) {
+        const page = Store.getActivePage();
+        if (!page) return;
+        
+        SlideshowPreview.seek(parseFloat(time), page);
     },
 
     // Quick transition edit - Opens Tooltip (not modal)
@@ -6207,7 +6976,131 @@ const App = {
             this._timelineStop();
         }
         this.setActivePage(index);
+        this.clearSlideSelection();
         renderTimeline();
+    },
+
+    // ── Slide Selection (carousel-centric) ──
+    selectSlide(pageIdx, slideIdx) {
+        const player = Store.get('timelinePlayer') || {};
+        if (player.playing) this._timelineStop();
+        // Switch page if needed
+        if (pageIdx !== Store.get('activePageIndex')) {
+            this.setActivePage(pageIdx);
+        }
+        // Sync both state systems
+        Store.set({ activeSlideIndex: slideIdx });
+        this._activeSlidePreview = slideIdx;
+        renderTimeline();
+        renderCanvas();
+        renderRightPanel();
+    },
+
+    clearSlideSelection() {
+        Store.set({ activeSlideIndex: null });
+        this._activeSlidePreview = 0;
+    },
+
+    getActiveSlide() {
+        const page = Store.getActivePage();
+        const idx = Store.get('activeSlideIndex');
+        if (!page || !page.slides || idx === null || idx === undefined) return null;
+        return page.slides[idx] || null;
+    },
+
+    // ── Slide Drag & Drop (carousel reorder) ──
+    _slideDragData: null,
+    
+    slideDragStart(event, pageIdx, slideIdx) {
+        this._slideDragData = { pageIdx, slideIdx };
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', `slide:${pageIdx}:${slideIdx}`);
+        // Add visual feedback
+        event.target.style.opacity = '0.5';
+        setTimeout(() => { if (event.target) event.target.style.opacity = '1'; }, 0);
+    },
+    
+    // ── Inline Duration Edit (double-click on slide) ──
+    editSlideDurationInline(pageIdx, slideIdx, event) {
+        const page = Store.get('currentProject')?.pages?.[pageIdx];
+        if (!page || !page.slides || !page.slides[slideIdx]) return;
+        
+        const slide = page.slides[slideIdx];
+        const target = event.target;
+        const currentDur = slide.duration || 2;
+        
+        // Create inline input
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.value = currentDur;
+        input.min = 0.5;
+        input.max = 60;
+        input.step = 0.5;
+        input.style.cssText = 'width:100%;height:100%;border:none;background:rgba(99,102,241,0.3);color:#fff;font-size:9px;font-weight:700;text-align:center;border-radius:2px;padding:0;';
+        
+        const originalHTML = target.innerHTML;
+        target.innerHTML = '';
+        target.appendChild(input);
+        input.focus();
+        input.select();
+        
+        const finish = () => {
+            const newDur = Math.max(0.5, Math.min(60, parseFloat(input.value) || 2));
+            this.updateSlideDuration(slideIdx, newDur);
+            target.innerHTML = newDur + 's';
+        };
+        
+        input.addEventListener('blur', finish);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+            if (e.key === 'Escape') { target.innerHTML = originalHTML; }
+        });
+    },
+    
+    slideDrop(event, targetPageIdx, targetSlideIdx) {
+        event.preventDefault();
+        if (!this._slideDragData) return;
+        
+        const { pageIdx: srcPageIdx, slideIdx: srcSlideIdx } = this._slideDragData;
+        this._slideDragData = null;
+        
+        // Only allow reorder within same page for now
+        if (srcPageIdx !== targetPageIdx) {
+            Toast.show(t('toast.slideSamePage') || 'Arraste apenas dentro da mesma página', 'warning');
+            return;
+        }
+        
+        if (srcSlideIdx === targetSlideIdx) return; // No-op
+        
+        const page = Store.get('currentProject')?.pages?.[srcPageIdx];
+        if (!page || !page.slides) return;
+        
+        // Reorder slides
+        const slides = page.slides;
+        const [movedSlide] = slides.splice(srcSlideIdx, 1);
+        slides.splice(targetSlideIdx, 0, movedSlide);
+        
+        // Update active slide index if needed
+        const activeIdx = Store.get('activeSlideIndex');
+        if (activeIdx === srcSlideIdx) {
+            Store.set({ activeSlideIndex: targetSlideIdx });
+            this._activeSlidePreview = targetSlideIdx;
+        } else if (activeIdx !== null && activeIdx !== undefined) {
+            // Adjust if active was between src and target
+            if (srcSlideIdx < activeIdx && targetSlideIdx >= activeIdx) {
+                Store.set({ activeSlideIndex: activeIdx - 1 });
+                this._activeSlidePreview = activeIdx - 1;
+            } else if (srcSlideIdx > activeIdx && targetSlideIdx <= activeIdx) {
+                Store.set({ activeSlideIndex: activeIdx + 1 });
+                this._activeSlidePreview = activeIdx + 1;
+            }
+        }
+        
+        Store.save();
+        renderTimeline();
+        renderCanvas();
+        renderRightPanel();
+        Toast.show(t('toast.slideReordered') || 'Slide reordenado', 'info');
     },
     
     timelineScrub(timeInSeconds, totalDuration) {
@@ -6908,7 +7801,12 @@ const App = {
         Store.pushUndo(); 
         page.showTextBelow = !page.showTextBelow; 
         if (page.showTextBelow && !page.narrativeHeight) page.narrativeHeight = 120;
-        Store.set({ currentProject: p }); Store.save(); 
+        Store.set({ currentProject: p }); 
+        Store.save(); 
+        // Re-render to update UI properly
+        renderCanvas();
+        renderRightPanel();
+        renderLeftPanel();
     },
     setTextPosition(position) {
         const p = Store.get('currentProject'), page = Store.getActivePage();
@@ -7624,14 +8522,21 @@ const App = {
         }
     },
     toggleSidebarSection(section) {
+        const now = performance.now();
+        if (now - this._sidebarToggleTs < 120) return;
+        this._sidebarToggleTs = now;
         const collapsed = Store.get('sidebarCollapsed') || {};
         // Advanced sections start collapsed by default to reduce first-load noise
         const defaultCollapsedSections = new Set(['stickers', 'leftMateria', 'visualEffects', 'layers', 'audio', 'shortcuts']);
         const defaultState = defaultCollapsedSections.has(section);
         const current = collapsed[section] !== undefined ? collapsed[section] : defaultState;
         collapsed[section] = !current;
-        Store.set({ sidebarCollapsed: collapsed });
-        renderRightPanel();
+        Store.setSilent({ sidebarCollapsed: collapsed });
+        if (this._sidebarToggleRaf) cancelAnimationFrame(this._sidebarToggleRaf);
+        this._sidebarToggleRaf = requestAnimationFrame(() => {
+            this._sidebarToggleRaf = null;
+            renderRightPanel();
+        });
     },
     toggleNarrSection(section) {
         // Accordion toggle for narrative controls subsections
@@ -7677,6 +8582,7 @@ const App = {
             return;
         }
         
+        // Insert SFX directly - user can edit text and color in the panel
         Store.pushUndo();
         const sfx = { 
             type: 'sfx', 
@@ -7708,7 +8614,7 @@ const App = {
         Store.pushUndo();
         b.sfxPreset = presetId;
         b.font = preset.font || b.font || 'comic';
-        b.fontSize = preset.fontSize || b.fontSize || 42;
+        if (b.type === 'caption') b.fontSize = Math.max(b.fontSize, 28) || 42;
         b.textColor = preset.color || b.textColor || '#ff6600';
         b.sfxStroke = preset.stroke || '#000000';
         b.sfxStrokeWidth = preset.strokeWidth ?? 3;
@@ -7866,13 +8772,13 @@ const App = {
             const slot = id;
             App.selectSlot(slot);
             renderContextMenu(x, y, [
-                { label: '📁 Upload imagem', icon: Icons.upload, action: `App.triggerImageUpload(${slot})` },
-                { label: '📋 Colar imagem (Ctrl+V)', icon: Icons.upload, action: `App._pasteToSlot(${slot})` },
-                { label: '🔗 Inserir URL', action: `App.promptImageUrl()` },
+                { label: 'Upload imagem', icon: Icons.upload, action: `App.triggerImageUpload(${slot})` },
+                { label: 'Colar imagem (Ctrl+V)', icon: Icons.copy, action: `App._pasteToSlot(${slot})` },
+                { label: 'Inserir URL', icon: Icons.globe, action: `App.promptImageUrl()` },
                 { separator: true },
-                { label: '💬 Adicionar balão', action: `App.addBalloonToPanel(${slot},'speech')` },
-                { label: '💭 Adicionar pensamento', action: `App.addBalloonToPanel(${slot},'thought')` },
-                { label: 'Adicionar narração', action: `App.addBalloonToPanel(${slot},'narration')` },
+                { label: 'Adicionar balao', icon: Icons.balloon, action: `App.addBalloonToPanel(${slot},'speech')` },
+                { label: 'Adicionar pensamento', icon: Icons.thought, action: `App.addBalloonToPanel(${slot},'thought')` },
+                { label: 'Adicionar narracao', icon: Icons.narrationBox, action: `App.addBalloonToPanel(${slot},'narration')` },
             ]);
             return;
         }
@@ -7890,14 +8796,14 @@ const App = {
                 { label: '↕ Espelhar Vertical', icon: Icons.flipV, action: `App.flipImage(${slot},'flipV')` },
                 { label: '⊡ Alternar Ajuste (Inteira/Preencher)', action: `App.toggleImageFit(${slot})` },
                 { separator: true },
-                { label: '🔄 Substituir imagem', icon: Icons.upload, action: `App.triggerImageUpload(${slot})` },
-                { label: '📋 Colar imagem aqui', icon: Icons.upload, action: `App._pasteToSlot(${slot})` },
+                { label: 'Substituir imagem', icon: Icons.upload, action: `App.triggerImageUpload(${slot})` },
+                { label: 'Colar imagem aqui', icon: Icons.copy, action: `App._pasteToSlot(${slot})` },
                 { separator: true },
-                { label: '💬 Adicionar balão', action: `App.addBalloonToPanel(${slot},'speech')` },
+                { label: 'Adicionar balao', icon: Icons.balloon, action: `App.addBalloonToPanel(${slot},'speech')` },
                 { label: 'Recordatório (topo)', action: `App.addRecordatorio(${slot},'top')` },
                 { label: 'Recordatório (base)', action: `App.addRecordatorio(${slot},'bottom')` },
                 { separator: true },
-                { label: '🗑 Remover imagem', icon: Icons.trash, action: `App.removeImage(${slot})`, danger: true },
+                { label: 'Remover imagem', icon: Icons.trash, action: `App.removeImage(${slot})`, danger: true },
             ]);
         } else if (type === 'text') {
             App.selectElement('text', id);
@@ -8226,8 +9132,31 @@ const App = {
                 });
                 this.closeBalloonTooltip(); this.closeStickerTooltip(); this.deselectAll(); this.closeModal(); 
             }
-            if (e.key === 'ArrowLeft') { e.preventDefault(); const i = Store.get('activePageIndex'); if (i > 0) this.setActivePage(i - 1); }
-            if (e.key === 'ArrowRight') { e.preventDefault(); const p = Store.get('currentProject'), i = Store.get('activePageIndex'); if (p && i < p.pages.length - 1) this.setActivePage(i + 1); }
+            if (e.key === 'ArrowLeft') { 
+                e.preventDefault(); 
+                const slideIdx = Store.get('activeSlideIndex');
+                const page = Store.getActivePage();
+                // If slide selected, navigate slides; otherwise navigate pages
+                if (slideIdx !== null && slideIdx !== undefined && page?.slides?.length > 0) {
+                    if (slideIdx > 0) this.selectSlide(Store.get('activePageIndex'), slideIdx - 1);
+                } else {
+                    const i = Store.get('activePageIndex'); 
+                    if (i > 0) this.setActivePage(i - 1);
+                }
+            }
+            if (e.key === 'ArrowRight') { 
+                e.preventDefault(); 
+                const slideIdx = Store.get('activeSlideIndex');
+                const page = Store.getActivePage();
+                const p = Store.get('currentProject');
+                // If slide selected, navigate slides; otherwise navigate pages
+                if (slideIdx !== null && slideIdx !== undefined && page?.slides?.length > 0) {
+                    if (slideIdx < page.slides.length - 1) this.selectSlide(Store.get('activePageIndex'), slideIdx + 1);
+                } else {
+                    const i = Store.get('activePageIndex'); 
+                    if (p && i < p.pages.length - 1) this.setActivePage(i + 1);
+                }
+            }
             
             // Space = Play/Pause Preview (replaced Pan)
             if (e.code === 'Space' && !e.repeat) { 
@@ -8764,7 +9693,14 @@ const App = {
           </div>`;
         backdrop.classList.add('visible');
     },
-    closeModal() { const b = document.getElementById('modal-backdrop'); if (b) b.classList.remove('visible'); this.closeBalloonTooltip(); this.closeStickerTooltip(); },
+    closeModal() { 
+        const b = document.getElementById('modal-backdrop'); 
+        if (b) b.classList.remove('visible'); 
+        // Also remove modal-overlay (used by SFX picker, photo sequence modal, etc.)
+        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+        this.closeBalloonTooltip(); 
+        this.closeStickerTooltip(); 
+    },
 
     // ── Letterbox Blur (for social exports) ──
     async _renderPageToCanvas(pageIndex, scale = 2) {

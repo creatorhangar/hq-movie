@@ -3,6 +3,18 @@
  * HQ Movie v15 — MP4 (H.264) support
  */
 
+const WatermarkConfig = {
+    enabled: true,
+    text: 'CREATORHANGAR',
+    showUrl: false,
+    url: 'creatorhangar.com',
+    mode: 'static',
+    changeInterval: 5,
+    positions: ['bottom-right', 'bottom-left', 'top-right', 'top-left'],
+    fontFamily: "'Inter', 'Segoe UI', sans-serif",
+    fontWeight: '700'
+};
+
 class VideoExporter {
     constructor(project, options = {}) {
         this.project = project;
@@ -18,6 +30,8 @@ class VideoExporter {
         this.onProgress = options.onProgress || null;
         this.onStatus = options.onStatus || null;
         this._resolvedMimeType = null; // set during export
+        this._timelineSeconds = 0;
+        this._estimatedDurationSeconds = 0;
     }
 
     /**
@@ -97,6 +111,11 @@ class VideoExporter {
                         document.fonts.load(`16px "${font}"`).catch(() => {})
                     ));
                 }
+                
+                // Preload Inter Bold specifically for watermark rendering
+                await document.fonts.load("700 48px Inter").catch(() => {
+                    console.warn('[VideoExport] Could not preload Inter Bold for watermark');
+                });
             } catch (e) {
                 console.warn('[VideoExport] Font preload warning:', e);
             }
@@ -368,6 +387,8 @@ class VideoExporter {
 
             // Iniciar gravação (timeslice 1s para captura confiável)
             this.mediaRecorder.start(1000);
+            this._timelineSeconds = 0;
+            this._estimatedDurationSeconds = this._estimateProjectDurationSeconds();
 
             // ═══════════════════════════════════════════════════════════════
             // RENDER COVER PAGE (if exists) - FIX: Covers were not being exported
@@ -510,8 +531,31 @@ class VideoExporter {
             gain.setValueAtTime(duckVol, endAbsTime - actualFade);
             gain.linearRampToValueAtTime(baseVol, endAbsTime);
         } catch (e) {
-            console.warn('Erro ao aplicar ducking:', e);
+            console.warn('[VideoExport] Erro ao aplicar ducking:', e);
         }
+    }
+
+    _estimateProjectDurationSeconds() {
+        let total = 0;
+
+        if (this.project?.cover) {
+            total += this.project.cover.duration || 3;
+        }
+
+        const pages = this.project?.pages || [];
+        for (const page of pages) {
+            if (page?.slides && page.slides.length > 0) {
+                total += page.slides.reduce((sum, slide) => sum + (slide?.duration || 4), 0);
+            } else {
+                total += page?.duration || 4;
+            }
+        }
+
+        if (this.project?.backCover) {
+            total += this.project.backCover.duration || 3;
+        }
+
+        return total;
     }
 
     // Narrative font presets per video format
@@ -603,7 +647,7 @@ class VideoExporter {
             }
 
             // Renderizar watermark (FREE tier)
-            this.renderWatermark();
+            this.renderWatermark(this._timelineSeconds);
 
             // Force frame capture for MediaRecorder
             if (this.videoTrack && typeof this.videoTrack.requestFrame === 'function') {
@@ -612,6 +656,7 @@ class VideoExporter {
 
             // Aguardar próximo frame
             await this.waitFrame();
+            this._timelineSeconds += (1 / this.fps);
         }
     }
 
@@ -678,12 +723,16 @@ class VideoExporter {
 
             this.ctx.globalAlpha = 1.0;
 
+            // Render watermark on transition frames too
+            this.renderWatermark(this._timelineSeconds);
+
             // Force frame capture
             if (this.videoTrack && typeof this.videoTrack.requestFrame === 'function') {
                 this.videoTrack.requestFrame();
             }
 
             await this.waitFrame();
+            this._timelineSeconds += (1 / this.fps);
         }
     }
 
@@ -771,7 +820,7 @@ class VideoExporter {
                 }
 
                 // Render watermark (FREE tier)
-                this.renderWatermark();
+                this.renderWatermark(this._timelineSeconds);
 
                 // Force frame capture
                 if (this.videoTrack && typeof this.videoTrack.requestFrame === 'function') {
@@ -785,6 +834,7 @@ class VideoExporter {
                 }
 
                 await this.waitFrame();
+                this._timelineSeconds += (1 / this.fps);
             }
         }
     }
@@ -1394,9 +1444,12 @@ class VideoExporter {
             } else if (type === 'thought') {
                 // Thought: cloud shape with bubble trail
                 this._drawThoughtBalloon(x, y, w, h, direction, bgColor, strokeColor);
+            } else if (type === 'caption') {
+                // Caption: simple rounded rectangle
+                this._drawCaptionBalloon(x, y, w, h, bgColor, strokeColor);
             } else {
-                // Speech/whisper: ellipse with tail
-                this._drawSpeechBalloon(x, y, w, h, direction, bgColor, strokeColor, type === 'whisper');
+                // Speech: ellipse with tail
+                this._drawSpeechBalloon(x, y, w, h, direction, bgColor, strokeColor);
             }
 
             // Draw text - scale font size
@@ -1560,7 +1613,7 @@ class VideoExporter {
             this.drawCoverElements(elements, imageElements);
 
             // Render watermark
-            this.renderWatermark();
+            this.renderWatermark(this._timelineSeconds);
 
             // Force frame capture
             if (this.videoTrack && typeof this.videoTrack.requestFrame === 'function') {
@@ -1568,6 +1621,7 @@ class VideoExporter {
             }
 
             await this.waitFrame();
+            this._timelineSeconds += (1 / this.fps);
         }
     }
 
@@ -1648,7 +1702,7 @@ class VideoExporter {
         });
     }
 
-    _drawSpeechBalloon(x, y, w, h, direction, fill, stroke, isWhisper = false) {
+    _drawSpeechBalloon(x, y, w, h, direction, fill, stroke) {
         const cx = x + w / 2;
         const cy = y + h / 2;
         const rx = w / 2 - 4;
@@ -1660,17 +1714,39 @@ class VideoExporter {
         this.ctx.fillStyle = fill;
         this.ctx.fill();
         
-        if (isWhisper) {
-            this.ctx.setLineDash([6, 4]);
-        }
         this.ctx.strokeStyle = stroke;
         this.ctx.stroke();
-        this.ctx.setLineDash([]);
 
         // Draw tail if direction is not 'none' or 'center'
         if (direction && direction !== 'none' && direction !== 'center') {
             this._drawBalloonTail(cx, cy, rx, ry, direction, fill, stroke);
         }
+    }
+    
+    _drawCaptionBalloon(x, y, w, h, fill, stroke) {
+        // Pill shape - very rounded corners (key visual difference from narration)
+        const radius = Math.min(h / 2, 24);
+        
+        // Draw pill-shaped rectangle
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + radius, y);
+        this.ctx.lineTo(x + w - radius, y);
+        this.ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+        this.ctx.lineTo(x + w, y + h - radius);
+        this.ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+        this.ctx.lineTo(x + radius, y + h);
+        this.ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+        this.ctx.lineTo(x, y + radius);
+        this.ctx.quadraticCurveTo(x, y, x + radius, y);
+        this.ctx.closePath();
+        
+        // Use customizable colors
+        this.ctx.fillStyle = fill;
+        this.ctx.fill();
+        
+        this.ctx.strokeStyle = stroke;
+        this.ctx.lineWidth = 1.5;
+        this.ctx.stroke();
     }
 
     _drawBalloonTail(cx, cy, rx, ry, direction, fill, stroke) {
@@ -1921,7 +1997,106 @@ class VideoExporter {
     // ══════════════════════════════════════════
     // WATERMARK - FREE TIER
     // ══════════════════════════════════════════
-    renderWatermark() {
+    _calculateWatermarkBaseSpecs(canvasWidth, canvasHeight) {
+        const fontSize = Math.max(20, Math.floor(canvasHeight * 0.026));
+        const marginRight = Math.floor(canvasWidth * 0.07);
+        const marginBottom = Math.floor(canvasHeight * 0.055);
+        return {
+            fontSize,
+            marginRight,
+            marginBottom
+        };
+    }
+
+    _getWatermarkPosition(canvasWidth, canvasHeight, currentTimeSeconds, textWidth, fontSize, lineCount) {
+        const base = this._calculateWatermarkBaseSpecs(canvasWidth, canvasHeight);
+        const mode = WatermarkConfig.mode || 'static';
+        const lineHeight = Math.round(fontSize * 1.18);
+        const totalTextHeight = lineHeight * lineCount;
+        const topY = base.marginBottom + totalTextHeight;
+        const rightX = canvasWidth - base.marginRight;
+        const leftX = base.marginRight;
+
+        const presets = {
+            'bottom-right': { x: rightX, y: canvasHeight - base.marginBottom, align: 'right', baseline: 'bottom' },
+            'bottom-left': { x: leftX, y: canvasHeight - base.marginBottom, align: 'left', baseline: 'bottom' },
+            'top-right': { x: rightX, y: topY, align: 'right', baseline: 'bottom' },
+            'top-left': { x: leftX, y: topY, align: 'left', baseline: 'bottom' }
+        };
+
+        if (mode !== 'semi-dynamic') {
+            return presets['bottom-right'];
+        }
+
+        const interval = Math.max(1, WatermarkConfig.changeInterval || 5);
+        const positions = WatermarkConfig.positions && WatermarkConfig.positions.length
+            ? WatermarkConfig.positions
+            : ['bottom-right', 'bottom-left', 'top-right', 'top-left'];
+        const idx = Math.floor((currentTimeSeconds || 0) / interval) % positions.length;
+        const position = positions[idx];
+
+        return presets[position] || presets['bottom-right'];
+    }
+
+    _measureLumaInRect(x, y, width, height) {
+        try {
+            const sampleW = Math.max(1, Math.floor(width));
+            const sampleH = Math.max(1, Math.floor(height));
+            const sx = Math.max(0, Math.floor(x));
+            const sy = Math.max(0, Math.floor(y));
+            const maxW = Math.max(0, this._logicalWidth - sx);
+            const maxH = Math.max(0, this._logicalHeight - sy);
+            if (maxW <= 0 || maxH <= 0) return null;
+
+            const rw = Math.min(sampleW, maxW);
+            const rh = Math.min(sampleH, maxH);
+            if (rw <= 0 || rh <= 0) return null;
+
+            const data = this.ctx.getImageData(sx, sy, rw, rh).data;
+            if (!data || data.length === 0) return null;
+
+            let lumaSum = 0;
+            const pxCount = data.length / 4;
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                lumaSum += (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+            }
+            return lumaSum / pxCount;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    _getWatermarkVisualStyle(estimatedDurationSeconds, sampledLuma) {
+        const style = {
+            fillAlpha: 0.7,
+            strokeAlpha: 0.4,
+            strokeWidth: 2,
+            shadowBlur: 4,
+            shadowAlpha: 0.6
+        };
+
+        if (sampledLuma != null) {
+            if (sampledLuma > 0.8) {
+                style.strokeAlpha = 0.6;
+                style.shadowBlur = 6;
+            } else if (sampledLuma < 0.2) {
+                style.fillAlpha = 0.85;
+            }
+        }
+
+        if (estimatedDurationSeconds > 0 && estimatedDurationSeconds < 5) {
+            style.fillAlpha = Math.min(style.fillAlpha, 0.5);
+        }
+
+        return style;
+    }
+
+    renderWatermark(currentTimeSeconds = 0) {
+        if (!WatermarkConfig.enabled) return;
+
         // Check premium status
         const premiumKey = localStorage.getItem('hqm_premium_key');
         if (premiumKey && this._validatePremiumKey(premiumKey)) {
@@ -1933,34 +2108,66 @@ class VideoExporter {
         const h = this._logicalHeight;
         
         // Watermark settings
-        const text = '🎬 HQ MOVIE';
-        const fontSize = Math.round(w * 0.028);
-        const margin = w * 0.03;
+        const text = (WatermarkConfig.text || 'CREATORHANGAR').toUpperCase();
+        const showUrl = WatermarkConfig.showUrl && WatermarkConfig.url;
+        const fontSize = this._calculateWatermarkBaseSpecs(w, h).fontSize;
+        const urlFontSize = Math.max(12, Math.round(fontSize * 0.42));
+        const lineHeight = Math.round(fontSize * 1.18);
+        const lineCount = showUrl ? 2 : 1;
         
         ctx.save();
         
-        // Position: bottom-right
-        ctx.font = `bold ${fontSize}px Inter, system-ui, sans-serif`;
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'bottom';
+        ctx.font = `${WatermarkConfig.fontWeight || '700'} ${fontSize}px ${WatermarkConfig.fontFamily || "'Inter', sans-serif"}`;
+        const textWidth = ctx.measureText(text).width;
+        const position = this._getWatermarkPosition(w, h, currentTimeSeconds, textWidth, fontSize, lineCount);
+        const x = position.x;
+        const y = position.y;
+        const firstLineY = showUrl ? (y - Math.round(urlFontSize * 1.25)) : y;
+
+        ctx.textAlign = position.align;
+        ctx.textBaseline = position.baseline;
+
+        const samplePad = Math.round(fontSize * 0.35);
+        const sampleHeight = lineHeight + (showUrl ? Math.round(urlFontSize * 1.5) : 0);
+        const sampleX = position.align === 'right'
+            ? x - textWidth - samplePad
+            : x - samplePad;
+        const sampleY = firstLineY - fontSize - samplePad;
+        const sampleWidth = textWidth + samplePad * 2;
         
-        const x = w - margin;
-        const y = h - margin;
-        
-        // Drop shadow
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.shadowBlur = 4;
-        ctx.shadowOffsetX = 2;
+        // Cache luma sampling every 0.5s for performance (getImageData is expensive)
+        let sampledLuma = null;
+        const lumaCacheInterval = 0.5;
+        if (!this._lastLumaTime || (currentTimeSeconds - this._lastLumaTime) >= lumaCacheInterval) {
+            sampledLuma = this._measureLumaInRect(sampleX, sampleY, sampleWidth, sampleHeight + samplePad * 2);
+            this._cachedLuma = sampledLuma;
+            this._lastLumaTime = currentTimeSeconds;
+        } else {
+            sampledLuma = this._cachedLuma;
+        }
+        const visual = this._getWatermarkVisualStyle(this._estimatedDurationSeconds, sampledLuma);
+
+        ctx.shadowColor = `rgba(0,0,0,${visual.shadowAlpha})`;
+        ctx.shadowBlur = visual.shadowBlur;
+        ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 2;
-        
-        // Black stroke
-        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-        ctx.lineWidth = 3;
-        ctx.strokeText(text, x, y);
-        
-        // White fill with opacity
-        ctx.fillStyle = 'rgba(255,255,255,0.55)';
-        ctx.fillText(text, x, y);
+
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = `rgba(0,0,0,${visual.strokeAlpha})`;
+        ctx.lineWidth = visual.strokeWidth;
+        ctx.fillStyle = `rgba(255,255,255,${visual.fillAlpha})`;
+
+        ctx.font = `${WatermarkConfig.fontWeight || '700'} ${fontSize}px ${WatermarkConfig.fontFamily || "'Inter', sans-serif"}`;
+        ctx.strokeText(text, x, firstLineY);
+        ctx.fillText(text, x, firstLineY);
+
+        if (showUrl) {
+            const urlText = String(WatermarkConfig.url).toLowerCase();
+            const secondLineY = y;
+            ctx.font = `${WatermarkConfig.fontWeight || '700'} ${urlFontSize}px ${WatermarkConfig.fontFamily || "'Inter', sans-serif"}`;
+            ctx.strokeText(urlText, x, secondLineY);
+            ctx.fillText(urlText, x, secondLineY);
+        }
         
         ctx.restore();
     }
@@ -2016,4 +2223,5 @@ class VideoExporter {
 // Exportar para uso global
 if (typeof window !== 'undefined') {
     window.VideoExporter = VideoExporter;
+    window.WatermarkConfig = WatermarkConfig;
 }

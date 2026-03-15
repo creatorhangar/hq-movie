@@ -31,10 +31,11 @@ const Onboarding = {
 
     _checkView(view) {
         // Dashboard: Point to New Project
-        if (view === 'dashboard') {
+        if (view === 'dashboard' && this._step === 0) {
             const btn = document.querySelector('.btn-primary');
             if (btn) this.showTooltipElement(btn, t('onboarding.welcome'), t('onboarding.createFirstProject'), 'bottom', () => {
-                this.clear(); // User will click the button naturally
+                this._step = 1;
+                this.clear(); // User acknowledged first dashboard tip
             });
         }
         
@@ -274,6 +275,7 @@ style.textContent = `
 .ob-highlight {
     position: relative;
     z-index: 100;
+    pointer-events: none;
     box-shadow: 0 0 0 4px var(--accent, #6b7280) !important;
     transition: box-shadow 0.3s ease;
 }

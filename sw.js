@@ -1,17 +1,17 @@
 // HQ Movie — Service Worker (Cache-First)
-const CACHE_NAME = 'hq-movie-v98-color-audit';
+const CACHE_NAME = 'hq-movie-v113-accordion-thumbs';
 const ASSETS = [
     '/',
     '/index.html',
-    '/styles-v3.css?v=34',
+    '/styles-v3.css?v=42',
     '/i18n.js?v=5',
     '/layouts.js?v=4',
     '/layouts-video.js?v=7',
-    '/app.js?v=12',
-    '/video-exporter.js?v=11',
-    '/ui.js?v=37',
-    '/onboarding.js?v=8',
-    '/controller.js?v=31',
+    '/app.js?v=13',
+    '/video-exporter.js?v=14',
+    '/ui.js?v=45',
+    '/onboarding.js?v=10',
+    '/controller.js?v=36',
     '/manifest.json',
     '/locales/en.json',
     '/locales/pt-BR.json',

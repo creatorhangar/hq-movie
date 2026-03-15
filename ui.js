@@ -348,10 +348,11 @@ function renderExportPage() {
 
 function renderDashboard() {
   const currentLang = i18n.getLocale();
+  const icon24 = (svg) => svg.replace(/width="\d+"/, 'width="24"').replace(/height="\d+"/, 'height="24"');
   return `
   <div class="dashboard" id="dashboard">
     <!-- Language Selector (Top Right) -->
-    <div style="position:absolute;top:16px;right:24px;display:flex;gap:4px;background:var(--surface-2);border-radius:6px;padding:3px;z-index:100;">
+    <div style="position:absolute;top:16px;right:24px;display:flex;gap:4px;background:var(--surface-2);border-radius:4px;padding:3px;z-index:100;">
       <button onclick="i18n.changeLocale('en')" title="English" style="padding:6px 12px;border-radius:4px;border:none;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;background:${currentLang === 'en' ? 'var(--accent)' : 'transparent'};color:${currentLang === 'en' ? '#fff' : 'var(--text-2)'};">EN</button>
       <button onclick="i18n.changeLocale('pt-BR')" title="Português" style="padding:6px 12px;border-radius:4px;border:none;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;background:${currentLang === 'pt-BR' ? 'var(--accent)' : 'transparent'};color:${currentLang === 'pt-BR' ? '#fff' : 'var(--text-2)'};">PT</button>
     </div>
@@ -361,62 +362,89 @@ function renderDashboard() {
       <p>${t('dashboard.subtitle')}</p>
     </div>
     <div class="dashboard-actions">
-      <div style="width:100%;max-width:980px;margin:0 auto 40px;display:grid;gap:18px;">
-        <div style="background:linear-gradient(135deg,rgba(20,184,166,0.12),rgba(99,102,241,0.08));border:1px solid rgba(20,184,166,0.24);border-radius:18px;padding:24px 24px 22px;box-shadow:var(--sh-md);">
-          <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">${t('dashboard.primaryTitle')}</div>
-          <div style="font-size:14px;color:var(--text-2);max-width:620px;line-height:1.5;margin-bottom:18px;">${t('dashboard.primaryDescription')}</div>
-          <button class="btn btn-primary btn-lg" onclick="App.showFormatSelector()" style="display:inline-flex;align-items:center;gap:8px;padding:14px 20px;font-size:15px;box-shadow:var(--sh-accent);">${Icons.plus} ${t('dashboard.newProject')}</button>
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
-          <button class="btn btn-ghost btn-lg" onclick="document.getElementById('import-project-input').click()" style="display:flex;align-items:flex-start;gap:10px;justify-content:flex-start;text-align:left;padding:18px;background:var(--surface);border:1px solid var(--border);border-radius:14px;min-height:84px;">
-            <span style="color:var(--accent);margin-top:1px;">${Icons.download}</span>
-            <span>
-              <span style="display:block;font-size:13px;font-weight:700;color:var(--text-1);margin-bottom:4px;">${t('dashboard.import')}</span>
-              <span style="display:block;font-size:11px;color:var(--text-3);line-height:1.4;">${t('dashboard.importDescription')}</span>
-            </span>
-          </button>
-          <button class="btn btn-ghost btn-lg" onclick="App.showBulkTextModal()" style="display:flex;align-items:flex-start;gap:10px;justify-content:flex-start;text-align:left;padding:18px;background:var(--surface);border:1px solid var(--border);border-radius:14px;min-height:84px;">
-            <span style="color:var(--accent);margin-top:1px;">${Icons.fileText}</span>
-            <span>
-              <span style="display:block;font-size:13px;font-weight:700;color:var(--text-1);margin-bottom:4px;">${t('dashboard.createFromScript')}</span>
-              <span style="display:block;font-size:11px;color:var(--text-3);line-height:1.4;">${t('dashboard.scriptDescription')}</span>
-            </span>
-          </button>
-        </div>
-
-        <!-- Templates direto (sem clique extra) -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-            <span style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;">${t('dashboard.templatesTitle')}</span>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-ghost btn-sm" onclick="App.showBulkAudioModal()" style="display:flex;align-items:center;gap:4px;font-size:10px;">${Icons.music} Áudio</button>
-              <button class="btn btn-ghost btn-sm" onclick="App.createDemoProject()" style="display:flex;align-items:center;gap:4px;font-size:10px;">${Icons.palette} Demo</button>
+      <div style="width:100%;max-width:1040px;margin:0 auto 28px;display:grid;gap:14px;">
+        <div style="background:#1a1a1a;border:1px solid #333333;border-radius:4px;padding:20px 20px 18px;box-shadow:var(--sh-md);">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">${t('dashboard.primaryTitle')}</div>
+          <div style="font-size:14px;color:var(--text-1);max-width:660px;line-height:1.55;margin-bottom:14px;">${t('dashboard.primaryDescription')}</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-lg dashboard-primary-cta" onclick="App.newProject('vertical')" style="display:inline-flex;align-items:center;gap:10px;padding:12px 18px;font-size:14px;background:#14b8a6;color:#ffffff;border:none;box-shadow:0 0 0 1px rgba(20,184,166,0.35),0 8px 20px rgba(20,184,166,0.28);">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:32px;background:rgba(255,255,255,0.25);border-radius:3px;flex-shrink:0;"></span>
+              <span>Stories / Reels</span>
+            </button>
+            <div style="display:flex;gap:6px;">
+              <button onclick="App.newProject('widescreen')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 12px;border-radius:6px;border:1px solid #444;background:#1a1a1a;color:#a0a0a0;font-size:10px;cursor:pointer;transition:all 0.15s;min-width:56px;" onmouseenter="this.style.borderColor='#14b8a6';this.style.color='#fff'" onmouseleave="this.style.borderColor='#444';this.style.color='#a0a0a0'" title="YouTube, TV">
+                <span style="display:block;width:32px;height:18px;background:#444;border-radius:2px;"></span>
+                <span>YouTube</span>
+              </button>
+              <button onclick="App.newProject('square')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 12px;border-radius:6px;border:1px solid #444;background:#1a1a1a;color:#a0a0a0;font-size:10px;cursor:pointer;transition:all 0.15s;min-width:56px;" onmouseenter="this.style.borderColor='#14b8a6';this.style.color='#fff'" onmouseleave="this.style.borderColor='#444';this.style.color='#a0a0a0'" title="Instagram Feed">
+                <span style="display:block;width:24px;height:24px;background:#444;border-radius:2px;"></span>
+                <span>Feed</span>
+              </button>
+              <button onclick="App.newProject('portrait')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 12px;border-radius:6px;border:1px solid #444;background:#1a1a1a;color:#a0a0a0;font-size:10px;cursor:pointer;transition:all 0.15s;min-width:56px;" onmouseenter="this.style.borderColor='#14b8a6';this.style.color='#fff'" onmouseleave="this.style.borderColor='#444';this.style.color='#a0a0a0'" title="Apresentações">
+                <span style="display:block;width:28px;height:21px;background:#444;border-radius:2px;"></span>
+                <span>Slides</span>
+              </button>
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-            <button type="button" class="template-card" onclick="App.createFromTemplate('motion-comic')" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px 10px;cursor:pointer;text-align:center;">
-              <div style="font-size:20px;margin-bottom:4px;">${Icons.shield}</div>
-              <div style="font-size:11px;font-weight:600;color:var(--text);">${t('templates.motionComic')}</div>
-              <div style="font-size:9px;color:var(--text3);margin-top:2px;">4 pgs · 2×2</div>
-            </button>
-            <button type="button" class="template-card" onclick="App.createFromTemplate('podcast')" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px 10px;cursor:pointer;text-align:center;">
-              <div style="font-size:20px;margin-bottom:4px;">${Icons.radio}</div>
-              <div style="font-size:11px;font-weight:600;color:var(--text);">${t('templates.podcast')}</div>
-              <div style="font-size:9px;color:var(--text3);margin-top:2px;">8 pgs · Full</div>
-            </button>
-            <button type="button" class="template-card" onclick="App.createFromTemplate('tutorial')" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px 10px;cursor:pointer;text-align:center;">
-              <div style="font-size:20px;margin-bottom:4px;">${Icons.bookOpen}</div>
-              <div style="font-size:11px;font-weight:600;color:var(--text);">${t('templates.tutorial')}</div>
-              <div style="font-size:9px;color:var(--text3);margin-top:2px;">6 pgs · Text</div>
-            </button>
-            <button type="button" class="template-card" onclick="App.createFromTemplate('story')" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px 10px;cursor:pointer;text-align:center;">
-              <div style="font-size:20px;margin-bottom:4px;">${Icons.smartphone}</div>
-              <div style="font-size:11px;font-weight:600;color:var(--text);">${t('templates.story')}</div>
-              <div style="font-size:9px;color:var(--text3);margin-top:2px;">5 pgs · 9:16</div>
-            </button>
-          </div>
         </div>
+
+        <!-- More Options Accordion (Import, Script, Templates) -->
+        <details class="more-options-accordion" id="more-options-accordion" ${localStorage.getItem('hqm_more_options_expanded') === 'true' ? 'open' : ''} ontoggle="localStorage.setItem('hqm_more_options_expanded', this.open)">
+          <summary class="more-options-summary">
+            <span class="more-options-arrow">▸</span>
+            <span>${t('dashboard.moreOptions') || 'More options'}</span>
+          </summary>
+          <div class="more-options-content">
+            <!-- Import / Script Cards -->
+            <div class="more-options-cards">
+              <button class="more-options-card" onclick="document.getElementById('import-project-input').click()">
+                <span class="more-options-card-icon">${Icons.download}</span>
+                <span class="more-options-card-label">${t('dashboard.import')}</span>
+              </button>
+              <button class="more-options-card" onclick="App.showBulkTextModal()">
+                <span class="more-options-card-icon">${Icons.fileText}</span>
+                <span class="more-options-card-label">${t('dashboard.createFromScript')}</span>
+              </button>
+            </div>
+            
+            <!-- Templates Section -->
+            <div class="more-options-templates">
+              <div class="more-options-templates-header">
+                <span class="more-options-templates-label">${t('dashboard.templatesTitle') || 'Templates'}</span>
+                <div class="more-options-templates-actions">
+                  <button class="btn btn-ghost btn-sm" onclick="App.showBulkAudioModal()" title="Audio project">
+                    <span>${icon24(Icons.mic)}</span> Audio
+                  </button>
+                  <button class="btn btn-ghost btn-sm" onclick="App.createDemoProject()" title="Demo project">
+                    <span>${icon24(Icons.play)}</span> Demo
+                  </button>
+                </div>
+              </div>
+              <div class="more-options-templates-grid">
+                <button type="button" class="template-card" onclick="App.createFromTemplate('motion-comic')">
+                  <div class="template-card-icon">${icon24(Icons.grid)}</div>
+                  <div class="template-card-title">${t('templates.motionComic')}</div>
+                  <div class="template-card-meta">4 pgs · 2×2</div>
+                </button>
+                <button type="button" class="template-card" onclick="App.createFromTemplate('podcast')">
+                  <div class="template-card-icon">${icon24(Icons.headphones)}</div>
+                  <div class="template-card-title">${t('templates.podcast')}</div>
+                  <div class="template-card-meta">8 pgs · Full</div>
+                </button>
+                <button type="button" class="template-card" onclick="App.createFromTemplate('tutorial')">
+                  <div class="template-card-icon">${icon24(Icons.bookOpen)}</div>
+                  <div class="template-card-title">${t('templates.tutorial')}</div>
+                  <div class="template-card-meta">6 pgs · Text</div>
+                </button>
+                <button type="button" class="template-card" onclick="App.createFromTemplate('story')">
+                  <div class="template-card-icon">${icon24(Icons.smartphone)}</div>
+                  <div class="template-card-title">${t('templates.story')}</div>
+                  <div class="template-card-meta">5 pgs · 9:16</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
     </div>
     <div class="dashboard-projects" id="projects-section"></div>
@@ -575,8 +603,8 @@ function renderMobileTextTools() {
         <button data-balloon-type="shout" class="${_dis('shout')}" onclick="App.startBalloonPlacement('shout');App.closeMobileSidebar()" title="${_title('shout',t('balloons.shoutTooltip'))}" style="${_btnStyle}" ${_hover}>
           ${Icons.shout} <span>${t('balloons.shout')}</span>
         </button>
-        <button data-balloon-type="whisper" class="${_dis('whisper')}" onclick="App.startBalloonPlacement('whisper');App.closeMobileSidebar()" title="${_title('whisper',t('balloons.whisperTooltip'))}" style="${_btnStyle}" ${_hover}>
-          ${Icons.balloon} <span>${t('balloons.whisper')}</span>
+        <button data-balloon-type="caption" class="${_dis('caption')}" onclick="App.startBalloonPlacement('caption');App.closeMobileSidebar()" title="${_title('caption',t('balloons.captionTooltip'))}" style="${_btnStyle}" ${_hover}>
+          ${Icons.fileText} <span>${t('balloons.caption')}</span>
         </button>
         <button data-balloon-type="sfx" class="${_dis('sfx')}" onclick="App.addSfxToPage();App.closeMobileSidebar()" title="${_title('sfx',t('balloons.sfxTooltip'))}" style="${_btnStyle}" ${_hover}>
           ${Icons.text} <span>${t('balloons.sfx')}</span>
@@ -968,27 +996,48 @@ function renderLeftPanel() {
       <div id="mobile-anchor-texttools" style="font-size: 10px; font-weight: 700; color: var(--text3); margin: 12px 12px 6px 12px; letter-spacing: 1px;">${t('sidebar.comicElements')}</div>
       ${(() => {
         const _isMateria = page?.type === 'materia' || page?.isMateria === true;
-        const _dis = (type) => _isMateria && ['thought','shout','sfx'].includes(type) ? 'disabled-in-context' : '';
-        const _title = (type, orig) => _isMateria && ['thought','shout','sfx'].includes(type) ? t('balloons.notAvailableMateria') : orig;
+        const _isCover = Store.get('coverActive') || Store.get('backCoverActive');
         const _btnStyle = `display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 4px; border:1px solid var(--border); border-radius:6px; background:var(--surface2); color:var(--text2); cursor:pointer; font-size:10px; transition:all 0.12s;`;
         const _hover = `onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'"`;
+        
+        // In cover mode, don't show balloon tools at all
+        if (_isCover) {
+          return `<div style="padding:8px 12px;background:var(--surface2);border-radius:6px;margin:0 8px;">
+            <div style="font-size:10px;color:var(--text3);text-align:center;">Balões não disponíveis no modo capa</div>
+          </div>`;
+        }
+        
+        // In matéria mode, only show narration and caption
+        if (_isMateria) {
+          return `<div class="balloon-toolbox" style="display:grid; grid-template-columns:1fr 1fr; gap:4px; padding: 0 8px;">
+            <button data-balloon-type="narration" onclick="App.startBalloonPlacement('narration')" title="${t('balloons.narrationTooltip')}" style="${_btnStyle}" ${_hover}>
+              ${Icons.narrationBox} <span>${t('balloons.narration')}</span>
+            </button>
+            <button data-balloon-type="caption" onclick="App.startBalloonPlacement('caption')" title="${t('balloons.captionTooltip')}" style="${_btnStyle}" ${_hover}>
+              ${Icons.fileText} <span>${t('balloons.caption')}</span>
+            </button>
+          </div>
+          <div style="padding:4px 12px;font-size:9px;color:var(--text3);text-align:center;">Modo Matéria: apenas narração e legenda</div>`;
+        }
+        
+        // Normal mode - show all balloon types
         return `<div class="balloon-toolbox" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; padding: 0 8px;">
-        <button data-balloon-type="narration" class="${_dis('narration')}" onclick="App.startBalloonPlacement('narration')" title="${_title('narration',t('balloons.narrationTooltip'))}" style="${_btnStyle}" ${_hover}>
+        <button data-balloon-type="narration" onclick="App.startBalloonPlacement('narration')" title="${t('balloons.narrationTooltip')}" style="${_btnStyle}" ${_hover}>
           ${Icons.narrationBox} <span>${t('balloons.narration')}</span>
         </button>
-        <button data-balloon-type="speech" class="${_dis('speech')}" onclick="App.startBalloonPlacement('speech')" title="${_title('speech',t('balloons.speechTooltip'))}" style="${_btnStyle}" ${_hover}>
+        <button data-balloon-type="speech" onclick="App.startBalloonPlacement('speech')" title="${t('balloons.speechTooltip')}" style="${_btnStyle}" ${_hover}>
           ${Icons.balloon} <span>${t('balloons.speech')}</span>
         </button>
-        <button data-balloon-type="thought" class="${_dis('thought')}" onclick="App.startBalloonPlacement('thought')" title="${_title('thought',t('balloons.thoughtTooltip'))}" style="${_btnStyle}" ${_hover}>
+        <button data-balloon-type="thought" onclick="App.startBalloonPlacement('thought')" title="${t('balloons.thoughtTooltip')}" style="${_btnStyle}" ${_hover}>
           ${Icons.thought} <span>${t('balloons.thought')}</span>
         </button>
-        <button data-balloon-type="shout" class="${_dis('shout')}" onclick="App.startBalloonPlacement('shout')" title="${_title('shout',t('balloons.shoutTooltip'))}" style="${_btnStyle}" ${_hover}>
+        <button data-balloon-type="shout" onclick="App.startBalloonPlacement('shout')" title="${t('balloons.shoutTooltip')}" style="${_btnStyle}" ${_hover}>
           ${Icons.shout} <span>${t('balloons.shout')}</span>
         </button>
-        <button data-balloon-type="whisper" class="${_dis('whisper')}" onclick="App.startBalloonPlacement('whisper')" title="${_title('whisper',t('balloons.whisperTooltip'))}" style="${_btnStyle}" ${_hover}>
-          ${Icons.balloon} <span>${t('balloons.whisper')}</span>
+        <button data-balloon-type="caption" onclick="App.startBalloonPlacement('caption')" title="${t('balloons.captionTooltip')}" style="${_btnStyle}" ${_hover}>
+          ${Icons.fileText} <span>${t('balloons.caption')}</span>
         </button>
-        <button data-balloon-type="sfx" class="${_dis('sfx')}" onclick="App.addSfxToPage()" title="${_title('sfx',t('balloons.sfxTooltip'))}" style="${_btnStyle}" ${_hover}>
+        <button data-balloon-type="sfx" onclick="App.addSfxToPage()" title="${t('balloons.sfxTooltip')}" style="${_btnStyle}" ${_hover}>
           ${Icons.text} <span>${t('balloons.sfx')}</span>
         </button>
       </div>`;
@@ -1317,14 +1366,17 @@ function renderCoverCanvas() {
       onclick="event.stopPropagation();var _s=Store.get('selectedElement');if(!_s||_s.id!=='${el.id}'){Store.set({selectedElement:{type:'cover-text',id:'${el.id}'}});renderRightPanel();}"
       ondblclick="event.stopPropagation();App._editCoverElementInline('${el.id}',this)"
       oncontextmenu="event.preventDefault();event.stopPropagation();App.showCoverElementContextMenu(event,'${el.id}')"
-      title="Drag to move · Double-click to edit">
-      <div class="cover-text-inner" style="${styleStr};outline:none;white-space:pre-wrap;word-break:normal;overflow-wrap:break-word;"
+      title="Arraste para mover · Duplo-clique para editar">
+      <div class="cover-text-inner" style="${styleStr};outline:none;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;box-sizing:border-box;"
         contenteditable="false"
         data-el-id="${el.id}"
         onblur="App._saveCoverElementText('${el.id}',this.innerText)"
         onkeydown="event.stopImmediatePropagation();"
       >${S(el.text || '')}</div>
       ${isSelected ? `<div style="position:absolute;inset:-3px;border:2px dashed var(--accent);border-radius:4px;pointer-events:none;z-index:26;"></div>
+        <!-- Resize handles for width -->
+        <div class="resize-handle-left" onmousedown="event.stopPropagation();App.startResizeCoverTextWidth(event,'${el.id}','left')" title="Arrastar para redimensionar"></div>
+        <div class="resize-handle-right" onmousedown="event.stopPropagation();App.startResizeCoverTextWidth(event,'${el.id}','right')" title="Arrastar para redimensionar"></div>
         <button onclick="event.stopPropagation();App.deleteCoverElement('${el.id}')" style="position:absolute;top:-10px;right:-10px;width:20px;height:20px;border-radius:50%;background:#e00;color:#fff;border:2px solid #fff;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:27;">✕</button>` : ''}
     </div>`;
   }).join('');
@@ -1356,11 +1408,17 @@ function renderCoverCanvas() {
     }
   }
 
-  // Fixed back button — always visible regardless of zoom/pan
-  const fixedBackBtn = `<button class="cover-back-btn-fixed" onclick="App.setActivePage(0)" style="position:fixed;top:70px;left:16px;z-index:9999;padding:8px 14px;background:var(--surface);border:1px solid var(--border);color:var(--text1);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3);transition:all 0.15s;" onmouseenter="this.style.background='var(--accent)';this.style.color='#fff';this.style.borderColor='var(--accent)'" onmouseleave="this.style.background='var(--surface)';this.style.color='var(--text1)';this.style.borderColor='var(--border)'" title="Back to pages (Esc)">← Back to Pages</button>`;
+  // Fixed back button — highly visible with accent color
+  const fixedBackBtn = `<button class="cover-back-btn-fixed" onclick="App.setActivePage(0)" style="position:fixed;top:70px;left:16px;z-index:9999;padding:10px 18px;background:var(--accent);border:2px solid var(--accent);border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(20,184,166,0.4);transition:all 0.15s;" onmouseenter="this.style.transform='scale(1.05)';this.style.boxShadow='0 6px 16px rgba(20,184,166,0.5)'" onmouseleave="this.style.transform='scale(1)';this.style.boxShadow='0 4px 12px rgba(20,184,166,0.4)'" title="Voltar para páginas (Esc)">← Voltar</button>`;
   
-  // Cover badge — also fixed position
-  const coverBadge = `<span style="position:fixed;top:70px;right:16px;z-index:9999;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:4px 12px;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">COVER</span>`;
+  // Cover badge with duration info
+  const coverDuration = cover.duration || 0.2;
+  const coverBadge = `<div style="position:fixed;top:70px;right:16px;z-index:9999;display:flex;align-items:center;gap:8px;">
+    <span style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+      ${Icons.clock} <input type="number" value="${coverDuration}" min="0.1" max="10" step="0.1" onchange="App.setCoverDuration(parseFloat(this.value))" style="width:45px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11px;text-align:center;">s
+    </span>
+    <span style="background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:6px 14px;border-radius:6px;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">CAPA</span>
+  </div>`;
 
   // Wrapper with actual zoomed dimensions for proper scrolling
   scrollEl.innerHTML = `
@@ -1539,7 +1597,7 @@ function renderLayoutEditorCanvas() {
       <div style="position:absolute;left:50%;bottom:-36px;transform:translateX(-50%);display:flex;gap:3px;z-index:110;white-space:nowrap;">
         ${canSplit ? `<button onclick="event.stopPropagation();App.layoutEditorSplitH(${i})" style="padding:3px 8px;border:none;background:var(--accent);color:#fff;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600;" title="Dividir Horizontal (H)">─ Split H</button>
         <button onclick="event.stopPropagation();App.layoutEditorSplitV(${i})" style="padding:3px 8px;border:none;background:var(--accent);color:#fff;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600;" title="Dividir Vertical (V)">│ Split V</button>
-        <button onclick="event.stopPropagation();App.layoutEditorDuplicate(${i})" style="padding:3px 8px;border:none;background:#6366f1;color:#fff;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600;" title="Duplicar (Ctrl+D)">⊞ Dup</button>` : ''}
+        <button onclick="event.stopPropagation();App.layoutEditorDuplicate(${i})" style="padding:3px 8px;border:none;background:#14b8a6;color:#fff;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600;" title="Duplicar (Ctrl+D)">⊞ Dup</button>` : ''}
         ${panels.length > 1 ? `<button onclick="event.stopPropagation();App.layoutEditorDeletePanel(${i})" style="padding:3px 8px;border:none;background:#ef4444;color:#fff;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600;" title="Deletar (Del)">${Icons.trash}</button>` : ''}
       </div>` : '';
 
@@ -1690,8 +1748,9 @@ function renderCanvas() {
   const _hasSequence = _seqSlides.length > 0;
   
   if (_hasSequence) {
-    // Clamp active index
-    const _si = Math.min(Math.max(0, App._activeSlidePreview || 0), _seqSlides.length - 1);
+    // Use Store activeSlideIndex if set, otherwise fall back to App._activeSlidePreview
+    const _storeIdx = Store.get('activeSlideIndex');
+    const _si = Math.min(Math.max(0, (_storeIdx !== null && _storeIdx !== undefined ? _storeIdx : (App._activeSlidePreview || 0))), _seqSlides.length - 1);
     const _activeSlide = _seqSlides[_si];
     const _slideImg = _activeSlide.image;
     const _hasNav = _seqSlides.length > 1;
@@ -1711,7 +1770,7 @@ function renderCanvas() {
         ` : ''}
         
         <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.85);padding:6px 14px;border-radius:20px;">
-          <span style="color:#fff;font-size:11px;font-weight:700;">📷 ${_si + 1}/${_seqSlides.length}</span>
+          <span style="color:#fff;font-size:11px;font-weight:700;">${_si + 1}/${_seqSlides.length}</span>
           <span style="color:var(--accent);font-size:9px;">|</span>
           <span style="color:rgba(255,255,255,0.7);font-size:10px;">${_activeSlide.duration}s</span>
           <span style="color:var(--accent);font-size:9px;">|</span>
@@ -1726,7 +1785,7 @@ function renderCanvas() {
     // Slideshow layout but no slides yet - show prompt
     panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;top:${panelZoneTop}px;">
       <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(107,114,128,0.02);border:2px dashed var(--accent);border-radius:8px;margin:20px;">
-        <div style="color:var(--accent);margin-bottom:12px;font-size:48px;">📷</div>
+        <div style="color:var(--accent);margin-bottom:12px;">${Icons.images}</div>
         <div style="color:var(--accent);font-weight:600;font-size:16px;margin-bottom:6px;">Sequência de Fotos</div>
         <div style="color:var(--text3);font-size:13px;text-align:center;line-height:1.5;max-width:300px;">Use o painel "Fotos em Sequência" ao lado para adicionar fotos da Library</div>
       </div>
@@ -2793,7 +2852,7 @@ function renderRightPanel() {
             <option value="speech" ${bType==='speech'?'selected':''}>Fala</option>
             <option value="thought" ${bType==='thought'?'selected':''}>Pensamento</option>
             <option value="shout" ${bType==='shout'?'selected':''}>Grito</option>
-            <option value="whisper" ${bType==='whisper'?'selected':''}>Sussurro</option>
+            <option value="caption" ${bType==='caption'?'selected':''}>Legenda</option>
             <option value="narration" ${bType==='narration'?'selected':''}>Narração</option>
             <option value="sfx" ${bType==='sfx'?'selected':''}>SFX</option>
           </select>
@@ -2834,17 +2893,30 @@ function renderRightPanel() {
         </div>
 
         ${bType === 'narration' ? `
-        <!-- POSITION row -->
-        <div class="bcr-row">
-          <span class="bcr-label">POSIÇÃO</span>
-          <button onclick="App.setBalloonPositionMode('free')" ${_pd} style="flex:1;padding:2px;border-radius:2px;border:1px solid ${(selectedBalloon.positionMode||'free')==='free'?'var(--accent)':'var(--border)'};background:${(selectedBalloon.positionMode||'free')==='free'?'var(--accent)':'transparent'};color:${(selectedBalloon.positionMode||'free')==='free'?'#fff':'var(--text3)'};font-size:8px;cursor:pointer;">Livre</button>
-          <button onclick="App.setBalloonPositionMode('top')" ${_pd} style="flex:1;padding:2px;border-radius:2px;border:1px solid ${selectedBalloon.positionMode==='top'?'var(--accent)':'var(--border)'};background:${selectedBalloon.positionMode==='top'?'var(--accent)':'transparent'};color:${selectedBalloon.positionMode==='top'?'#fff':'var(--text3)'};font-size:8px;cursor:pointer;">↑ Topo</button>
-          <button onclick="App.setBalloonPositionMode('bottom')" ${_pd} style="flex:1;padding:2px;border-radius:2px;border:1px solid ${selectedBalloon.positionMode==='bottom'?'var(--accent)':'var(--border)'};background:${selectedBalloon.positionMode==='bottom'?'var(--accent)':'transparent'};color:${selectedBalloon.positionMode==='bottom'?'#fff':'var(--text3)'};font-size:8px;cursor:pointer;">↓ Base</button>
+        <!-- NARRATION STYLE PRESETS - Visual creative options -->
+        <div class="bcr-row" style="flex-wrap:wrap;gap:4px;">
+          <span class="bcr-label" style="width:100%;margin-bottom:4px;">${Icons.style} ESTILO</span>
+          <button onclick="App.applyNarrationPreset('classic')" ${_pd} title="Clássico HQ - amarelo com borda dupla" style="flex:1;min-width:45%;padding:6px 4px;border-radius:4px;border:2px solid #1a1a1a;background:linear-gradient(135deg,#fffde7,#fff9c4);color:#1a1a1a;font-size:8px;font-weight:600;cursor:pointer;box-shadow:inset 0 0 0 2px rgba(0,0,0,0.1);">Classico</button>
+          <button onclick="App.applyNarrationPreset('cinema')" ${_pd} title="Cinema - preto com texto branco" style="flex:1;min-width:45%;padding:6px 4px;border-radius:4px;border:1px solid #333;background:linear-gradient(180deg,#1a1a1a,#0a0a0a);color:#fff;font-size:8px;font-weight:600;cursor:pointer;">Cinema</button>
+          <button onclick="App.applyNarrationPreset('manga')" ${_pd} title="Mangá - branco clean" style="flex:1;min-width:45%;padding:6px 4px;border-radius:4px;border:1px solid #000;background:#fff;color:#000;font-size:8px;font-weight:600;cursor:pointer;">Manga</button>
+          <button onclick="App.applyNarrationPreset('neon')" ${_pd} title="Neon - cyberpunk style" style="flex:1;min-width:45%;padding:6px 4px;border-radius:4px;border:1px solid #0ff;background:linear-gradient(135deg,#0a0a1a,#1a0a2a);color:#0ff;font-size:8px;font-weight:600;cursor:pointer;text-shadow:0 0 4px #0ff;">Neon</button>
+          <button onclick="App.applyNarrationPreset('vintage')" ${_pd} title="Vintage - papel envelhecido" style="flex:1;min-width:45%;padding:6px 4px;border-radius:4px;border:1px solid #8b4513;background:linear-gradient(135deg,#f5deb3,#deb887);color:#4a3728;font-size:8px;font-weight:600;cursor:pointer;">Vintage</button>
+          <button onclick="App.applyNarrationPreset('horror')" ${_pd} title="Horror - vermelho sangue" style="flex:1;min-width:45%;padding:6px 4px;border-radius:4px;border:1px solid #8b0000;background:linear-gradient(135deg,#1a0a0a,#2a0a0a);color:#ff3333;font-size:8px;font-weight:600;cursor:pointer;">Horror</button>
+        </div>
+        <!-- POSITION PRESETS - Simplified: Full Width toggle + 3 positions -->
+        <div class="bcr-row" style="flex-wrap:wrap;gap:4px;margin-top:4px;">
+          <span class="bcr-label" style="width:100%;margin-bottom:2px;display:flex;align-items:center;gap:4px;">${Icons.crosshair} POSICAO</span>
+          <!-- Full Width Toggle -->
+          <button onclick="App.toggleNarrationFullWidth()" ${_pd} title="Largura total do frame" style="width:100%;padding:6px 8px;border-radius:4px;border:1px solid ${selectedBalloon.fullWidth?'var(--accent)':'var(--border)'};background:${selectedBalloon.fullWidth?'var(--accent)':'var(--surface)'};color:${selectedBalloon.fullWidth?'#fff':'var(--text2)'};font-size:9px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">${Icons.expand} Largura Total ${selectedBalloon.fullWidth?'ON':'OFF'}</button>
+          <!-- 3 Position buttons -->
+          <button onclick="App.setNarrationPosition('top')" ${_pd} title="Fixar no topo" style="flex:1;padding:6px 4px;border-radius:4px;border:1px solid ${selectedBalloon.positionMode==='top'||selectedBalloon.positionMode==='top-full'||selectedBalloon.positionMode==='top-safe'?'var(--accent)':'var(--border)'};background:${selectedBalloon.positionMode==='top'||selectedBalloon.positionMode==='top-full'||selectedBalloon.positionMode==='top-safe'?'var(--accent)':'var(--surface)'};color:${selectedBalloon.positionMode==='top'||selectedBalloon.positionMode==='top-full'||selectedBalloon.positionMode==='top-safe'?'#fff':'var(--text2)'};font-size:9px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">${Icons.alignTop} Topo</button>
+          <button onclick="App.setNarrationPosition('middle')" ${_pd} title="Centralizar" style="flex:1;padding:6px 4px;border-radius:4px;border:1px solid ${selectedBalloon.positionMode==='center'||selectedBalloon.positionMode==='middle'?'var(--accent)':'var(--border)'};background:${selectedBalloon.positionMode==='center'||selectedBalloon.positionMode==='middle'?'var(--accent)':'var(--surface)'};color:${selectedBalloon.positionMode==='center'||selectedBalloon.positionMode==='middle'?'#fff':'var(--text2)'};font-size:9px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">${Icons.alignMiddle} Meio</button>
+          <button onclick="App.setNarrationPosition('bottom')" ${_pd} title="Fixar na base" style="flex:1;padding:6px 4px;border-radius:4px;border:1px solid ${selectedBalloon.positionMode==='bottom'||selectedBalloon.positionMode==='bottom-full'||selectedBalloon.positionMode==='bottom-safe'?'var(--accent)':'var(--border)'};background:${selectedBalloon.positionMode==='bottom'||selectedBalloon.positionMode==='bottom-full'||selectedBalloon.positionMode==='bottom-safe'?'var(--accent)':'var(--surface)'};color:${selectedBalloon.positionMode==='bottom'||selectedBalloon.positionMode==='bottom-full'||selectedBalloon.positionMode==='bottom-safe'?'#fff':'var(--text2)'};font-size:9px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">${Icons.alignBottom} Base</button>
         </div>` : ''}
 
         <!-- FUNDO row (6 fixed + 6 editable) -->
         <div class="bcr-row">
-          <span class="bcr-label">⬛ FUNDO</span>
+          <span class="bcr-label">FUNDO</span>
           <div class="bcr-swatch-grid">
             ${window.BALLOON_BG_FIXED.map(c => `<button class="bcr-swatch ${bgColor.toLowerCase()===c.toLowerCase()?'active':''}" style="--sw:${c};${_isDark(c)?'--sw-check:#fff;':''}" onclick="App.setBalloonBg('${c}')" ${_pd} title="Cor fixa"></button>`).join('')}
             ${ColorPresets.getBgCustom().map((c,i) => `<button class="bcr-swatch editable ${bgColor.toLowerCase()===c.toLowerCase()?'active':''}" style="--sw:${c};${_isDark(c)?'--sw-check:#fff;':''}" onclick="App.setBalloonBg('${c}')" ondblclick="App.editBgCustomColor(${i},this)" ${_pd} title="Dbl-click para editar"></button>`).join('')}
@@ -2853,7 +2925,7 @@ function renderRightPanel() {
 
         <!-- TEXTO row (6 fixed + 6 editable) -->
         <div class="bcr-row">
-          <span class="bcr-label">A TEXTO</span>
+          <span class="bcr-label">TEXTO</span>
           <div class="bcr-swatch-grid">
             ${window.BALLOON_TEXT_FIXED.map(c => `<button class="bcr-swatch ${txtColor.toLowerCase()===c.toLowerCase()?'active':''}" style="--sw:${c};${_isDark(c)?'--sw-check:#fff;':''}" onclick="App.setBalloonTextColor('${c}')" ${_pd} title="Cor fixa"></button>`).join('')}
             ${ColorPresets.getTextCustom().map((c,i) => `<button class="bcr-swatch editable ${txtColor.toLowerCase()===c.toLowerCase()?'active':''}" style="--sw:${c};${_isDark(c)?'--sw-check:#fff;':''}" onclick="App.setBalloonTextColor('${c}')" ondblclick="App.editTextCustomColor(${i},this)" ${_pd} title="Dbl-click para editar"></button>`).join('')}
@@ -2973,8 +3045,8 @@ function renderRightPanel() {
         <style>.library-thumb:hover .lib-thumb-overlay{opacity:1!important;}</style>
         ${libEntries.length > 24 ? '<div style="font-size:9px;color:var(--text3);padding:2px 0 4px;">+' + (libEntries.length - 24) + ' mais imagens</div>' : ''}
         <div style="display:flex;gap:6px;margin-top:6px;">
-          <button onclick="App.triggerImageUpload()" style="flex:1;padding:7px 10px;border-radius:3px;background:transparent;border:1px dashed var(--border3);color:var(--text2);cursor:pointer;font-size:10px;font-weight:600;transition:all 0.15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';" onmouseleave="this.style.borderColor='var(--border3)';this.style.color='var(--text2)';">+ Upload</button>
-          <button onclick="App.promptImageUrl()" style="flex:1;padding:7px 10px;border-radius:3px;background:transparent;border:1px dashed var(--border3);color:var(--text2);cursor:pointer;font-size:10px;font-weight:600;transition:all 0.15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';" onmouseleave="this.style.borderColor='var(--border3)';this.style.color='var(--text2)';">+ URL</button>
+          <button onclick="App.triggerImageUpload()" style="flex:1;padding:8px 10px;border-radius:4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.24);color:var(--text);cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.2px;transition:all 0.15s;" onmouseenter="this.style.borderColor='var(--brand-teal)';this.style.background='rgba(20,184,166,0.14)';this.style.color='var(--brand-teal-light)';this.style.boxShadow='0 0 0 1px rgba(20,184,166,0.35)';" onmouseleave="this.style.borderColor='rgba(255,255,255,0.24)';this.style.background='rgba(255,255,255,0.04)';this.style.color='var(--text)';this.style.boxShadow='none';">+ Upload</button>
+          <button onclick="App.promptImageUrl()" style="flex:1;padding:8px 10px;border-radius:4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.24);color:var(--text);cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.2px;transition:all 0.15s;" onmouseenter="this.style.borderColor='var(--brand-teal)';this.style.background='rgba(20,184,166,0.14)';this.style.color='var(--brand-teal-light)';this.style.boxShadow='0 0 0 1px rgba(20,184,166,0.35)';" onmouseleave="this.style.borderColor='rgba(255,255,255,0.24)';this.style.background='rgba(255,255,255,0.04)';this.style.color='var(--text)';this.style.boxShadow='none';">+ URL</button>
         </div>
       ` : ''}
     </div>`;
@@ -2983,128 +3055,184 @@ function renderRightPanel() {
   const slides = page.slides || [];
   const hasSlides = slides.length > 0;
   const totalDuration = page.duration || 2.5;
-  const slidesCollapsed = collapsed.slideshow;
   
-  // Always show slides section - either with slides or with "Enable" button
-  {
-    const usedTime = slides.reduce((sum, s) => sum + (s.duration || 0), 0);
-    const remainingTime = totalDuration - usedTime;
-    const slideshowCollapsed = collapsed.slideshow;
-    
-    html += `
-      <div style="margin-bottom:6px;border:2px solid var(--accent);border-radius:6px;padding:6px;background:rgba(20,184,166,0.08);">
-        <div onclick="App.toggleSidebarSection('slideshow')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
-          <span style="font-size:11px;font-weight:700;color:var(--accent);flex:1;">📷 FOTOS EM SEQUÊNCIA (${slides.length})</span>
-          <span style="font-size:10px;color:var(--accent);">${slideshowCollapsed ? '+' : '-'}</span>
+  // Get active slide index from Store
+  const _activeSlideIdx = Store.get('activeSlideIndex');
+  const _hasActiveSlide = hasSlides && _activeSlideIdx !== null && _activeSlideIdx !== undefined && _activeSlideIdx < slides.length;
+  const _activeSlideData = _hasActiveSlide ? slides[_activeSlideIdx] : null;
+
+  if (hasSlides) {
+    // ── SLIDE SELECTED: show controls for the selected slide ──
+    if (_hasActiveSlide && _activeSlideData) {
+      const si = _activeSlideIdx;
+      const slide = _activeSlideData;
+      html += `
+        <div style="margin-bottom:6px;border:2px solid #14b8a6;border-radius:6px;padding:6px;background:rgba(20,184,166,0.08);">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;color:#14b8a6;flex:1;">SLIDE ${si + 1} / ${slides.length}</span>
+            <button onclick="App.selectSlide(${Store.get('activePageIndex')},${Math.max(0,si-1)})" 
+                    style="padding:2px 6px;border:1px solid var(--border);border-radius:3px;background:var(--surface);color:var(--text2);font-size:11px;cursor:pointer;" 
+                    ${si === 0 ? 'disabled' : ''} title="Slide anterior">‹</button>
+            <button onclick="App.selectSlide(${Store.get('activePageIndex')},${Math.min(slides.length-1,si+1)})" 
+                    style="padding:2px 6px;border:1px solid var(--border);border-radius:3px;background:var(--surface);color:var(--text2);font-size:11px;cursor:pointer;" 
+                    ${si === slides.length - 1 ? 'disabled' : ''} title="Próximo slide">›</button>
+          </div>
+          
+          <!-- Thumbnail preview -->
+          ${slide.image ? `<div style="width:100%;aspect-ratio:16/9;border-radius:4px;overflow:hidden;margin-bottom:8px;background:#000;"><img src="${slide.image}" style="width:100%;height:100%;object-fit:cover;"></div>` : ''}
+          
+          <!-- Duration -->
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+            <span style="font-size:10px;color:var(--text3);flex:1;">Duração</span>
+            <input type="number" value="${slide.duration || 2}" min="0.5" max="60" step="0.5"
+                   onchange="App.updateSlideDuration(${si}, parseFloat(this.value))"
+                   style="width:56px;padding:3px 6px;border:1px solid var(--border);border-radius:3px;background:var(--surface);color:var(--text);font-size:12px;font-weight:600;text-align:center;">
+            <span style="font-size:10px;color:var(--text3);">s</span>
+          </div>
+          
+          <!-- Ken Burns -->
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+            <span style="font-size:10px;color:var(--text3);flex:1;">Ken Burns</span>
+            <select onchange="App.updateSlideKenBurns(${si}, this.value)"
+                    style="flex:1;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:var(--surface);color:var(--text);font-size:10px;">
+              ${Object.entries(KEN_BURNS_PRESETS).map(([id, preset]) => 
+                `<option value="${id}" ${(slide.kenBurns || 'zoom-in') === id ? 'selected' : ''}>${preset.name}</option>`
+              ).join('')}
+            </select>
+          </div>
+          
+          <!-- Transition -->
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span style="font-size:10px;color:var(--text3);flex:1;">Transição</span>
+            <select onchange="App.updateSlideTransition(${si}, this.value)"
+                    style="flex:1;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:var(--surface);color:var(--text);font-size:10px;">
+              <option value="cut" ${(slide.transition || 'cut') === 'cut' ? 'selected' : ''}>Corte</option>
+              <option value="crossfade" ${slide.transition === 'crossfade' ? 'selected' : ''}>Crossfade</option>
+              <option value="fade-black" ${slide.transition === 'fade-black' ? 'selected' : ''}>Fade Black</option>
+            </select>
+          </div>
+          
+          <!-- Delete + Add -->
+          <div style="display:flex;gap:4px;">
+            <button onclick="App.addSlideFromLibrary()"
+                    style="flex:1;padding:6px;border-radius:4px;border:1px dashed rgba(20,184,166,0.5);background:transparent;color:#14b8a6;font-size:10px;cursor:pointer;font-weight:600;">+ Foto</button>
+            <button onclick="App.removeSlide(${si})"
+                    style="padding:6px 10px;border-radius:4px;border:1px solid rgba(220,38,38,0.4);background:transparent;color:#f87171;font-size:10px;cursor:pointer;">🗑 Remover</button>
+          </div>
         </div>
-        ${!slideshowCollapsed ? `
-          <!-- Explicação visual clara -->
-          <div style="background:rgba(20,184,166,0.15);border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:var(--accent);line-height:1.4;">
-            <strong>Uma página, várias fotos:</strong> cada foto aparece por um tempo antes de trocar para a próxima.
+      `;
+    } else {
+      // ── SLIDES EXIST but none selected: show summary + hint ──
+      const usedTime = slides.reduce((sum, s) => sum + (s.duration || 0), 0);
+      html += `
+        <div style="margin-bottom:6px;border:2px solid var(--accent);border-radius:6px;padding:6px;background:rgba(20,184,166,0.08);">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+            <span style="font-size:11px;font-weight:700;color:var(--accent);flex:1;">${Icons.images} SEQUÊNCIA (${slides.length} fotos)</span>
           </div>
-          <!-- Progress Info -->
-          <div class="slideshow-progress-info">
-            <span class="slideshow-progress-label">Tempo total: ${totalDuration}s · Fotos: ${slides.length}</span>
-            <span class="slideshow-progress-value ${usedTime > totalDuration ? 'error' : usedTime < totalDuration ? 'warning' : ''}">
-              ${usedTime.toFixed(1)}s ${usedTime < totalDuration ? '(-' + remainingTime.toFixed(1) + 's)' : usedTime > totalDuration ? '(+' + (usedTime - totalDuration).toFixed(1) + 's)' : '✓'}
-            </span>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:8px;line-height:1.5;">
+            <strong style="color:var(--accent);">Tempo total: ${usedTime.toFixed(1)}s</strong><br>
+            Clique em um slide no carousel abaixo para editar.
           </div>
-          
-          <!-- Timeline Bar -->
-          ${slides.length > 0 ? `
-            <div class="slideshow-timeline-bar">
-              ${slides.map((s, idx) => {
-                const pct = ((s.duration || 2.5) / totalDuration) * 100;
-                return `<div class="slideshow-timeline-segment" style="width:${pct}%;" title="Slide ${idx + 1}: ${s.duration}s"></div>`;
-              }).join('')}
-            </div>
-          ` : ''}
-          
-          <!-- Slides List -->
-          <div class="slideshow-slides-container" role="list" aria-label="Lista de slides, ${slides.length} itens" 
-               style="max-height:300px;overflow-y:auto;margin-bottom:8px;"
-               onkeydown="App.handleSlideKeyboard(event)">
-            ${slides.map((slide, i) => {
-              const escapedImg = (slide.image || '').replace(/'/g, "\\'");
-              const _isActive = i === Math.min(Math.max(0, App._activeSlidePreview || 0), slides.length - 1);
-              return `
-                <div class="slideshow-slide-item${_isActive ? ' seq-active' : ''}" draggable="true" 
-                     onclick="App.setSlidePreview(${i})"
-                     ondragstart="App.handleSlideDragStart(event, ${i})" 
-                     ondragover="App.handleSlideDragOver(event)" 
-                     ondragleave="App.handleSlideDragLeave(event)"
-                     ondrop="App.handleSlideDrop(event, ${i})"
-                     ondragend="App.handleSlideDragEnd(event)"
-                     tabindex="0"
-                     role="listitem"
-                     aria-label="Slide ${i + 1}, duração ${slide.duration || 2.5} segundos"
-                     data-slide-index="${i}">
-                  <!-- Drag Handle -->
-                  <div class="slideshow-drag-handle" title="Arrastar para reordenar">
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                      <circle cx="3" cy="3" r="1.5"/>
-                      <circle cx="9" cy="3" r="1.5"/>
-                      <circle cx="3" cy="6" r="1.5"/>
-                      <circle cx="9" cy="6" r="1.5"/>
-                      <circle cx="3" cy="9" r="1.5"/>
-                      <circle cx="9" cy="9" r="1.5"/>
-                    </svg>
-                  </div>
-                  
-                  <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;">
-                    <!-- Thumbnail with badges -->
-                    <div style="position:relative;flex-shrink:0;">
-                      <img src="${slide.image}" class="slideshow-slide-thumb">
-                      <div class="slideshow-number-badge">#${i + 1}</div>
-                      <div class="slideshow-duration-badge">${(slide.duration || 2.5).toFixed(1)}s</div>
-                    </div>
-                    
-                    <!-- Controls -->
-                    <div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0;">
-                      <div style="display:flex;gap:4px;align-items:center;">
-                        <span style="font-size:9px;color:var(--text3);white-space:nowrap;">Tempo:</span>
-                        <input type="number" value="${slide.duration || 2.5}" min="0.5" step="0.5" 
-                               onchange="App.updateSlideDuration(${i}, parseFloat(this.value))" 
-                               class="slideshow-control-input">
-                        <span style="font-size:9px;color:var(--text3);">s</span>
-                      </div>
-                      <select onchange="App.updateSlideKenBurns(${i}, this.value)" class="slideshow-control-select">
-                        ${Object.entries(KEN_BURNS_PRESETS).map(([id, preset]) => 
-                          `<option value="${id}" ${(slide.kenBurns || 'zoom-in') === id ? 'selected' : ''}>${preset.name}</option>`
-                        ).join('')}
-                      </select>
-                      <select onchange="App.updateSlideTransition(${i}, this.value)" class="slideshow-control-select">
-                        <option value="cut" ${(slide.transition || 'cut') === 'cut' ? 'selected' : ''}>Corte</option>
-                        <option value="crossfade" ${slide.transition === 'crossfade' ? 'selected' : ''}>Crossfade</option>
-                        <option value="fade-black" ${slide.transition === 'fade-black' ? 'selected' : ''}>Fade Black</option>
-                      </select>
-                    </div>
-                    
-                    <!-- Delete button -->
-                    <button onclick="App.removeSlide(${i})" title="Remover slide" class="slideshow-delete-btn">✕</button>
-                  </div>
-                </div>
-              `;
-            }).join('')}
+          <div style="display:flex;gap:4px;">
+            <button onclick="App.addSlideFromLibrary()"
+                    style="flex:1;padding:7px;border-radius:4px;border:1px dashed var(--accent);background:rgba(20,184,166,0.1);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">+ Adicionar Foto</button>
+            <button onclick="App.divideSlidesEqually()" title="Dividir tempo igualmente"
+                    style="padding:7px 10px;border-radius:4px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">÷</button>
           </div>
-          
-          <!-- Actions -->
-          <div style="display:flex;gap:4px;margin-bottom:4px;">
-            <button onclick="App.addSlideFromLibrary()" 
-                    style="flex:1;padding:8px;border-radius:4px;border:1px dashed var(--accent);background:rgba(20,184,166,0.1);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">+ Adicionar Foto</button>
-            <button onclick="App.divideSlidesEqually()" title="Dividir tempo igualmente entre fotos" 
-                    style="padding:8px 10px;border-radius:4px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">⚡ Dividir</button>
-          </div>
-          
-          ${slides.length === 0 ? `
-            <div style="padding:12px;text-align:center;background:var(--surface2);border-radius:4px;border:1px dashed var(--accent);">
-              <div style="font-size:11px;color:var(--accent);margin-bottom:6px;font-weight:600;">📷 Ativar sequência de fotos</div>
-              <div style="font-size:10px;color:var(--text2);line-height:1.4;margin-bottom:10px;">Várias fotos na mesma página, cada uma com seu tempo de exibição</div>
-              <button onclick="App.enableSlidesMode()" style="padding:10px 20px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600;">📷 Converter para sequência</button>
-            </div>
-          ` : ''}
-        ` : ''}
+        </div>
+      `;
+    }
+  } else {
+    // ── NO SLIDES: show enable button ──
+    html += `
+      <div style="margin-bottom:6px;border:2px solid var(--accent);border-radius:6px;padding:8px;background:rgba(20,184,166,0.08);">
+        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:6px;">${Icons.images} FOTOS EM SEQUÊNCIA</div>
+        <div style="font-size:10px;color:var(--text2);line-height:1.5;margin-bottom:10px;">
+          Várias fotos na mesma página, cada uma aparece por um tempo antes de trocar para a próxima.
+        </div>
+        <button onclick="App.enableSlidesMode()" style="width:100%;padding:10px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600;">Converter para sequência</button>
       </div>
+    `;
+  }
+    
+  // ── SLIDESHOW AUDIO (only show if slides exist) ──
+  if (hasSlides) {
+    const audioCollapsed = collapsed.slideshowAudio;
+    const audioData = page.slideshowAudio || { file: null, duration: 0, syncMode: 'auto', perSlideDuration: 4, volume: 0.8 };
+    const hasAudio = audioData.file && audioData.duration > 0;
+    const totalSlideDuration = slides.reduce((sum, s) => sum + (s.duration || 0), 0);
+    const isPlaying = typeof SlideshowPreview !== 'undefined' && SlideshowPreview.playing;
+      
+    html += `
+      <div style="margin-bottom:6px;border:1px solid #14b8a6;border-radius:4px;padding:6px;background:rgba(20,184,166,0.05);">
+          <div onclick="App.toggleSidebarSection('slideshowAudio')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
+            <span style="font-size:11px;font-weight:700;color:#14b8a6;flex:1;display:flex;align-items:center;gap:6px;">${Icons.music} AUDIO NARRATIVO</span>
+            <span style="font-size:10px;color:#14b8a6;">${audioCollapsed ? '+' : '-'}</span>
+          </div>
+          ${!audioCollapsed ? `
+            ${!hasAudio ? `
+              <!-- No audio state -->
+              <div style="padding:8px;background:#1a1a1a;border-radius:4px;margin-bottom:8px;">
+                <div style="font-size:11px;color:#a0a0a0;margin-bottom:8px;">Status: Sem áudio</div>
+                <div style="display:flex;gap:8px;">
+                  <button onclick="App.uploadSlideshowAudio()" style="flex:1;padding:8px;border-radius:4px;border:1px solid #14b8a6;background:rgba(20,184,166,0.1);color:#14b8a6;font-size:11px;font-weight:600;cursor:pointer;">Upload MP3/WAV</button>
+                </div>
+              </div>
+            ` : `
+              <!-- Audio loaded state -->
+              <div style="padding:8px;background:#1a1a1a;border-radius:4px;margin-bottom:8px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                  <div style="flex:1;">
+                    <div style="font-size:12px;color:#fff;font-weight:500;">Audio: ${audioData.duration.toFixed(1)}s</div>
+                    <div style="font-size:10px;color:#707070;">Slides: ${slides.length} (${totalSlideDuration.toFixed(1)}s total)</div>
+                  </div>
+                  <button onclick="App.removeSlideshowAudio()" title="Remover áudio" style="padding:4px 8px;border-radius:3px;border:1px solid #c00;background:transparent;color:#f66;font-size:10px;cursor:pointer;">Remover</button>
+                </div>
+                
+                ${Math.abs(audioData.duration - totalSlideDuration) > 1 ? `
+                  <div style="padding:8px;background:rgba(245,158,11,0.1);border:1px solid #f59e0b;border-radius:4px;margin-bottom:8px;">
+                    <div style="font-size:11px;color:#f59e0b;margin-bottom:4px;font-weight:600;">⚠ Desync</div>
+                    <div style="font-size:10px;color:#a0a0a0;margin-bottom:8px;">
+                      ${audioData.duration > totalSlideDuration ? `Áudio é ${(audioData.duration - totalSlideDuration).toFixed(0)}s mais longo que slides` : `Slides são ${(totalSlideDuration - audioData.duration).toFixed(0)}s mais longos que áudio`}
+                    </div>
+                    <button onclick="App.checkSlideshowSync()" style="width:100%;padding:6px;border-radius:4px;border:none;background:#f59e0b;color:#000;font-size:11px;font-weight:600;cursor:pointer;">Ajustar Sync</button>
+                  </div>
+                ` : ''}
+                
+                <!-- Sync mode -->
+                <div style="margin-bottom:8px;">
+                  <div style="font-size:10px;color:#9ca3af;text-transform:uppercase;margin-bottom:4px;">Modo de Sync</div>
+                  <div style="font-size:11px;color:#fff;">${audioData.syncMode === 'loop' ? 'Loop de slides' : audioData.syncMode === 'distribute' ? 'Distribuição igual' : audioData.syncMode === 'kenburns' ? 'Ken Burns' : 'Auto'}</div>
+                </div>
+              </div>
+            `}
+            
+            ${hasAudio ? `
+              <!-- Preview controls -->
+              <div style="padding:8px;background:#1a1a1a;border-radius:4px;">
+                <div style="font-size:10px;color:#9ca3af;text-transform:uppercase;margin-bottom:8px;">Pré-visualização</div>
+                
+                <!-- Scrubber -->
+                <input type="range" 
+                       id="slideshow-preview-scrubber" 
+                       min="0" 
+                       max="${audioData.duration}" 
+                       value="${typeof SlideshowPreview !== 'undefined' ? SlideshowPreview.currentTime : 0}" 
+                       step="0.1"
+                       oninput="App.seekSlideshowPreview(this.value)"
+                       style="width:100%;margin-bottom:8px;accent-color:#14b8a6;">
+                
+                <!-- Time display -->
+                <div id="slideshow-preview-time" style="font-size:11px;color:#a0a0a0;text-align:center;margin-bottom:8px;">0:00 / ${Math.floor(audioData.duration / 60)}:${Math.floor(audioData.duration % 60).toString().padStart(2, '0')}</div>
+                
+                <!-- Play/Pause button -->
+                <button onclick="App.toggleSlideshowPreview()" style="width:100%;padding:10px;border-radius:4px;border:none;background:#14b8a6;color:#fff;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                  ${isPlaying ? '⏸ Pausar' : '▶ Reproduzir'}
+                </button>
+              </div>
+            ` : ''}
+          ` : ''}
+        </div>
     `;
   }
 
@@ -3122,7 +3250,7 @@ function renderRightPanel() {
   html += `
     <div style="margin-bottom:6px;">
       <div onclick="App.toggleSidebarSection('pageSettings')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
-        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">${t('sidebar.page')}</span>
+        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;display:flex;align-items:center;gap:6px;">${Icons.file} ${t('sidebar.page')}</span>
         <span style="font-size:10px;color:var(--text3);">${pageCollapsed ? '+' : '-'}</span>
       </div>
       ${!pageCollapsed ? `
@@ -3229,7 +3357,7 @@ function renderRightPanel() {
   html += `
     <div style="margin-bottom:4px;">
       <div onclick="App.toggleSidebarSection('visualEffects')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
-        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">${t('sidebar.effects')}</span>
+        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;display:flex;align-items:center;gap:6px;">${Icons.sparkles} ${t('sidebar.effects')}</span>
         <span style="font-size:10px;color:var(--text3);">${fxCollapsed ? '+' : '-'}</span>
       </div>
       ${!fxCollapsed ? `
@@ -3274,7 +3402,7 @@ function renderRightPanel() {
     html += `
     <div id="mobile-anchor-narrative" style="margin-bottom:4px;">
       <div onclick="App.toggleSidebarSection('narrative')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
-        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">NARRATIVA</span>
+        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;display:flex;align-items:center;gap:6px;">${Icons.fileText} NARRATIVA</span>
         <span style="font-size:8px;padding:2px 4px;border-radius:3px;background:${activeLangSidebar === 'pt-BR' ? '#22c55e' : '#3b82f6'};color:#fff;font-weight:600;margin-right:4px;">${activeLangSidebar === 'pt-BR' ? 'PT' : 'EN'}</span>
         <span style="font-size:10px;color:var(--text3);">${narrativeCollapsed ? '+' : '-'}</span>
       </div>
@@ -3294,7 +3422,7 @@ function renderRightPanel() {
   html += `
     <div style="margin-bottom:4px;">
       <div onclick="App.toggleSidebarSection('layers')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
-        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">${t('sidebar.layers')} (${totalLayers})</span>
+        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;display:flex;align-items:center;gap:6px;">${Icons.layers} ${t('sidebar.layers')} (${totalLayers})</span>
         <span style="font-size:10px;color:var(--text3);">${layersCollapsed ? '+' : '-'}</span>
       </div>
       ${!layersCollapsed ? `
@@ -3326,8 +3454,8 @@ function renderRightPanel() {
           <!-- Balloons -->
           ${page.texts ? page.texts.map((b, bi) => {
             const isActive = selectedEl && selectedEl.type === 'balloon' && selectedEl.index === bi;
-            const typeIcons = { speech: Icons.balloon, thought: Icons.thought, shout: Icons.shout, whisper: Icons.balloon, narration: Icons.fileText, sfx: Icons.shout };
-            const typeLabels = { speech:'Fala', thought:'Pensamento', shout:'Grito', whisper:'Sussurro', narration:'Narração', sfx:'SFX' };
+            const typeIcons = { speech: Icons.balloon, thought: Icons.thought, shout: Icons.shout, caption: Icons.fileText, narration: Icons.fileText, sfx: Icons.shout };
+            const typeLabels = { speech:'Fala', thought:'Pensamento', shout:'Grito', caption:'Legenda', narration:'Narração', sfx:'SFX' };
             const isLocked = b.locked || false;
             return `<div onclick="App.selectBalloon(${bi})" style="display:flex;align-items:center;gap:4px;padding:4px 6px;border-radius:4px;border:1px solid ${isActive ? 'var(--accent)' : 'var(--border)'};background:${isActive ? 'var(--accent-glow)' : 'var(--surface2)'};cursor:pointer;font-size:9px;color:${isActive ? 'var(--accent)' : 'var(--text2)'};${isLocked ? 'opacity:0.65;' : ''}">
               <span title="${typeLabels[b.type]||''}">${typeIcons[b.type] || Icons.balloon}</span>
@@ -3366,7 +3494,7 @@ function renderRightPanel() {
   html += `
     <div style="margin-bottom:4px;">
       <div onclick="App.toggleSidebarSection('stickers')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
-        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;">STICKERS (${stickerAssets.length})</span>
+        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;display:flex;align-items:center;gap:6px;">${Icons.image} STICKERS (${stickerAssets.length})</span>
         <span style="font-size:10px;color:var(--text3);">${stickersCollapsed ? '+' : '-'}</span>
       </div>
       ${!stickersCollapsed ? `
@@ -3526,7 +3654,7 @@ function renderRightPanel() {
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
             ${KenBurns.getAllPresets().map(p => {
               const isActive = (page.kenBurns || 'zoom-in') === p.id;
-              return '<button onclick="App.setPageKenBurns(\'' + p.id + '\')" title="' + p.name + '" style="padding:6px 4px;border-radius:4px;border:1.5px solid ' + (isActive ? '#e879f9' : 'var(--border)') + ';background:' + (isActive ? 'rgba(232,121,249,0.15)' : 'var(--surface)') + ';color:' + (isActive ? '#e879f9' : 'var(--text3)') + ';cursor:pointer;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.12s;"><span style="font-size:16px;">' + p.icon + '</span><span style="font-size:8px;font-weight:' + (isActive ? '700' : '500') + ';">' + p.name + '</span></button>';
+              return '<button onclick="App.setPageKenBurns(\'' + p.id + '\')" title="' + p.name + '" style="padding:6px 4px;border-radius:4px;border:1.5px solid ' + (isActive ? '#e879f9' : 'var(--border)') + ';background:' + (isActive ? 'rgba(232,121,249,0.15)' : 'var(--surface)') + ';color:' + (isActive ? '#e879f9' : 'var(--text3)') + ';cursor:pointer;font-size:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:58px;transition:all 0.12s;"><span style="font-size:16px;line-height:1;">' + p.icon + '</span><span style="font-size:8px;line-height:1.1;min-height:18px;text-align:center;font-weight:' + (isActive ? '700' : '500') + ';">' + p.name + '</span></button>';
             }).join('')}
           </div>
         </div>
@@ -3538,7 +3666,7 @@ function renderRightPanel() {
   html += `
     <div style="margin-bottom:4px;">
       <div onclick="App.toggleSidebarSection('transition')" style="display:flex;align-items:center;gap:6px;padding:4px 0;cursor:pointer;user-select:none;">
-        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;display:flex;align-items:center;gap:6px;">⇄ TRANSIÇÃO</span>
+        <span style="font-size:10px;font-weight:700;color:var(--text3);flex:1;display:flex;align-items:center;gap:6px;">${Icons.transition} TRANSICAO</span>
         <span style="font-size:10px;color:var(--text3);">${transitionCollapsed ? '+' : '-'}</span>
       </div>
       ${!transitionCollapsed ? `
@@ -3728,7 +3856,7 @@ function renderNarrativeControlsMarkup({ page, proj, panelMode = 'sidebar' } = {
             </div>
             <!-- Preset Estilo Clássico -->
             <button onclick="App.applyNarrativePreset('classic')" style="width:100%;padding:6px 8px;border-radius:4px;border:1px solid #f59e0b;background:rgba(245,158,11,0.1);color:#f59e0b;font-size:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;" title="Aplica: amarelo + contorno preto + sem fundo">
-              <span style="font-size:12px;">🎬</span> Estilo Clássico
+              Estilo Classico
             </button>
           </div>
         </div>
@@ -4068,6 +4196,22 @@ function renderPageCarousel() {
   items += p.pages.map((page, i) => {
     const isActive = !coverActive && !backCoverActive && i === active;
     const hasImg = page.images && page.images.some(im => im && im.src);
+    const hasSlides = page.slides && page.slides.length > 0;
+    const slideCount = hasSlides ? page.slides.length : 0;
+    const hasAudio = page.slideshowAudio && page.slideshowAudio.file;
+    
+    // Slideshow pages get special styling
+    if (hasSlides) {
+      return `<button class="tl-page tl-slideshow ${isActive ? 'active' : ''}"
+        onclick="App.setActivePage(${i})"
+        title="Pg ${i + 1} - ${slideCount} slides">
+        <span class="tl-page-num">${i + 1}</span>
+        <span class="tl-slide-count">${slideCount}</span>
+        ${hasAudio ? '<span class="tl-audio-dot">🎵</span>' : ''}
+        ${isActive ? '<span class="tl-active-bar" style="background:#14b8a6;"></span>' : ''}
+      </button>`;
+    }
+    
     return `<button class="tl-page ${isActive ? 'active' : ''}"
       onclick="App.setActivePage(${i})"
       title="Pg ${i + 1}">
@@ -4154,7 +4298,8 @@ function renderBalloons(page) {
     // CSS custom properties for dynamic colors
     const balloonBg = bgColor || (type === 'narration' ? '#fffde7' : '#ffffff');
     const balloonStroke = balloon.strokeColor || '#1a1a1a';
-    let cssVars = `--b-bg:${balloonBg}; --b-stroke:${balloonStroke};`;
+    const balloonTextColor = textColor || '#1a1a1a';
+    let cssVars = `--b-bg:${balloonBg}; --b-stroke:${balloonStroke}; --b-text:${balloonTextColor};`;
     if (balloon.lineHeight) cssVars += ` --b-lh:${balloon.lineHeight};`;
     if (balloon.letterSpacing) cssVars += ` --b-ls:${balloon.letterSpacing}px;`;
     if (type === 'narration' && balloon.cornerRadius !== undefined) {
@@ -4181,11 +4326,11 @@ function renderBalloons(page) {
       shoutSvgHtml = `<div class="shout-svg-bg">${BalloonSVGRenderer.shout(w, shoutH, direction, { fill: balloonBg === '#ffffff' ? '#fffde7' : balloonBg, stroke: balloonStroke, strokeWidth: 2.5 })}</div>`;
     }
 
-    // Whisper: render SVG (dashed ellipse + soft tail)
-    let whisperSvgHtml = '';
-    if (type === 'whisper') {
-      const whisperH = balloon.h || 80;
-      whisperSvgHtml = `<div class="whisper-svg-bg">${BalloonSVGRenderer.whisper(w, whisperH, direction, { fill: balloonBg, stroke: balloonStroke, sw: 1.5 })}</div>`;
+    // Caption: render SVG (simple rounded rectangle)
+    let captionSvgHtml = '';
+    if (type === 'caption') {
+      const captionH = balloon.h || 60;
+      captionSvgHtml = `<div class="caption-svg-bg">${BalloonSVGRenderer.caption(w, captionH, { fill: balloonBg, stroke: balloonStroke })}</div>`;
     }
 
     // Thought: 3rd bubble dot
@@ -4234,7 +4379,7 @@ function renderBalloons(page) {
       onmousedown="${locked ? 'event.stopPropagation()' : `(function(e){var t=e.target;if(t.classList.contains('balloon-text-css')&&t.contentEditable==='true')return;e.stopPropagation();App.startBalloonDrag(e,${i})})(event)`}"
       oncontextmenu="event.preventDefault();event.stopPropagation();App.showContextMenu(event,'balloon',${i})">
       ${shoutSvgHtml}
-      ${whisperSvgHtml}
+      ${captionSvgHtml}
       ${thoughtDot}
       <div class="balloon-text-css"
         contenteditable="false"
@@ -4385,6 +4530,57 @@ function renderTimeline() {
         if (hasKB) classes += ' has-effect';
         if (hasNarr) classes += ' has-audio';
         if (hasNarrText) classes += ' has-narrative';
+
+        // ── SLIDESHOW EXPANDED RENDER ──
+        const pgSlides = pg.slides || [];
+        const hasSlides = pgSlides.length > 0;
+        const activeSlideIdx = Store.get('activeSlideIndex');
+
+        if (hasSlides) {
+          const hasPgAudio = pg.slideshowAudio && pg.slideshowAudio.file;
+          const audioDur = hasPgAudio ? pg.slideshowAudio.duration.toFixed(1) : null;
+          const expandedClasses = classes + ' slideshow-expanded';
+
+          return '<div class="' + expandedClasses + '" ' +
+            'onclick="App.timelineClickPage(' + i + ')" ' +
+            'draggable="true" ondragstart="App.pageDragStart(event,' + i + ')" ' +
+            'ondragover="event.preventDefault();this.style.outline=\'2px solid var(--accent)\';" ' +
+            'ondragleave="this.style.outline=\'none\';" ' +
+            'ondrop="this.style.outline=\'none\';App.pageDrop(event,' + i + ')">' +
+            // Header row
+            '<div class="slideshow-expanded-header">' +
+              '<span class="slideshow-expanded-label">Pg ' + (i + 1) + ' · ' + pgSlides.length + ' slides</span>' +
+              '<button class="delete-btn slideshow-expanded-del" onclick="event.stopPropagation();App.deletePage(' + i + ')" title="Deletar">×</button>' +
+            '</div>' +
+            // Slides inline row
+            '<div class="slides-inline">' +
+              pgSlides.map((sl, si) => {
+                const isActiveSlide = isActive && si === activeSlideIdx;
+                return '<div class="slide-mini-thumb' + (isActiveSlide ? ' selected' : '') + '" ' +
+                  'draggable="true" ' +
+                  'ondragstart="event.stopPropagation();App.slideDragStart(event,' + i + ',' + si + ')" ' +
+                  'ondragover="event.preventDefault();event.stopPropagation();this.classList.add(\'drag-over\')" ' +
+                  'ondragleave="this.classList.remove(\'drag-over\')" ' +
+                  'ondrop="event.stopPropagation();this.classList.remove(\'drag-over\');App.slideDrop(event,' + i + ',' + si + ')" ' +
+                  'onclick="event.stopPropagation();App.selectSlide(' + i + ',' + si + ')" ' +
+                  'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();App.selectSlide(' + i + ',' + si + ');}" ' +
+                  'tabindex="0" role="button" ' +
+                  'aria-label="Slide ' + (si + 1) + ' de ' + pgSlides.length + ', ' + (sl.duration || 2) + ' segundos" ' +
+                  'title="Slide ' + (si + 1) + ': ' + (sl.duration || 2) + 's (duplo-clique para editar)">' +
+                  (sl.image ? '<img src="' + sl.image + '" alt="">' : '<div class="slide-mini-empty"></div>') +
+                  '<span class="slide-mini-dur" ondblclick="event.stopPropagation();App.editSlideDurationInline(' + i + ',' + si + ',event)">' + (sl.duration || 2) + 's</span>' +
+                  '<span class="slide-mini-num">' + (si + 1) + '</span>' +
+                '</div>';
+              }).join('') +
+              '<button class="slide-mini-add" onclick="event.stopPropagation();App.timelineClickPage(' + i + ');App.addSlideFromLibrary();" title="Adicionar slide">+</button>' +
+            '</div>' +
+            // Audio + progress indicator
+            (hasPgAudio
+              ? '<div class="slideshow-expanded-audio" onclick="event.stopPropagation();App.timelineClickPage(' + i + ');">🎵 ' + audioDur + 's</div>'
+              : '') +
+            '<div class="tl-progress-bar" style="width:' + progressPct + '%;position:absolute;bottom:0;left:0;height:3px;"></div>' +
+          '</div>' + addBtnHTML;
+        }
 
         return '<div class="' + classes + '" style="width:' + widthPx + 'px;" ' +
           'onclick="App.timelineClickPage(' + i + ')" ' +
@@ -4803,23 +4999,26 @@ function renderBulkTextModal() {
               <button class="btn btn-ghost btn-sm" onclick="App._bulkTextFillExample()" style="font-size:10px;padding:3px 8px;">Ver Exemplo</button>
             </div>
           </div>
-          <!-- Bilingual mode selector -->
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:6px;">
-            <span style="font-size:10px;font-weight:600;color:#00d4ff;">🌐 Idioma:</span>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer;">
-              <input type="radio" name="bulk-text-lang" value="single-pt" checked onchange="App._bulkTextPreview()" style="accent-color:#00d4ff;margin:0;"> Apenas PT-BR
+          <!-- Language mode selector -->
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;padding:10px 12px;background:rgba(20,184,166,0.06);border:1px solid rgba(20,184,166,0.2);border-radius:6px;">
+            <div style="font-size:11px;font-weight:700;color:#14b8a6;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🌐 IDIOMA DAS LEGENDAS</div>
+            <label style="display:flex;align-items:flex-start;gap:8px;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:border-color 0.15s;" onmouseenter="this.style.borderColor='#14b8a6'" onmouseleave="this.style.borderColor='var(--border)'">
+              <input type="radio" name="bulk-text-lang" value="single-pt" checked onchange="App._bulkTextPreview()" style="accent-color:#14b8a6;margin-top:2px;">
+              <div><div style="font-size:12px;font-weight:600;color:var(--text);">Idioma único</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">Digite o texto em um idioma apenas</div></div>
             </label>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer;">
-              <input type="radio" name="bulk-text-lang" value="single-en" onchange="App._bulkTextPreview()" style="accent-color:#00d4ff;margin:0;"> Apenas EN
-            </label>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#00d4ff;cursor:pointer;font-weight:600;">
-              <input type="radio" name="bulk-text-lang" value="bilingual" onchange="App._bulkTextPreview()" style="accent-color:#00d4ff;margin:0;"> Bilíngue (PT + EN)
+            <label style="display:flex;align-items:flex-start;gap:8px;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:border-color 0.15s;" onmouseenter="this.style.borderColor='#14b8a6'" onmouseleave="this.style.borderColor='var(--border)'">
+              <input type="radio" name="bulk-text-lang" value="bilingual" onchange="App._bulkTextPreview()" style="accent-color:#14b8a6;margin-top:2px;">
+              <div><div style="font-size:12px;font-weight:600;color:#14b8a6;">Dois idiomas (Bilíngue)</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">Digite <strong>DUAS LINHAS</strong> por bloco: 1: e 2:</div></div>
             </label>
           </div>
-          <div id="bulk-text-bilingual-help" style="display:none;margin-bottom:6px;padding:6px 10px;background:rgba(0,212,255,0.04);border-radius:4px;border:1px dashed rgba(0,212,255,0.2);">
-            <div style="font-size:10px;color:#00d4ff;font-weight:600;margin-bottom:3px;">Formato bilíngue — cole assim:</div>
-            <pre style="font-size:10px;color:var(--text3);margin:0;white-space:pre-wrap;line-height:1.5;">PT: Era uma vez um herói...\nEN: Once upon a time a hero...\n\nPT: Ele viajou pelo mundo.\nEN: He traveled the world.</pre>
-            <div style="font-size:9px;color:var(--text4);margin-top:3px;">Cada bloco separado por linha vazia = 1 página. PT:/EN: no início de cada linha.</div>
+          <div id="bulk-text-bilingual-help" style="display:none;margin-bottom:8px;padding:10px 12px;background:rgba(20,184,166,0.06);border-radius:4px;border:1px solid rgba(20,184,166,0.2);">
+            <div style="font-size:11px;color:#14b8a6;font-weight:700;margin-bottom:6px;">FORMATO DOIS IDIOMAS — cole assim:</div>
+            <pre style="font-size:11px;color:var(--text2);margin:0;white-space:pre-wrap;line-height:1.6;background:#1a1a1a;padding:8px;border-radius:4px;">1: Era uma vez um herói...
+2: Once upon a time a hero...
+
+1: Ele viajou pelo mundo.
+2: He traveled the world.</pre>
+            <div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.4;"><strong>Cada bloco</strong> separado por linha vazia = 1 página<br><strong>1:</strong> = primeiro idioma &nbsp;•&nbsp; <strong>2:</strong> = segundo idioma</div>
           </div>
           <textarea id="bulk-text-input" class="bulk-textarea" style="flex:1;min-height:220px;max-height:none;resize:none;" placeholder="Cole seu texto aqui...\n\nSepare cada parte com uma linha em branco.\nCada bloco de texto vira uma página.\n\nExemplo: este seria o texto da página 3." oninput="App._bulkTextPreview()"></textarea>
           <div id="bulk-text-feedback" class="bulk-feedback bulk-feedback-empty">

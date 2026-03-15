@@ -1,9 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════
    PROJECT THUMBNAIL GENERATOR
    Generates 200x150px JPEG thumbnails (<20KB) for dashboard preview
+   Mobile-optimized with adaptive quality (50% mobile, 60% desktop)
    ═══════════════════════════════════════════════════════════════ */
 
 const ThumbnailGenerator = {
+  // Throttle: max 1 thumbnail generation at a time
+  _generating: false,
+  _queue: [],
+  
   /**
    * Generate thumbnail for a project
    * @param {Object} project - Project object
@@ -12,30 +17,92 @@ const ThumbnailGenerator = {
   async generate(project) {
     if (!project || !project.pages || project.pages.length === 0) return null;
     
+    // Throttle concurrent generations
+    if (this._generating) {
+      return new Promise((resolve) => {
+        this._queue.push({ project, resolve });
+      });
+    }
+    
+    this._generating = true;
+    
+    try {
+      const result = await this._doGenerate(project);
+      return result;
+    } finally {
+      this._generating = false;
+      // Process next in queue
+      if (this._queue.length > 0) {
+        const next = this._queue.shift();
+        this.generate(next.project).then(next.resolve);
+      }
+    }
+  },
+  
+  async _doGenerate(project) {
     // Find first image from pages
     const firstImage = this._findFirstImage(project);
     if (!firstImage) return null;
     
     try {
+      // Detect device for adaptive quality
+      const isMobile = window.innerWidth <= 768;
+      const quality = isMobile ? 0.5 : 0.6;
+      const width = 200;
+      const height = 150;
+      
       const canvas = document.createElement('canvas');
-      canvas.width = 200;
-      canvas.height = 150;
+      canvas.width = width;
+      canvas.height = height;
       const ctx = canvas.getContext('2d');
       
       // Load image
       const img = await this._loadImage(firstImage);
       
       // Draw with cover fit (fill without distortion)
-      this._drawCoverFit(ctx, img, 200, 150);
+      this._drawCoverFit(ctx, img, width, height);
       
-      // Convert to JPEG with quality 60% (target <20KB)
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+      // Convert to JPEG with adaptive quality
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
       
       return dataUrl;
     } catch (err) {
       console.warn('Thumbnail generation failed:', err);
       return null;
     }
+  },
+  
+  /**
+   * Generate thumbnails for all projects that don't have one
+   * Called on dashboard load for migration
+   * @param {Array} projects - Array of project objects
+   * @returns {Promise<number>} - Number of thumbnails generated
+   */
+  async migrateAll(projects) {
+    if (!projects || !Array.isArray(projects)) return 0;
+    
+    let count = 0;
+    const needsThumbnail = projects.filter(p => !p.thumbnail);
+    
+    for (const project of needsThumbnail) {
+      try {
+        const thumb = await this.generate(project);
+        if (thumb) {
+          project.thumbnail = thumb;
+          // Persist to IndexedDB
+          if (typeof db !== 'undefined' && db.projects) {
+            await db.projects.put(structuredClone(project));
+          }
+          count++;
+        }
+        // Small delay between generations to prevent UI blocking
+        await new Promise(r => setTimeout(r, 100));
+      } catch (e) {
+        console.warn('Migration failed for project:', project.id, e);
+      }
+    }
+    
+    return count;
   },
   
   _findFirstImage(project) {
