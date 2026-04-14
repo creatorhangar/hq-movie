@@ -923,7 +923,14 @@ const AudioManager = {
   },
   
   setBackgroundMusic(project, audioData) {
-    if (!project || !project.videoAudio) return;
+    if (!project) return;
+    // Ensure videoAudio exists (older projects may not have it)
+    if (!project.videoAudio) {
+      project.videoAudio = { background: { file: null, volume: 0.6, loop: true, fadeIn: 1, fadeOut: 2 }, pages: [] };
+    }
+    if (!project.videoAudio.background) {
+      project.videoAudio.background = { file: null, volume: 0.6, loop: true, fadeIn: 1, fadeOut: 2 };
+    }
     project.videoAudio.background.file = audioData;
     Store.save();
   },

@@ -1,5 +1,5 @@
 // HQ Movie — Service Worker (Cache-First)
-const CACHE_NAME = 'hq-movie-v121-audio-random-pages';
+const CACHE_NAME = 'hq-movie-v122-no-watermark-audio-fix';
 const ASSETS = [
     '/',
     '/index.html',
@@ -7,13 +7,13 @@ const ASSETS = [
     '/i18n.js?v=5',
     '/layouts.js?v=4',
     '/layouts-video.js?v=7',
-    '/app.js?v=13',
-    '/video-exporter.js?v=15',
+    '/app.js?v=14',
+    '/video-exporter.js?v=16',
     '/thumbnail-generator.js?v=1',
     '/slideshow-audio-sync.js?v=1',
     '/ui.js?v=49',
     '/onboarding.js?v=10',
-    '/controller.js?v=41',
+    '/controller.js?v=42',
     '/manifest.json',
     '/locales/en.json',
     '/locales/pt-BR.json',

@@ -1355,63 +1355,48 @@ const App = {
     _handleMultipleFileUpload(files) {
         const page = Store.getActivePage();
         if (!page) return;
-        
-        // Verificar se página já tem conteúdo
-        const hasImages = page.images && page.images.length > 0;
-        const hasSlides = page.slides && page.slides.length > 0;
-        
-        // Se já está em modo slideshow, adicionar diretamente como slides
-        if (hasSlides) {
+
+        // If already in slideshow mode, add directly as slides
+        if (page.slides && page.slides.length > 0) {
             this._processFilesAsSlides(files);
             return;
         }
-        
-        // Se página tem painéis, adicionar como painéis (comportamento atual)
-        if (hasImages) {
-            this._processFilesAsPanels(files);
-            return;
-        }
-        
-        // Página vazia - PERGUNTAR ao usuário
+
+        // Show a proper modal (no confirm() dialog that browsers may block)
         const count = files.length;
-        
-        // Se muitas fotos (>10), sugerir distribuir em múltiplas páginas
-        if (count > 10) {
-            const message = `Você selecionou ${count} fotos.\n\n` +
-                            `Como quer organizar?\n\n` +
-                            `1️⃣ PÁGINAS (recomendado): 1 foto por página (fácil de editar história)\n` +
-                            `2️⃣ SLIDESHOW: Todas em sequência na mesma página\n` +
-                            `3️⃣ PAINÉIS: Múltiplas fotos lado a lado\n\n` +
-                            `Escolha:\n• OK = Páginas separadas\n• Cancelar = Ver mais opções`;
-            
-            const usePages = confirm(message);
-            
-            if (usePages) {
-                this._processFilesAsPages(files);
-            } else {
-                // Mostrar segundo dialog para escolher entre slideshow e painéis
-                const useSlideshow = confirm(`Escolha:\n\n• OK = SLIDESHOW (${count} fotos em sequência)\n• Cancelar = PAINÉIS (layout de quadrinhos)`);
-                if (useSlideshow) {
-                    this._processFilesAsSlides(files);
-                } else {
-                    this._processFilesAsPanels(files);
-                }
-            }
-        } else {
-            // Poucas fotos (≤10) - dialog simples
-            const message = `Você selecionou ${count} fotos.\n\n` +
-                            `• SLIDESHOW: Fotos em sequência temporal (vídeo animado)\n` +
-                            `• PAINÉIS: Fotos lado a lado na mesma página (quadrinhos)\n\n` +
-                            `Criar slideshow?`;
-            
-            const useSlideshow = confirm(message);
-            
-            if (useSlideshow) {
-                this._processFilesAsSlides(files);
-            } else {
-                this._processFilesAsPanels(files);
-            }
-        }
+        const overlay = document.createElement('div');
+        overlay.id = 'multi-upload-modal';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        overlay.innerHTML = `
+            <div style="background:var(--surface);border-radius:12px;padding:24px;max-width:400px;width:90%;border:1px solid var(--border);">
+                <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;">📷 ${count} fotos selecionadas</div>
+                <div style="font-size:13px;color:var(--text3);margin-bottom:20px;">Como quer organizar?</div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <button onclick="App._pickMultiUpload('pages',${count})" style="padding:14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">
+                        📄 Uma foto por página <span style="font-size:11px;font-weight:400;opacity:0.8;display:block;">Cada foto vira uma página na timeline</span>
+                    </button>
+                    <button onclick="App._pickMultiUpload('slides',${count})" style="padding:14px;border-radius:8px;border:none;background:var(--surface2);color:var(--text);font-size:14px;font-weight:700;cursor:pointer;text-align:left;border:1px solid var(--border);">
+                        🎞 Slideshow <span style="font-size:11px;font-weight:400;opacity:0.8;display:block;">Todas na mesma página, em sequência</span>
+                    </button>
+                    <button onclick="App._pickMultiUpload('panels',${count})" style="padding:14px;border-radius:8px;border:none;background:var(--surface2);color:var(--text);font-size:14px;font-weight:700;cursor:pointer;text-align:left;border:1px solid var(--border);">
+                        ⊞ Painéis lado a lado <span style="font-size:11px;font-weight:400;opacity:0.8;display:block;">Layout de quadrinhos</span>
+                    </button>
+                    <button onclick="document.getElementById('multi-upload-modal').remove()" style="padding:10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:13px;cursor:pointer;">Cancelar</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        this._pendingMultiFiles = files;
+    },
+
+    _pickMultiUpload(mode) {
+        const overlay = document.getElementById('multi-upload-modal');
+        if (overlay) overlay.remove();
+        const files = this._pendingMultiFiles;
+        this._pendingMultiFiles = null;
+        if (!files) return;
+        if (mode === 'pages') this._processFilesAsPages(files);
+        else if (mode === 'slides') this._processFilesAsSlides(files);
+        else this._processFilesAsPanels(files);
     },
     _processFilesAsSlides(files) {
         const page = Store.getActivePage();

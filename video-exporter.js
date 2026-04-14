@@ -4,13 +4,13 @@
  */
 
 const WatermarkConfig = {
-    enabled: true,
-    text: 'CREATORHANGAR',
+    enabled: false,
+    text: '',
     showUrl: false,
-    url: 'creatorhangar.com',
+    url: '',
     mode: 'static',
     changeInterval: 5,
-    positions: ['bottom-right', 'bottom-left', 'top-right', 'top-left'],
+    positions: ['bottom-right'],
     fontFamily: "'Inter', 'Segoe UI', sans-serif",
     fontWeight: '700'
 };
@@ -29,6 +29,7 @@ class VideoExporter {
         this.resolution = options.resolution || '1080p'; // '1080p' or '4k'
         this.onProgress = options.onProgress || null;
         this.onStatus = options.onStatus || null;
+        this.onError = options.onError || null;
         this._resolvedMimeType = null; // set during export
         this._timelineSeconds = 0;
         this._estimatedDurationSeconds = 0;
@@ -85,6 +86,15 @@ class VideoExporter {
 
     async export() {
         try {
+            // CRITICAL: Create AudioContext IMMEDIATELY (before any await)
+            // Browsers require AudioContext to be created within the user-gesture window.
+            // Font/sticker preloading can take seconds, expiring the gesture on mobile Safari.
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            this.audioCtx = new AudioContextClass();
+            if (this.audioCtx.state === 'suspended') {
+                await this.audioCtx.resume();
+            }
+
             if (this.onStatus) this.onStatus(t('exporter.loadingFonts'));
             
             // Preload all fonts before rendering to avoid blank text
@@ -176,15 +186,6 @@ class VideoExporter {
             // 1. Capturar stream visual
             const videoStream = this.canvas.captureStream(0); // 0 = manual frame requests
             this.videoTrack = videoStream.getVideoTracks()[0];
-            
-            // 3. Configurar Mixagem de Áudio
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            this.audioCtx = new AudioContext();
-            
-            // Garantir que AudioContext está rodando (necessário em alguns browsers)
-            if (this.audioCtx.state === 'suspended') {
-                await this.audioCtx.resume();
-            }
             
             const dest = this.audioCtx.createMediaStreamDestination();
             
@@ -454,10 +455,23 @@ class VideoExporter {
         } catch (error) {
             console.error('Erro ao exportar vídeo:', error);
             if (this.onStatus) this.onStatus('Erro: ' + error.message);
-            if (this.audioCtx) this.audioCtx.close();
+            // Cleanup: stop MediaRecorder if running
+            if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                try { this.mediaRecorder.stop(); } catch (_) {}
+            }
+            // Cleanup: stop silent oscillator
+            if (this._silentOsc) {
+                try { this._silentOsc.stop(); } catch (_) {}
+            }
+            if (this.audioCtx) {
+                try { this.audioCtx.close(); } catch (_) {}
+                this.audioCtx = null;
+            }
             if (this.canvas && this.canvas.parentNode) {
                 this.canvas.parentNode.removeChild(this.canvas);
             }
+            // Notify caller to reset UI (close modal, hide progress bar)
+            if (this.onError) this.onError(error);
             throw error;
         }
     }
@@ -626,7 +640,7 @@ class VideoExporter {
 
                 // Renderizar imagem (se houver) — cover fit (sem esticar)
                 if (preloadedImages[0] && preloadedImages[0].img) {
-                    this._drawImageCover(preloadedImages[0].img, this._logicalWidth, this._logicalHeight);
+                    this._drawImageCover(preloadedImages[0].img, this._logicalWidth, this._logicalHeight, preloadedImages[0].data);
                 }
 
                 this.ctx.restore();
@@ -1232,20 +1246,55 @@ class VideoExporter {
         }
     }
 
-    _drawImageCover(img, canvasW, canvasH) {
+    _drawImageCover(img, canvasW, canvasH, imgData) {
+        const transform = imgData?.transform;
+        const hasTransform = transform && (transform.scale !== 1 || transform.x || transform.y);
+
         const imgRatio = img.width / img.height;
         const canvasRatio = canvasW / canvasH;
-        let sx = 0, sy = 0, sw = img.width, sh = img.height;
-        if (imgRatio > canvasRatio) {
-            // Image wider than canvas — crop sides
-            sw = img.height * canvasRatio;
-            sx = (img.width - sw) / 2;
-        } else {
-            // Image taller than canvas — crop top/bottom
-            sh = img.width / canvasRatio;
-            sy = (img.height - sh) / 2;
+
+        if (!hasTransform) {
+            // Original fast path — source-rect center crop
+            let sx = 0, sy = 0, sw = img.width, sh = img.height;
+            if (imgRatio > canvasRatio) {
+                sw = img.height * canvasRatio;
+                sx = (img.width - sw) / 2;
+            } else {
+                sh = img.width / canvasRatio;
+                sy = (img.height - sh) / 2;
+            }
+            this.ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvasW, canvasH);
+            return;
         }
-        this.ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvasW, canvasH);
+
+        // Transform path: destination-rect approach (matches CSS scale+translate behavior)
+        const userScale = transform.scale || 1;
+        const tx = transform.x || 0;
+        const ty = transform.y || 0;
+
+        let dw, dh;
+        if (imgRatio > canvasRatio) {
+            dh = canvasH;
+            dw = dh * imgRatio;
+        } else {
+            dw = canvasW;
+            dh = dw / imgRatio;
+        }
+
+        dw *= userScale;
+        dh *= userScale;
+
+        let dx = (canvasW - dw) / 2;
+        let dy = (canvasH - dh) / 2;
+
+        // Apply pan (layout pixels → export pixels)
+        const dims = typeof getProjectDims !== 'undefined' ? getProjectDims(this.project) : null;
+        const layoutW = dims ? dims.canvasW : canvasW;
+        const layoutH = dims ? dims.canvasH : canvasH;
+        dx += tx * userScale * (canvasW / layoutW);
+        dy += ty * userScale * (canvasH / layoutH);
+
+        this.ctx.drawImage(img, 0, 0, img.width, img.height, dx, dy, dw, dh);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1341,32 +1390,86 @@ class VideoExporter {
     }
 
     _drawImageToPanel(img, px, py, pw, ph, imgData) {
-        // Apply user pan/zoom adjustments if present
-        const panX = imgData?.panX || 0;
-        const panY = imgData?.panY || 0;
-        const zoom = imgData?.zoom || 1;
+        // Read user crop transform (set by crop mode UI: img.transform = {scale, x, y})
+        const transform = imgData?.transform;
+        const userScale = transform?.scale || 1;
+        const tx = transform?.x || 0;
+        const ty = transform?.y || 0;
+
+        // Backward compat: also check legacy panX/panY fields
+        const legacyPanX = imgData?.panX || 0;
+        const legacyPanY = imgData?.panY || 0;
+        const legacyZoom = imgData?.zoom || 1;
+        const hasLegacy = legacyPanX || legacyPanY || legacyZoom !== 1;
+        const hasTransform = tx || ty || userScale !== 1;
 
         const imgRatio = img.width / img.height;
         const panelRatio = pw / ph;
 
-        let sw, sh, sx, sy;
-        if (imgRatio > panelRatio) {
-            // Image wider than panel — crop sides
-            sh = img.height;
-            sw = sh * panelRatio;
-            sx = (img.width - sw) / 2 - (panX * img.width / 100);
-            sy = 0 - (panY * img.height / 100);
-        } else {
-            // Image taller than panel — crop top/bottom
-            sw = img.width;
-            sh = sw / panelRatio;
-            sx = 0 - (panX * img.width / 100);
-            sy = (img.height - sh) / 2 - (panY * img.height / 100);
+        if (!hasTransform && !hasLegacy) {
+            // Fast path: simple cover fit (no user adjustments)
+            let sx = 0, sy = 0, sw, sh;
+            if (imgRatio > panelRatio) {
+                sh = img.height;
+                sw = sh * panelRatio;
+                sx = (img.width - sw) / 2;
+            } else {
+                sw = img.width;
+                sh = sw / panelRatio;
+                sy = (img.height - sh) / 2;
+            }
+            this.ctx.drawImage(img, sx, sy, sw, sh, px, py, pw, ph);
+            return;
         }
 
-        // Apply zoom
-        if (zoom !== 1) {
-            const zoomFactor = 1 / zoom;
+        if (hasTransform) {
+            // New transform path: destination-rect approach (matches CSS transform behavior)
+            // CSS: scale(userScale) translate(tx, ty) with object-fit:cover
+            let dw, dh;
+            if (imgRatio > panelRatio) {
+                dh = ph;
+                dw = dh * imgRatio;
+            } else {
+                dw = pw;
+                dh = dw / imgRatio;
+            }
+
+            // Apply user zoom (scale > 1 = zoomed in = larger destination)
+            dw *= userScale;
+            dh *= userScale;
+
+            // Center in panel
+            let dx = px + (pw - dw) / 2;
+            let dy = py + (ph - dh) / 2;
+
+            // Apply pan: transform.x/y are in layout pixels (pre-scale), convert to export pixels
+            const dims = typeof getProjectDims !== 'undefined' ? getProjectDims(this.project) : null;
+            const layoutW = dims ? dims.canvasW : this._logicalWidth;
+            const layoutH = dims ? dims.canvasH : this._logicalHeight;
+            dx += tx * userScale * (this._logicalWidth / layoutW);
+            dy += ty * userScale * (this._logicalHeight / layoutH);
+
+            // Panel clip (set by caller) handles overflow
+            this.ctx.drawImage(img, 0, 0, img.width, img.height, dx, dy, dw, dh);
+            return;
+        }
+
+        // Legacy panX/panY path (percentage-based, kept for backward compat)
+        let sw, sh, sx, sy;
+        if (imgRatio > panelRatio) {
+            sh = img.height;
+            sw = sh * panelRatio;
+            sx = (img.width - sw) / 2 - (legacyPanX * img.width / 100);
+            sy = 0 - (legacyPanY * img.height / 100);
+        } else {
+            sw = img.width;
+            sh = sw / panelRatio;
+            sx = 0 - (legacyPanX * img.width / 100);
+            sy = (img.height - sh) / 2 - (legacyPanY * img.height / 100);
+        }
+
+        if (legacyZoom !== 1) {
+            const zoomFactor = 1 / legacyZoom;
             const centerX = sw / 2;
             const centerY = sh / 2;
             sw *= zoomFactor;
@@ -1375,10 +1478,8 @@ class VideoExporter {
             sy += centerY * (1 - zoomFactor);
         }
 
-        // Clamp source coordinates
         sx = Math.max(0, Math.min(sx, img.width - sw));
         sy = Math.max(0, Math.min(sy, img.height - sh));
-
         this.ctx.drawImage(img, sx, sy, sw, sh, px, py, pw, ph);
     }
 
