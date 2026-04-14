@@ -3170,12 +3170,16 @@ function renderRightPanel() {
                     title="Dividir igualmente pela duração alvo">÷</button>
           </div>
 
-          <div style="display:flex;gap:4px;">
+          <div style="display:flex;gap:4px;margin-bottom:4px;">
             <button onclick="App.addSlideFromLibrary()"
-                    style="flex:1;padding:7px;border-radius:4px;border:1px dashed var(--accent);background:rgba(20,184,166,0.1);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">+ Adicionar Foto</button>
+                    style="flex:1;padding:7px;border-radius:4px;border:1px dashed var(--accent);background:rgba(20,184,166,0.1);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">+ Foto</button>
+            <button onclick="App.randomizeEffects('slides')" title="Ken Burns e transições aleatórios nos slides"
+                    style="padding:7px 10px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:11px;cursor:pointer;">🎲 Aleatório</button>
             <button onclick="App.removeAllSlides()" title="Remover todos os slides"
-                    style="padding:7px 10px;border-radius:4px;border:1px solid rgba(220,38,38,0.4);background:transparent;color:#f87171;font-size:11px;cursor:pointer;">🗑 Limpar</button>
+                    style="padding:7px 8px;border-radius:4px;border:1px solid rgba(220,38,38,0.4);background:transparent;color:#f87171;font-size:11px;cursor:pointer;">🗑</button>
           </div>
+          <button onclick="App.randomizeEffects('pages')" title="Aplica Ken Burns e transições aleatórias em TODAS as páginas"
+                  style="width:100%;padding:6px;border-radius:4px;border:1px solid rgba(139,92,246,0.5);background:rgba(139,92,246,0.08);color:#a78bfa;font-size:10px;cursor:pointer;font-weight:600;">🎲 Aleatório em todas as páginas</button>
         </div>
       `;
     }
@@ -3592,7 +3596,7 @@ function renderRightPanel() {
     </div>`;
 
   // ── ÁUDIO (HQ Movie Audio System) ──
-  const audioCollapsed = collapsed.audio === undefined ? true : collapsed.audio;
+  const audioCollapsed = collapsed.audio === undefined ? false : collapsed.audio;
   const videoAudio = proj.videoAudio || { background: { file: null, volume: 0.6, loop: true }, pages: [] };
   const bgMusic = videoAudio.background;
   const pageNarration = AudioManager.getPageNarration(proj, page.id);
@@ -4577,6 +4581,7 @@ function renderTimeline() {
       <input type="range" class="timeline-scrubber" min="0" max="${Math.round(totalDuration * 10)}" value="${Math.round(currentTime * 10)}"
         oninput="App.timelineScrub(this.value / 10, ${totalDuration})">
       <span class="timeline-total">${pages.length} pág · ${fmtTime(totalDuration)} total</span>
+      ${hasBgMusic ? `<span style="font-size:10px;background:rgba(20,184,166,0.2);border:1px solid var(--accent);border-radius:4px;padding:2px 6px;color:var(--accent);cursor:pointer;" onclick="App.toggleBackgroundMusic()" title="Música de fundo ativa — clique para play/pause">🎵 Áudio</span>` : `<button onclick="App.uploadBackgroundMusic()" style="font-size:10px;background:transparent;border:1px dashed var(--border);border-radius:4px;padding:2px 6px;color:var(--text3);cursor:pointer;" title="Adicionar música de fundo">+ Áudio</button>`}
     </div>
     <div class="timeline-tracks">
       ${pages.map((pg, i) => {

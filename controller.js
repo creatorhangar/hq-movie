@@ -5703,14 +5703,16 @@ const App = {
             <div class="slide-picker-modal">
                 <div class="slide-picker-header">
                     <span style="font-size:20px;">📷</span>
-                    <h3>Selecionar fotos para sequência</h3>
+                    <h3>Selecionar fotos</h3>
+                    <button onclick="App.selectAllSlidePicker()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer;">✓ Todas</button>
                     <button onclick="App.closeSlidePicker()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px;">✕</button>
                 </div>
                 <div class="slide-picker-grid" id="slide-picker-grid">${grid}</div>
                 <div class="slide-picker-footer">
                     <span id="slide-picker-count" style="flex:1;font-size:11px;color:var(--text3);align-self:center;">0 selecionadas</span>
                     <button onclick="App.closeSlidePicker()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);">Cancelar</button>
-                    <button onclick="App.confirmSlidePicker()" id="slide-picker-confirm" style="background:var(--accent);border:1px solid var(--accent);color:#fff;">Adicionar 0 fotos</button>
+                    <button onclick="App.confirmSlidePickerAsPages()" id="slide-picker-pages" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);opacity:0.5;pointer-events:none;" title="Cada foto vira uma página independente na timeline">📄 Páginas</button>
+                    <button onclick="App.confirmSlidePicker()" id="slide-picker-confirm" style="background:var(--accent);border:1px solid var(--accent);color:#fff;opacity:0.5;pointer-events:none;">🎞 Slides</button>
                 </div>
             </div>`;
 
@@ -5733,10 +5735,17 @@ const App = {
         const count = this._slidePickerSelected.size;
         const countEl = document.getElementById('slide-picker-count');
         const confirmEl = document.getElementById('slide-picker-confirm');
+        const pagesEl = document.getElementById('slide-picker-pages');
         if (countEl) countEl.textContent = `${count} selecionada${count !== 1 ? 's' : ''}`;
         if (confirmEl) {
-            confirmEl.textContent = `Adicionar ${count} foto${count !== 1 ? 's' : ''}`;
+            confirmEl.textContent = `🎞 Slides (${count})`;
             confirmEl.style.opacity = count > 0 ? '1' : '0.5';
+            confirmEl.style.pointerEvents = count > 0 ? 'auto' : 'none';
+        }
+        if (pagesEl) {
+            pagesEl.textContent = `📄 Páginas (${count})`;
+            pagesEl.style.opacity = count > 0 ? '1' : '0.5';
+            pagesEl.style.pointerEvents = count > 0 ? 'auto' : 'none';
         }
     },
 
@@ -5758,6 +5767,61 @@ const App = {
 
         this.closeSlidePicker();
         Toast.show(`${selected.length} foto${selected.length > 1 ? 's adicionadas' : ' adicionada'} à sequência`, 'success');
+    },
+
+    selectAllSlidePicker() {
+        const proj = Store.get('currentProject');
+        const library = proj.library || [];
+        this._slidePickerSelected = new Set(library.map((_, i) => i));
+        // Update visual
+        document.querySelectorAll('.slide-picker-item').forEach((item, i) => {
+            item.classList.toggle('selected', this._slidePickerSelected.has(i));
+        });
+        const count = this._slidePickerSelected.size;
+        const countEl = document.getElementById('slide-picker-count');
+        const confirmEl = document.getElementById('slide-picker-confirm');
+        const pagesEl = document.getElementById('slide-picker-pages');
+        if (countEl) countEl.textContent = `${count} selecionadas`;
+        if (confirmEl) { confirmEl.textContent = `🎞 Slides (${count})`; confirmEl.style.opacity = '1'; confirmEl.style.pointerEvents = 'auto'; }
+        if (pagesEl) { pagesEl.textContent = `📄 Páginas (${count})`; pagesEl.style.opacity = '1'; pagesEl.style.pointerEvents = 'auto'; }
+    },
+
+    // Insert selected library images as individual pages (not slides)
+    confirmSlidePickerAsPages() {
+        const proj = Store.get('currentProject');
+        const library = proj.library || [];
+        const selected = [...this._slidePickerSelected].sort((a, b) => a - b);
+        if (selected.length === 0) { Toast.show('Selecione ao menos uma foto', 'warning'); return; }
+
+        const currentPageIdx = Store.get('activePageIndex') || 0;
+        const srcs = selected.map(idx => library[idx]?.src).filter(Boolean);
+
+        srcs.forEach((src, i) => {
+            const newPage = {
+                id: genId(),
+                images: [{ id: genId(), src, filters: { brightness: 100, contrast: 100 }, transform: { scale: 1, x: 0, y: 0 } }],
+                texts: [],
+                layoutId: '1p-full',
+                narrative: '',
+                duration: 4,
+                kenBurns: 'zoom-in',
+                transition: 'cut'
+            };
+            const currentPage = proj.pages[currentPageIdx];
+            if (currentPage) {
+                if (currentPage.narrativeStyle) newPage.narrativeStyle = JSON.parse(JSON.stringify(currentPage.narrativeStyle));
+                if (currentPage.duration) newPage.duration = currentPage.duration;
+            }
+            proj.pages.splice(currentPageIdx + 1 + i, 0, newPage);
+        });
+
+        Store.set({ currentProject: proj, activePageIndex: currentPageIdx + 1 });
+        Store.save();
+        this.closeSlidePicker();
+        Toast.show(`${srcs.length} páginas criadas na timeline!`, 'success');
+        renderCanvas();
+        renderLeftPanel();
+        renderTimeline();
     },
 
     closeSlidePicker() {
@@ -5920,7 +5984,47 @@ const App = {
         
         Store.save();
         renderRightPanel();
+        renderTimeline();
         Toast.show(`Slides divididos igualmente: ${equalDuration.toFixed(1)}s cada`, 'success');
+    },
+
+    // Randomize Ken Burns + transitions on all slides of active page (and optionally all pages)
+    randomizeEffects(scope = 'slides') {
+        const KB_OPTIONS = ['zoom-in', 'zoom-out', 'pan-left', 'pan-right', 'pan-up', 'pan-down'];
+        const SLIDE_TRANS = ['cut', 'crossfade', 'fade-black'];
+        const PAGE_TRANS = ['cut', 'fade'];
+        const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+
+        const proj = Store.get('currentProject');
+        if (!proj) return;
+
+        if (scope === 'slides' || scope === 'all') {
+            const page = Store.getActivePage();
+            if (page && page.slides && page.slides.length > 0) {
+                page.slides.forEach((s, i) => {
+                    s.kenBurns = rand(KB_OPTIONS);
+                    s.transition = i === 0 ? 'cut' : rand(SLIDE_TRANS);
+                });
+            }
+        }
+
+        if (scope === 'pages' || scope === 'all') {
+            (proj.pages || []).forEach((p, i) => {
+                p.kenBurns = rand(KB_OPTIONS);
+                p.transition = i === 0 ? 'cut' : rand(PAGE_TRANS);
+                // Also randomize each slide within each page
+                if (p.slides) p.slides.forEach((s, si) => {
+                    s.kenBurns = rand(KB_OPTIONS);
+                    s.transition = si === 0 ? 'cut' : rand(SLIDE_TRANS);
+                });
+            });
+        }
+
+        Store.save();
+        renderRightPanel();
+        renderCanvas();
+        renderTimeline();
+        Toast.show('Efeitos aleatórios aplicados! 🎲', 'success');
     },
 
     // Remove slide directly from timeline (no confirm for single delete)
