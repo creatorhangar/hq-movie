@@ -1322,7 +1322,17 @@ const App = {
         input.click();
     },
     handleFileUpload(e) {
-        Array.from(e.target.files || []).forEach(f => {
+        const files = Array.from(e.target.files || []);
+        
+        // NOVO: Se múltiplos arquivos, perguntar ao usuário
+        if (files.length > 1 && !this._coverImageMode && !this._coverImageElementMode) {
+            this._handleMultipleFileUpload(files);
+            e.target.value = '';
+            return;
+        }
+        
+        // Comportamento atual para arquivo único
+        files.forEach(f => {
             if (!f.type.startsWith('image/')) { Toast.show(t('toast.onlyImages'), 'error'); return; }
             if (f.size > 50 * 1024 * 1024) { Toast.show(t('toast.imageTooLarge'), 'warning'); return; }
             Toast.show(t('toast.optimizingImage'), 'info', 1500);
@@ -1341,6 +1351,217 @@ const App = {
             r.readAsDataURL(f);
         });
         e.target.value = '';
+    },
+    _handleMultipleFileUpload(files) {
+        const page = Store.getActivePage();
+        if (!page) return;
+        
+        // Verificar se página já tem conteúdo
+        const hasImages = page.images && page.images.length > 0;
+        const hasSlides = page.slides && page.slides.length > 0;
+        
+        // Se já está em modo slideshow, adicionar diretamente como slides
+        if (hasSlides) {
+            this._processFilesAsSlides(files);
+            return;
+        }
+        
+        // Se página tem painéis, adicionar como painéis (comportamento atual)
+        if (hasImages) {
+            this._processFilesAsPanels(files);
+            return;
+        }
+        
+        // Página vazia - PERGUNTAR ao usuário
+        const count = files.length;
+        
+        // Se muitas fotos (>10), sugerir distribuir em múltiplas páginas
+        if (count > 10) {
+            const message = `Você selecionou ${count} fotos.\n\n` +
+                            `Como quer organizar?\n\n` +
+                            `1️⃣ PÁGINAS (recomendado): 1 foto por página (fácil de editar história)\n` +
+                            `2️⃣ SLIDESHOW: Todas em sequência na mesma página\n` +
+                            `3️⃣ PAINÉIS: Múltiplas fotos lado a lado\n\n` +
+                            `Escolha:\n• OK = Páginas separadas\n• Cancelar = Ver mais opções`;
+            
+            const usePages = confirm(message);
+            
+            if (usePages) {
+                this._processFilesAsPages(files);
+            } else {
+                // Mostrar segundo dialog para escolher entre slideshow e painéis
+                const useSlideshow = confirm(`Escolha:\n\n• OK = SLIDESHOW (${count} fotos em sequência)\n• Cancelar = PAINÉIS (layout de quadrinhos)`);
+                if (useSlideshow) {
+                    this._processFilesAsSlides(files);
+                } else {
+                    this._processFilesAsPanels(files);
+                }
+            }
+        } else {
+            // Poucas fotos (≤10) - dialog simples
+            const message = `Você selecionou ${count} fotos.\n\n` +
+                            `• SLIDESHOW: Fotos em sequência temporal (vídeo animado)\n` +
+                            `• PAINÉIS: Fotos lado a lado na mesma página (quadrinhos)\n\n` +
+                            `Criar slideshow?`;
+            
+            const useSlideshow = confirm(message);
+            
+            if (useSlideshow) {
+                this._processFilesAsSlides(files);
+            } else {
+                this._processFilesAsPanels(files);
+            }
+        }
+    },
+    _processFilesAsSlides(files) {
+        const page = Store.getActivePage();
+        if (!page) return;
+        
+        // Ativar modo slideshow se necessário
+        if (!page.slides || page.slides.length === 0) {
+            this.enableSlidesMode();
+        }
+        
+        Toast.show(`Processando ${files.length} fotos para slideshow...`, 'info', 2000);
+        
+        let processed = 0;
+        files.forEach(f => {
+            if (!f.type.startsWith('image/')) { 
+                Toast.show(t('toast.onlyImages'), 'error'); 
+                return; 
+            }
+            if (f.size > 50 * 1024 * 1024) { 
+                Toast.show(t('toast.imageTooLarge'), 'warning'); 
+                return; 
+            }
+            
+            const r = new FileReader();
+            r.onload = () => {
+                this._optimizeToWebP(r.result, (optimized) => {
+                    this.addSlide(optimized);
+                    processed++;
+                    
+                    if (processed === files.length) {
+                        Toast.show(`${files.length} fotos adicionadas ao slideshow!`, 'success');
+                        renderRightPanel();
+                        renderCanvas();
+                        renderTimeline();
+                    }
+                });
+            };
+            r.readAsDataURL(f);
+        });
+    },
+    _processFilesAsPanels(files) {
+        Toast.show(`Processando ${files.length} fotos como painéis...`, 'info', 2000);
+        
+        let processed = 0;
+        files.forEach(f => {
+            if (!f.type.startsWith('image/')) { 
+                Toast.show(t('toast.onlyImages'), 'error'); 
+                return; 
+            }
+            if (f.size > 50 * 1024 * 1024) { 
+                Toast.show(t('toast.imageTooLarge'), 'warning'); 
+                return; 
+            }
+            
+            const r = new FileReader();
+            r.onload = () => {
+                this._addImage(r.result);
+                processed++;
+                
+                if (processed === files.length) {
+                    Toast.show(`${files.length} fotos adicionadas como painéis!`, 'success');
+                }
+            };
+            r.readAsDataURL(f);
+        });
+    },
+    _processFilesAsPages(files) {
+        const p = Store.get('currentProject');
+        if (!p) return;
+        
+        Toast.show(`Criando ${files.length} páginas (1 foto por página)...`, 'info', 2000);
+        Store.pushUndo();
+        
+        const currentPage = Store.getActivePage();
+        const currentLayout = currentPage ? currentPage.layoutId : '1p-full';
+        
+        let processed = 0;
+        const optimizedImages = [];
+        
+        // Primeiro: otimizar todas as imagens
+        files.forEach((f, idx) => {
+            if (!f.type.startsWith('image/')) { 
+                Toast.show(t('toast.onlyImages'), 'error'); 
+                return; 
+            }
+            if (f.size > 50 * 1024 * 1024) { 
+                Toast.show(t('toast.imageTooLarge'), 'warning'); 
+                return; 
+            }
+            
+            const r = new FileReader();
+            r.onload = () => {
+                this._optimizeToWebP(r.result, (optimized) => {
+                    optimizedImages[idx] = optimized;
+                    processed++;
+                    
+                    // Quando todas estiverem otimizadas, criar as páginas
+                    if (processed === files.length) {
+                        this._createPagesFromImages(optimizedImages, currentLayout);
+                    }
+                });
+            };
+            r.readAsDataURL(f);
+        });
+    },
+    _createPagesFromImages(images, layoutId) {
+        const p = Store.get('currentProject');
+        if (!p) return;
+        
+        const currentPageIdx = Store.get('activePageIndex');
+        const insertIdx = currentPageIdx + 1;
+        
+        // Criar uma página para cada imagem
+        images.forEach((src, i) => {
+            const newPage = {
+                id: genId(),
+                images: [{ 
+                    id: genId(), 
+                    src, 
+                    filters: { brightness: 100, contrast: 100 }, 
+                    transform: { scale: 1, x: 0, y: 0 } 
+                }],
+                texts: [],
+                layoutId: layoutId || '1p-full',
+                narrative: ''
+            };
+            
+            // Herdar configurações da página atual
+            const currentPage = p.pages[currentPageIdx];
+            if (currentPage) {
+                if (currentPage.narrativeStyle) newPage.narrativeStyle = JSON.parse(JSON.stringify(currentPage.narrativeStyle));
+                if (currentPage.narrativeHeight !== undefined) newPage.narrativeHeight = currentPage.narrativeHeight;
+                if (currentPage.showTextBelow !== undefined) newPage.showTextBelow = currentPage.showTextBelow;
+            }
+            
+            p.pages.splice(insertIdx + i, 0, newPage);
+        });
+        
+        // Ir para a primeira página criada
+        Store.set({ 
+            currentProject: p, 
+            activePageIndex: insertIdx,
+            selectedSlot: 0 
+        });
+        Store.save();
+        
+        Toast.show(`${images.length} páginas criadas! Agora você pode adicionar texto/áudio em cada uma.`, 'success', 3000);
+        renderCanvas();
+        renderLeftPanel();
+        renderTimeline();
     },
     promptImageUrl() {
         if (this._urlPromptOpen) return;
@@ -5179,6 +5400,32 @@ const App = {
         renderCanvas();
         renderRightPanel();
     },
+    
+    // Select slide and update active index (used by grid thumbnails)
+    selectSlide(pageIdx, slideIdx) {
+        const p = Store.get('currentProject');
+        if (!p || !p.pages[pageIdx]) return;
+        const page = p.pages[pageIdx];
+        if (!page.slides || slideIdx < 0 || slideIdx >= page.slides.length) return;
+        
+        // Update active slide index
+        Store.set({ activeSlideIndex: slideIdx });
+        this._activeSlidePreview = slideIdx;
+        
+        // Navigate to page if not already there
+        if (Store.get('activePageIndex') !== pageIdx) {
+            Store.set({ activePageIndex: pageIdx });
+        }
+        
+        renderCanvas();
+        renderRightPanel();
+        
+        // Scroll sidebar to show selected slide controls
+        setTimeout(() => {
+            const sidebar = document.querySelector('.right-panel');
+            if (sidebar) sidebar.scrollTop = 0;
+        }, 50);
+    },
 
     // Enable slides mode on any page
     enableSlidesMode() {
@@ -5341,10 +5588,10 @@ const App = {
             reader.onload = (e) => {
                 const src = e.target.result;
                 
-                // Add to library
-                const library = Store.get('library') || [];
-                library.push({ src, name: file.name, date: Date.now() });
-                Store.setSilent({ library });
+                // Add to library (use proj.library for persistence)
+                const proj = Store.get('currentProject');
+                if (!proj.library) proj.library = [];
+                proj.library.push({ id: genId(), src, name: file.name, date: Date.now() });
                 
                 // Add to slides
                 page.slides.push({
@@ -6746,7 +6993,10 @@ const App = {
             pageIndex: -1,
             pageProgress: 0
         }});
-        
+
+        // Reset to first slide after playback stops
+        Store.setSilent({ activeSlideIndex: 0 });
+
         // Remove Ken Burns transform
         this._removeKenBurnsTransform();
         
@@ -6782,7 +7032,26 @@ const App = {
         }});
         
         // Apply Ken Burns transform to canvas
-        this._applyKenBurnsTransform(page.kenBurns || 'zoom-in', progress);
+        // For slideshow pages: cycle through slides and use per-slide Ken Burns
+        if (page.slides && page.slides.length > 0) {
+            const elapsedSec = elapsed / 1000;
+            let acc = 0, slideIdx = page.slides.length - 1;
+            for (let i = 0; i < page.slides.length; i++) {
+                acc += (page.slides[i].duration || 2);
+                if (elapsedSec < acc) { slideIdx = i; break; }
+            }
+            const prevSlideIdx = Store.get('activeSlideIndex');
+            if (slideIdx !== prevSlideIdx) {
+                Store.setSilent({ activeSlideIndex: slideIdx });
+                renderCanvas();
+            }
+            const slideStart = page.slides.slice(0, slideIdx).reduce((s, sl) => s + (sl.duration || 2), 0);
+            const slideProg = Math.min(1, (elapsedSec - slideStart) / (page.slides[slideIdx].duration || 2));
+            const slideKenBurns = page.slides[slideIdx].kenBurns || page.kenBurns || 'zoom-in';
+            this._applyKenBurnsTransform(slideKenBurns, slideProg);
+        } else {
+            this._applyKenBurnsTransform(page.kenBurns || 'zoom-in', progress);
+        }
         
         // Apply transition fade-out near end of page
         const transition = page.transition || 'fade';
@@ -6823,6 +7092,9 @@ const App = {
             this._transitionActive = true;
             this._transitionStartTime = performance.now();
             this._transitionType = page.transition || 'fade';
+
+            // Reset slide index for new page
+            Store.setSilent({ activeSlideIndex: 0 });
             
             Store.setSilent({ timelinePlayer: {
                 playing: true,
