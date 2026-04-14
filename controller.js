@@ -5460,7 +5460,7 @@ const App = {
     },
     
     openPhotoSequenceModal() {
-        const library = Store.get('library') || [];
+        const library = (Store.get('currentProject') || {}).library || [];
         const libraryItems = library.map((item, idx) => {
             return `
                 <div class="library-item" onclick="App.togglePhotoSequenceSelection(${idx})" data-idx="${idx}"
@@ -5628,9 +5628,9 @@ const App = {
         if (!this._photoSequenceSelection || this._photoSequenceSelection.length === 0) return;
         
         const page = Store.getActivePage();
-        const library = Store.get('library') || [];
+        const library = (Store.get('currentProject') || {}).library || [];
         if (!page) return;
-        
+
         if (!page.slides) page.slides = [];
         
         this._photoSequenceSelection.forEach((idx, i) => {

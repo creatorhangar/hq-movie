@@ -1,5 +1,5 @@
 // HQ Movie — Service Worker (Cache-First)
-const CACHE_NAME = 'hq-movie-v114-canvas-center-fix';
+const CACHE_NAME = 'hq-movie-v119-slide-playback-fix';
 const ASSETS = [
     '/',
     '/index.html',
@@ -8,10 +8,12 @@ const ASSETS = [
     '/layouts.js?v=4',
     '/layouts-video.js?v=7',
     '/app.js?v=13',
-    '/video-exporter.js?v=14',
-    '/ui.js?v=46',
+    '/video-exporter.js?v=15',
+    '/thumbnail-generator.js?v=1',
+    '/slideshow-audio-sync.js?v=1',
+    '/ui.js?v=47',
     '/onboarding.js?v=10',
-    '/controller.js?v=37',
+    '/controller.js?v=39',
     '/manifest.json',
     '/locales/en.json',
     '/locales/pt-BR.json',
