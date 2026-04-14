@@ -5923,6 +5923,57 @@ const App = {
         Toast.show(`Slides divididos igualmente: ${equalDuration.toFixed(1)}s cada`, 'success');
     },
 
+    // Remove slide directly from timeline (no confirm for single delete)
+    removeSlideFromTimeline(pageIdx, slideIdx) {
+        const proj = Store.get('currentProject');
+        if (!proj || !proj.pages[pageIdx]) return;
+        const page = proj.pages[pageIdx];
+        if (!page.slides || page.slides.length <= 1) {
+            Toast.show('Mínimo 1 slide por página', 'warning');
+            return;
+        }
+        page.slides.splice(slideIdx, 1);
+        const total = page.slides.reduce((s, sl) => s + (sl.duration || 2), 0);
+        page.duration = Math.round(total * 10) / 10;
+        // Adjust active slide index
+        const cur = Store.get('activeSlideIndex') || 0;
+        if (cur >= page.slides.length) Store.setSilent({ activeSlideIndex: Math.max(0, page.slides.length - 1) });
+        Store.save();
+        renderRightPanel();
+        renderCanvas();
+        renderTimeline();
+        Toast.show('Slide removido', 'info');
+    },
+
+    // Set total duration and redistribute all slides equally
+    setTotalDurationAndRedistribute(totalSecondsRaw) {
+        const page = Store.getActivePage();
+        if (!page || !page.slides || page.slides.length === 0) return;
+        const totalSeconds = Math.max(1, parseFloat(totalSecondsRaw) || 0);
+        const perSlide = Math.round((totalSeconds / page.slides.length) * 10) / 10;
+        page.slides.forEach(s => { s.duration = Math.max(0.5, perSlide); });
+        page.duration = Math.round(page.slides.reduce((s, sl) => s + sl.duration, 0) * 10) / 10;
+        Store.save();
+        renderRightPanel();
+        renderTimeline();
+        Toast.show(`${page.slides.length} slides → ${perSlide}s cada (total ${page.duration}s)`, 'success');
+    },
+
+    // Remove all slides from active page
+    removeAllSlides() {
+        const page = Store.getActivePage();
+        if (!page || !page.slides || page.slides.length === 0) return;
+        if (!confirm(`Remover todos os ${page.slides.length} slides?`)) return;
+        page.slides = [];
+        page.duration = 4;
+        Store.setSilent({ activeSlideIndex: null });
+        Store.save();
+        renderRightPanel();
+        renderCanvas();
+        renderTimeline();
+        Toast.show('Todos os slides removidos', 'info');
+    },
+
     // Drag & Drop handlers
     _slideDragIndex: null,
     

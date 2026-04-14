@@ -1755,10 +1755,22 @@ function renderCanvas() {
     const _slideImg = _activeSlide.image;
     const _hasNav = _seqSlides.length > 1;
     
-    // Dot indicators
-    const _dots = _seqSlides.map((s, di) => 
-      `<span onclick="App.setSlidePreview(${di})" style="width:${di === _si ? '16px' : '6px'};height:6px;border-radius:3px;background:${di === _si ? 'var(--accent)' : 'rgba(255,255,255,0.4)'};cursor:pointer;transition:all 0.2s;"></span>`
-    ).join('');
+    // Dot indicators - smart display for many slides
+    let _dots = '';
+    if (_seqSlides.length <= 15) {
+      // Few slides: show all dots
+      _dots = _seqSlides.map((s, di) => 
+        `<span onclick="App.setSlidePreview(${di})" style="width:${di === _si ? '16px' : '6px'};height:6px;border-radius:3px;background:${di === _si ? 'var(--accent)' : 'rgba(255,255,255,0.4)'};cursor:pointer;transition:all 0.2s;"></span>`
+      ).join('');
+    } else {
+      // Many slides: show progress bar
+      const progress = (_si + 1) / _seqSlides.length * 100;
+      _dots = `
+        <div style="width:120px;height:6px;background:rgba(255,255,255,0.2);border-radius:3px;overflow:hidden;">
+          <div style="width:${progress}%;height:100%;background:var(--accent);transition:width 0.3s;"></div>
+        </div>
+      `;
+    }
     
     panelsHTML = `<div class="canvas-content" style="height:${panelZoneH}px;position:relative;top:${panelZoneTop}px;">
       <div class="slideshow-preview" style="position:absolute;inset:0;overflow:hidden;background:#111;">
@@ -3123,20 +3135,46 @@ function renderRightPanel() {
     } else {
       // ── SLIDES EXIST but none selected: show summary + hint ──
       const usedTime = slides.reduce((sum, s) => sum + (s.duration || 0), 0);
+      const perSlide = slides.length > 0 ? (usedTime / slides.length).toFixed(1) : 0;
       html += `
-        <div style="margin-bottom:6px;border:2px solid var(--accent);border-radius:6px;padding:6px;background:rgba(20,184,166,0.08);">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-            <span style="font-size:11px;font-weight:700;color:var(--accent);flex:1;">${Icons.images} SEQUÊNCIA (${slides.length} fotos)</span>
+        <div style="margin-bottom:6px;border:2px solid var(--accent);border-radius:6px;padding:8px;background:rgba(20,184,166,0.08);">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;color:var(--accent);flex:1;">📷 SEQUÊNCIA · ${slides.length} fotos</span>
           </div>
-          <div style="font-size:10px;color:var(--text3);margin-bottom:8px;line-height:1.5;">
-            <strong style="color:var(--accent);">Tempo total: ${usedTime.toFixed(1)}s</strong><br>
-            Clique em um slide no carousel abaixo para editar.
+
+          <!-- Stats row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px;">
+            <div style="text-align:center;background:var(--surface);border-radius:4px;padding:4px;">
+              <div style="font-size:14px;font-weight:700;color:var(--accent);">${slides.length}</div>
+              <div style="font-size:9px;color:var(--text3);">fotos</div>
+            </div>
+            <div style="text-align:center;background:var(--surface);border-radius:4px;padding:4px;">
+              <div style="font-size:14px;font-weight:700;color:#fff;">${usedTime.toFixed(0)}s</div>
+              <div style="font-size:9px;color:var(--text3);">total</div>
+            </div>
+            <div style="text-align:center;background:var(--surface);border-radius:4px;padding:4px;">
+              <div style="font-size:14px;font-weight:700;color:#fff;">${perSlide}s</div>
+              <div style="font-size:9px;color:var(--text3);">por foto</div>
+            </div>
           </div>
+
+          <!-- Set total duration & redistribute -->
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:6px;background:var(--surface);border-radius:4px;">
+            <span style="font-size:10px;color:var(--text3);flex:1;">Duração alvo</span>
+            <input type="number" id="slide-total-dur-input" value="${usedTime.toFixed(0)}" min="1" max="3600" step="1"
+                   style="width:56px;padding:3px 6px;border:1px solid var(--border);border-radius:3px;background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;text-align:center;"
+                   title="Digite o total em segundos e clique ÷">
+            <span style="font-size:10px;color:var(--text3);">s</span>
+            <button onclick="App.setTotalDurationAndRedistribute(document.getElementById('slide-total-dur-input').value)"
+                    style="padding:4px 8px;border-radius:3px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:11px;cursor:pointer;font-weight:700;"
+                    title="Dividir igualmente pela duração alvo">÷</button>
+          </div>
+
           <div style="display:flex;gap:4px;">
             <button onclick="App.addSlideFromLibrary()"
                     style="flex:1;padding:7px;border-radius:4px;border:1px dashed var(--accent);background:rgba(20,184,166,0.1);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">+ Adicionar Foto</button>
-            <button onclick="App.divideSlidesEqually()" title="Dividir tempo igualmente"
-                    style="padding:7px 10px;border-radius:4px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">÷</button>
+            <button onclick="App.removeAllSlides()" title="Remover todos os slides"
+                    style="padding:7px 10px;border-radius:4px;border:1px solid rgba(220,38,38,0.4);background:transparent;color:#f87171;font-size:11px;cursor:pointer;">🗑 Limpar</button>
           </div>
         </div>
       `;
@@ -3150,6 +3188,47 @@ function renderRightPanel() {
           Várias fotos na mesma página, cada uma aparece por um tempo antes de trocar para a próxima.
         </div>
         <button onclick="App.enableSlidesMode()" style="width:100%;padding:10px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600;">Converter para sequência</button>
+      </div>
+    `;
+  }
+  
+  // ── SLIDES GRID (quando tem muitos slides) ──
+  if (hasSlides && slides.length > 5) {
+    const gridCollapsed = collapsed.slidesGrid !== false; // default expanded
+    
+    html += `
+      <div style="margin-bottom:6px;border:1px solid var(--border);border-radius:4px;padding:6px;background:var(--surface);">
+        <div onclick="App.toggleSidebarSection('slidesGrid')" style="display:flex;align-items:center;padding:4px 0;cursor:pointer;user-select:none;">
+          <span style="font-size:11px;font-weight:700;color:var(--text);flex:1;display:flex;align-items:center;gap:6px;">
+            ${Icons.images} TODAS AS FOTOS (${slides.length})
+          </span>
+          <span style="font-size:10px;color:var(--text3);">${gridCollapsed ? '+' : '-'}</span>
+        </div>
+        
+        ${!gridCollapsed ? `
+          <!-- Thumbnails Grid -->
+          <div style="max-height:300px;overflow-y:auto;margin-top:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
+            ${slides.map((slide, idx) => {
+              const isActive = idx === _activeSlideIdx;
+              return `
+                <div onclick="App.selectSlide(${Store.get('activePageIndex')}, ${idx})" 
+                     style="position:relative;aspect-ratio:1;border-radius:4px;overflow:hidden;cursor:pointer;border:2px solid ${isActive ? 'var(--accent)' : 'transparent'};transition:all 0.2s;"
+                     onmouseenter="this.style.transform='scale(1.05)'"
+                     onmouseleave="this.style.transform='scale(1)'">
+                  <img src="${slide.image}" style="width:100%;height:100%;object-fit:cover;" draggable="false">
+                  <div style="position:absolute;top:2px;left:2px;background:rgba(0,0,0,0.75);color:#fff;font-size:9px;padding:2px 4px;border-radius:3px;font-weight:700;">${idx + 1}</div>
+                  <div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,0.75);color:#fff;font-size:8px;padding:1px 3px;border-radius:2px;">${slide.duration}s</div>
+                  ${isActive ? `<div style="position:absolute;inset:0;background:rgba(78,205,196,0.2);pointer-events:none;"></div>` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+          
+          <!-- Quick actions -->
+          <div style="display:flex;gap:4px;margin-top:8px;">
+            <button onclick="App.addSlideFromLibrary()" style="flex:1;padding:6px;border-radius:4px;border:1px dashed var(--accent);background:rgba(20,184,166,0.1);color:var(--accent);font-size:10px;cursor:pointer;font-weight:600;">+ Foto</button>
+          </div>
+        ` : ''}
       </div>
     `;
   }
@@ -4569,6 +4648,7 @@ function renderTimeline() {
                   (sl.image ? '<img src="' + sl.image + '" alt="">' : '<div class="slide-mini-empty"></div>') +
                   '<span class="slide-mini-dur" ondblclick="event.stopPropagation();App.editSlideDurationInline(' + i + ',' + si + ',event)">' + (sl.duration || 2) + 's</span>' +
                   '<span class="slide-mini-num">' + (si + 1) + '</span>' +
+                  '<button class="slide-mini-del" onclick="event.stopPropagation();App.removeSlideFromTimeline(' + i + ',' + si + ')" title="Remover slide">×</button>' +
                 '</div>';
               }).join('') +
               '<button class="slide-mini-add" onclick="event.stopPropagation();App.timelineClickPage(' + i + ');App.addSlideFromLibrary();" title="Adicionar slide">+</button>' +
